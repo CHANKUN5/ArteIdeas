@@ -151,6 +151,13 @@ const Header = ({ onToggleSidebar, user, onSectionChange }) => {
           <Settings className="w-5 h-5" />
         </button>
 
+        <hutton 
+          onClick={()=>onSectionChange("perfil")}
+          className="w-8 h-8 bg-primary rounded-full flex items-center justify-center hover:opacity-80 transition"
+        >
+          <User className="w-4 h-4 text-white"/>
+        </hutton>
+
         <div className="flex items-center space-x-3 pl-4 border-l border-gray-200">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium text-gray-900">{user?.name || 'Elberc149'}</p>
