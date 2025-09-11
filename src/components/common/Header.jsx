@@ -157,7 +157,7 @@ const Header = ({ onToggleSidebar, user, onSectionChange }) => {
             <p className="text-xs text-gray-500">{user?.role || 'Administrador'}</p>
           </div>
           <div 
-            onClick={()=>onSectionChange('/perfil')}
+            onClick={()=>onSectionChange('/Perfil')}
             className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
             <User className="w-4 h-4 text-white" />
           </div>
