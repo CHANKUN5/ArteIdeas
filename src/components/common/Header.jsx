@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Search, Bell, User, Settings, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const Header = ({ onToggleSidebar, user }) => {
+const Header = ({ onToggleSidebar, user, onSectionChange }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const navigate = useNavigate();
@@ -143,9 +143,9 @@ const Header = ({ onToggleSidebar, user }) => {
           <Bell className="w-5 h-5" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full"></span>
         </button>
-
+          
         <button 
-          onClick={() => navigate('/configuracion')}
+          onClick={() => onSectionChange("configuracion")}
           className="p-2 text-gray-600 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
         >
           <Settings className="w-5 h-5" />
