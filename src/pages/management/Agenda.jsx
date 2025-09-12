@@ -1,219 +1,183 @@
-import React, { useState } from 'react';
-import { Calendar, Clock, Plus, Users, MapPin, Filter, CheckCircle, Circle, AlertCircle, ChevronDown, ChevronLeft, ChevronRight, Eye, Edit, Trash2 } from 'lucide-react';
-import Card from '../../components/common/Card';
+import React, { useState, useEffect } from 'react';
+import { Calendar, Plus, CheckCircle, Circle, AlertCircle, ChevronLeft, ChevronRight, Eye, Edit, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 
 const Agenda = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showEventModal, setShowEventModal] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false); // Detalles del evento
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filter, setFilter] = useState('todos');
-  const [currentMonth, setCurrentMonth] = useState('Septiembre 2025');
-  const [selectedProject, setSelectedProject] = useState(null);
-  const [showProjectDetails, setShowProjectDetails] = useState(false);
+  const [clientFilter, setClientFilter] = useState('');
+  // Fecha de referencia para el calendario (primer día del mes mostrado)
+  const [currentMonthDate, setCurrentMonthDate] = useState(() => {
+    const base = new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
 
-  const events = [
-    {
-      id: 1,
-      title: 'Sesión Fotográfica Escolar',
-      client: 'Juan Pérez',
-      date: '14/03/2024',
-      time: '09:00',
-      duration: '3 horas',
-      location: 'A.v arequipa',
-      type: 'sesion',
-      status: 'confirmado',
-      participants: 150,
-      notes: 'Fotografía individual y grupal para promoción 2025'
-    },
-    {
-      id: 2,
-      title: 'Entrega de Marcos',
-      client: 'María López',
-      date: '14/03/2024',
-      time: '09:00',
-      duration: '30 min',
-      location: 'A.v arequipa',
-      type: 'entrega',
-      status: 'pendiente',
-      participants: 1,
-      notes: 'Marcos 20x30 y 30x40 listos para entrega'
-    },
-    {
-      id: 3,
-      title: 'Reunión Contrato Anual',
-      client: 'Colegio Particular Santa Rosa',
-      date: '2025-09-10',
-      time: '16:00',
-      duration: '1 hora',
-      location: 'Oficina del Director',
-      type: 'reunion',
-      status: 'confirmado',
-      participants: 3,
-      notes: 'Negociación contrato promoción 2026'
-    },
-    {
-      id: 4,
-      title: 'Sesión Familiar',
-      client: 'Familia Rodríguez',
-      date: '2025-09-10',
-      time: '18:00',
-      duration: '2 horas',
-      location: 'Parque Central',
-      type: 'sesion',
-      status: 'confirmado',
-      participants: 5,
-      notes: 'Sesión exterior para álbum familiar'
+  // Estado de eventos (persistencia inmediata con lazy initializer)
+  const [events, setEvents] = useState(() => {
+    try {
+      const stored = localStorage.getItem('agenda_events');
+      const parsed = stored ? JSON.parse(stored) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Error leyendo agenda_events de localStorage', e);
+      return [];
     }
-  ];
+  });
   
-  const projects = [
-    {
-      id: 101,
-      client: 'Juan Pérez',
-      clientId: 'CLI-001',
-      title: 'Sesión Fotográfica',
-      progress: 70,
-      tasks: [
-        { id: 1, name: 'Preparar equipo para sesión', completed: true },
-        { id: 2, name: 'Realizar selección de imágenes', completed: true },
-        { id: 3, name: 'Confirmar locación', completed: false }
-      ],
-      sessionTasks: [
-        { id: 4, name: 'Capturar fotos del producto', completed: false },
-        { id: 5, name: 'Revisar iluminación', completed: false }
-      ]
-    },
-    {
-      id: 102,
-      client: 'María López',
-      clientId: 'CLI-002',
-      title: 'Álbum Familiar',
-      progress: 30,
-      tasks: [
-        { id: 6, name: 'Seleccionar fotos para álbum', completed: true },
-        { id: 7, name: 'Diseñar maqueta de álbum', completed: false },
-        { id: 8, name: 'Enviar propuesta al cliente', completed: false }
-      ],
-      sessionTasks: []
+  // Formulario controlado para crear/editar evento
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [eventFormData, setEventFormData] = useState({
+    title: '',
+    client: '',
+    date: '',
+    time: '',
+    duration: '',
+    location: '',
+    type: 'sesion',
+    status: 'pendiente',
+    participants: 0,
+    notes: '',
+    tasks: []
+  });
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [taskInput, setTaskInput] = useState('');
+  
+  // Modales de confirmación
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [confirmEditOpen, setConfirmEditOpen] = useState(false);
+  const [eventToEdit, setEventToEdit] = useState(null);
+
+  // Guardar en localStorage cuando cambien (simple y robusto)
+  useEffect(() => {
+    try {
+      localStorage.setItem('agenda_events', JSON.stringify(events));
+    } catch (e) {
+      console.error('Error guardando eventos en localStorage', e);
     }
-  ];
+  }, [events]);
+
 
   const eventTypes = {
+    reunion: { color: 'bg-orange-500', label: 'Reunión' },
     sesion: { color: 'bg-blue-500', label: 'Sesión' },
-    entrega: { color: 'bg-green-500', label: 'Entrega' },
-    reunion: { color: 'bg-orange-500', label: 'Reunión' }
+    entrega: { color: 'bg-green-500', label: 'Entrega' }
   };
 
   const statusColors = {
     confirmado: 'bg-green-100 text-green-800',
     pendiente: 'bg-yellow-100 text-yellow-800',
-    cancelado: 'bg-red-100 text-red-800'
+    cancelado: 'bg-red-100 text-red-800',
+    completado: 'bg-green-100 text-green-800'
   };
 
+  const deriveStatusFromType = (type) => {
+    // Mantener la lógica según lo que ya hay en el código (pendiente, confirmado, completado)
+    if (type === 'sesion') return 'confirmado';
+    if (type === 'entrega') return 'completado';
+    if (type === 'reunion') return 'pendiente';
+    return 'pendiente';
+  };
+
+  // Sincronizar el calendario con el filtro de fecha
+  useEffect(() => {
+    if (!selectedDate) return;
+    const d = new Date(`${selectedDate}T00:00:00`);
+    setCurrentMonthDate(new Date(d.getFullYear(), d.getMonth(), 1));
+  }, [selectedDate]);
+
   const filteredEvents = events.filter(event => {
-    if (filter === 'todos') return true;
-    return event.type === filter;
+    if (filter !== 'todos' && event.type !== filter) return false;
+    if (clientFilter.trim()) {
+      const term = clientFilter.trim().toLowerCase();
+      if (!(event.client || '').toLowerCase().includes(term)) return false;
+    }
+    if (selectedDate) {
+      // Comparación de fecha exacta (YYYY-MM-DD)
+      if ((event.date || '').slice(0, 10) !== selectedDate) return false;
+    }
+    return true;
   });
 
-  const EventCard = ({ event }) => (
-    <Card 
-      className="hover:shadow-lg transition-all duration-200 cursor-pointer border-l-4"
-      style={{ borderLeftColor: eventTypes[event.type]?.color.replace('bg-', '#') || '#1DD1E3' }}
-      onClick={() => {
-        setSelectedEvent(event);
-        setShowEventModal(true);
-      }}
-    >
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex items-center space-x-2">
-          <div className={`w-3 h-3 rounded-full ${eventTypes[event.type]?.color}`} />
-          <h3 className="font-semibold text-gray-900">{event.title}</h3>
-        </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[event.status]}`}>
-          {event.status}
-        </span>
-      </div>
-      
-      <div className="space-y-2 text-sm text-gray-600">
-        <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4" />
-          <span>{event.client}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Clock className="w-4 h-4" />
-          <span>{event.time} - {event.duration}</span>
-        </div>
-        <div className="flex items-center space-x-2">
-          <MapPin className="w-4 h-4" />
-          <span>{event.location}</span>
-        </div>
-      </div>
-      
-      {event.notes && (
-        <div className="mt-3 p-2 bg-gray-50 rounded text-xs text-gray-500">
-          {event.notes}
-        </div>
-      )}
-    </Card>
-  );
+  // Orden y paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const sortedEvents = [...filteredEvents].sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+  const totalPages = Math.max(1, Math.ceil(sortedEvents.length / itemsPerPage));
+  const pageStart = (currentPage - 1) * itemsPerPage;
+  const paginatedEvents = sortedEvents.slice(pageStart, pageStart + itemsPerPage);
 
-  // Función para generar el calendario del mes actual
+  // Progreso según tareas
+  const getProgress = (ev) => {
+    if (!ev || !Array.isArray(ev.tasks) || ev.tasks.length === 0) return 0;
+    const completed = ev.tasks.filter(t => t.completed).length;
+    return Math.round((completed / ev.tasks.length) * 100);
+  };
+
+  // Utilidades de calendario
+  const monthLabel = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(currentMonthDate);
+  const pad2 = (n) => (n < 10 ? `0${n}` : `${n}`);
+  const statusPriority = { pendiente: 1, confirmado: 2, completado: 3 };
+
+  // Generar calendario para el mes en currentMonthDate
   const generateCalendar = () => {
     const days = [];
-    const daysOfWeek = ['LUN', 'MAR', 'MIE', 'JUE', 'VIE', 'SAB', 'DOM'];
-    
-    // Agregar los días de la semana
-    daysOfWeek.forEach(day => {
-      days.push(
-        <div key={`header-${day}`} className="text-center py-2 text-xs font-medium text-gray-500">
-          {day}
-        </div>
-      );
-    });
-    
-    // Agregar los días del mes (ejemplo para septiembre 2025)
-    for (let i = 1; i <= 30; i++) {
-      // Determinar si hay eventos para este día
-      const hasEvents = events.some(event => {
-        const eventDate = new Date(event.date);
-        return eventDate.getDate() === i;
-      });
-      
-      // Determinar el estado del día (pendiente, confirmado, completado)
-      let status = '';
-      let statusComponent = null;
-      
-      if (i === 5) {
-        status = 'bg-yellow-100';
-        statusComponent = <Circle className="w-3 h-3 text-yellow-500" />;
-      } else if (i === 10 || i === 11 || i === 13) {
-        status = 'bg-green-100';
-        statusComponent = <CheckCircle className="w-3 h-3 text-green-500" />;
-      } else if (i === 19) {
-        status = 'bg-blue-100';
-        statusComponent = <AlertCircle className="w-3 h-3 text-blue-500" />;
+    const year = currentMonthDate.getFullYear();
+    const month = currentMonthDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const startWeekday = firstDay.getDay(); // 0=Dom, 6=Sab para alinear con cabecera DOM..SÁB
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Relleno de días en blanco antes del 1
+    for (let i = 0; i < startWeekday; i++) {
+      days.push(<div key={`blank-${i}`} className="py-3 border border-gray-100 bg-white" />);
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
+      const eventsInDay = events.filter(ev => (ev.date || '').slice(0, 10) === dateStr);
+
+      // Determinar estado dominante del día
+      let dominantStatus = null;
+      for (const ev of eventsInDay) {
+        const st = ev.status || deriveStatusFromType(ev.type);
+        if (!dominantStatus || statusPriority[st] > statusPriority[dominantStatus]) {
+          dominantStatus = st;
+        }
       }
-      
+
+      let bgClass = '';
+      let statusIcon = null;
+      if (dominantStatus === 'pendiente') {
+        bgClass = 'bg-yellow-100';
+        statusIcon = <Circle className="w-4 h-4 text-yellow-500" />;
+      } else if (dominantStatus === 'confirmado') {
+        bgClass = 'bg-blue-100';
+        statusIcon = <AlertCircle className="w-4 h-4 text-blue-500" />;
+      } else if (dominantStatus === 'completado') {
+        bgClass = 'bg-green-100';
+        statusIcon = <CheckCircle className="w-4 h-4 text-green-500" />;
+      }
+
       days.push(
-        <div 
-          key={`day-${i}`} 
-          className={`text-center py-3 border border-gray-100 ${status} ${i === 5 ? 'bg-yellow-100' : ''} hover:bg-gray-50 cursor-pointer transition-colors`}
-          onClick={() => setSelectedDate(`2025-09-${i < 10 ? '0' + i : i}`)}
+        <div
+          key={`day-${dateStr}`}
+          className={`text-center py-3 border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${bgClass}`}
+          onClick={() => setSelectedDate(dateStr)}
         >
           <div className="relative">
-            <div className="text-sm font-medium">{i}</div>
-            {statusComponent && (
-              <div className="absolute -top-1 -right-1">
-                {statusComponent}
-              </div>
+            <div className="text-sm font-medium">{d}</div>
+            {statusIcon && (
+              <div className="absolute -top-1 -right-1">{statusIcon}</div>
             )}
           </div>
         </div>
       );
     }
-    
+
     return days;
   };
   
@@ -231,66 +195,6 @@ const Agenda = () => {
       <span className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
         {task.name}
       </span>
-    </div>
-  );
-  
-  // Componente para mostrar un proyecto
-  const ProjectItem = ({ project }) => (
-    <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden">
-      <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center space-x-2">
-          <div className="text-xs text-gray-500">{project.clientId}</div>
-          <div className="font-medium">{project.client}</div>
-        </div>
-        <div className="text-xs text-gray-500">70%</div>
-      </div>
-      
-      <div className="p-3">
-        <div className="font-medium mb-2">Sesión Fotográfica - {project.client}</div>
-        <div className="flex items-center space-x-2 text-xs text-gray-500 mb-2">
-          <Calendar className="w-3 h-3" />
-          <span>10 Septiembre 2025</span>
-        </div>
-        
-        <div className="mb-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-xs font-medium text-gray-700">Preparación</div>
-            <div className="text-xs text-gray-500">2/3</div>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-1.5">
-            <div className="bg-primary h-1.5 rounded-full" style={{ width: '66%' }}></div>
-          </div>
-        </div>
-        
-        {project.tasks.map(task => (
-          <TaskItem 
-            key={task.id} 
-            task={task} 
-            onToggle={() => console.log('Toggle task', task.id)} 
-          />
-        ))}
-        
-        {project.sessionTasks.length > 0 && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between mb-1">
-              <div className="text-xs font-medium text-gray-700">Durante la Sesión</div>
-              <div className="text-xs text-gray-500">0/2</div>
-            </div>
-            {project.sessionTasks.map(task => (
-              <TaskItem 
-                key={task.id} 
-                task={task} 
-                onToggle={() => console.log('Toggle task', task.id)} 
-              />
-            ))}
-          </div>
-        )}
-        
-        <div className="flex justify-end mt-3 space-x-2">
-          <Button variant="outline" size="sm">Cancelar Sesión</Button>
-          <Button size="sm">Confirmar Todo</Button>
-        </div>
-      </div>
     </div>
   );
 
@@ -315,7 +219,7 @@ const Agenda = () => {
           <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
           <Button 
             icon={<Plus className="w-4 h-4" />}
-            onClick={() => setShowEventModal(true)}
+            onClick={() => setShowEventForm(true)}
             className="bg-blue-600 hover:bg-blue-700 text-white"
           >
             Nueva Sesión
@@ -340,12 +244,23 @@ const Agenda = () => {
               <input
                 type="text"
                 placeholder="Buscar por cliente"
+                value={clientFilter}
+                onChange={(e) => setClientFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
+            </div >
+            <div className="flex items-end">
+              <Button
+                onClick={() => {
+                  setSelectedDate('');
+                  setClientFilter('');
+                  setFilter('todos');
+                }}
+                className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
+              >
+                Limpiar filtros
+              </Button>
             </div>
-            <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-              Aplicar filtros
-            </Button>
           </div>
         </div>
       </div>
@@ -356,11 +271,11 @@ const Agenda = () => {
           {/* Header del calendario */}
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <button className="p-1 hover:bg-gray-100 rounded">
+              <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCurrentMonthDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>
                 <ChevronLeft className="w-5 h-5 text-gray-600" />
               </button>
-              <h2 className="text-lg font-semibold text-gray-900">Septiembre 2025</h2>
-              <button className="p-1 hover:bg-gray-100 rounded">
+              <h2 className="text-lg font-semibold text-gray-900">{monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}</h2>
+              <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCurrentMonthDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>
                 <ChevronRight className="w-5 h-5 text-gray-600" />
               </button>
             </div>
@@ -431,7 +346,7 @@ const Agenda = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredEvents.map((event) => (
+                {paginatedEvents.map((event) => (
                   <tr key={event.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {event.id}
@@ -461,16 +376,16 @@ const Agenda = () => {
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div 
                           className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${event.status === 'confirmado' ? '75' : '25'}%` }}
+                          style={{ width: `${getProgress(event)}%` }}
                         ></div>
                       </div>
-                    </td>
+                  </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex space-x-2">
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setSelectedEvent(event)}
+                          onClick={() => { setSelectedEvent(event); setShowEventModal(true); }}
                           className="text-blue-600 hover:bg-blue-50"
                         >
                           <Eye className="w-4 h-4" />
@@ -478,7 +393,7 @@ const Agenda = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setSelectedEvent(event)}
+                          onClick={() => { setEventToEdit(event); setConfirmEditOpen(true); }}
                           className="text-yellow-600 hover:bg-yellow-50"
                         >
                           <Edit className="w-4 h-4" />
@@ -486,11 +401,7 @@ const Agenda = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => {
-                            if (window.confirm('¿Estás seguro de eliminar esta sesión?')) {
-                              // Lógica para eliminar
-                            }
-                          }}
+                          onClick={() => { setEventToDelete(event); setConfirmDeleteOpen(true); }}
                           className="text-red-600 hover:bg-red-50"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -505,14 +416,50 @@ const Agenda = () => {
         </div>
       </div>
 
-      {/* Event Detail Modal */}
+      {/* Paginación de sesiones */}
+      <div className="flex justify-between items-center mt-6">
+        <div className="text-sm text-gray-700">
+          Mostrando {sortedEvents.length === 0 ? 0 : pageStart + 1} a {Math.min(pageStart + itemsPerPage, sortedEvents.length)} de {sortedEvents.length} resultados
+        </div>
+        <div className="flex space-x-2">
+          <button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+            <button
+              key={page}
+              onClick={() => setCurrentPage(page)}
+              className={`px-3 py-1 border rounded text-sm ${
+                page === currentPage
+                  ? 'bg-primary text-white border-primary'
+                  : 'border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              {page}
+            </button>
+          ))}
+          <button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      {/* Modal de Detalles del Evento */}
       <Modal
         isOpen={showEventModal}
         onClose={() => {
           setShowEventModal(false);
           setSelectedEvent(null);
         }}
-        title={selectedEvent ? 'Detalles del Evento' : 'Nueva Cita'}
+        title={'Detalles del Evento'}
         size="lg"
       >
         {selectedEvent ? (
@@ -562,18 +509,24 @@ const Agenda = () => {
             <div className="mt-6">
               <h4 className="text-sm font-medium text-gray-700 mb-2">Tareas relacionadas</h4>
               <div className="space-y-2 bg-gray-50 p-3 rounded-lg">
-                <TaskItem 
-                  task={{ id: 101, name: 'Preparar equipo fotográfico', completed: true }} 
-                  onToggle={() => console.log('Toggle task')} 
-                />
-                <TaskItem 
-                  task={{ id: 102, name: 'Confirmar asistentes', completed: false }} 
-                  onToggle={() => console.log('Toggle task')} 
-                />
-                <TaskItem 
-                  task={{ id: 103, name: 'Revisar locación', completed: false }} 
-                  onToggle={() => console.log('Toggle task')} 
-                />
+                {Array.isArray(selectedEvent.tasks) && selectedEvent.tasks.length > 0 ? (
+                  selectedEvent.tasks.map((t) => (
+                    <TaskItem
+                      key={t.id}
+                      task={t}
+                      onToggle={() => {
+                        // Solo actualizar en memoria del modal; guardar con "Confirmar"
+                        setSelectedEvent(prev => {
+                          if (!prev) return prev;
+                          const updatedTasks = (prev.tasks || []).map(task => task.id === t.id ? { ...task, completed: !task.completed } : task);
+                          return { ...prev, tasks: updatedTasks };
+                        });
+                      }}
+                    />
+                  ))
+                ) : (
+                  <div className="text-sm text-gray-500">No hay tareas registradas.</div>
+                )}
               </div>
             </div>
             
@@ -581,91 +534,279 @@ const Agenda = () => {
               <Button variant="outline" onClick={() => setShowEventModal(false)}>
                 Cerrar
               </Button>
-              <Button variant="secondary">
+              <Button 
+                variant="secondary"
+                onClick={() => { setEventToEdit(selectedEvent); setConfirmEditOpen(true); setShowEventModal(false); }}
+              >
                 Editar
               </Button>
-              <Button>
+              <Button
+                onClick={() => {
+                  if (!selectedEvent) return;
+                  // Confirmar tareas y persistir en events/localStorage
+                  setEvents(prev => prev.map(ev => ev.id === selectedEvent.id ? { ...ev, tasks: selectedEvent.tasks || [] } : ev));
+                  setShowEventModal(false);
+                  setSelectedEvent(null);
+                }}
+              >
                 Confirmar
               </Button>
             </Modal.Footer>
           </div>
-        ) : (
-          <div className="space-y-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-                <input 
-                  type="text" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Título del evento"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-                <input 
-                  type="text" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Nombre del cliente"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-                <input 
-                  type="date" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-                <input 
-                  type="time" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Duración</label>
-                <input 
-                  type="text" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: 2 horas"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none">
-                  <option value="sesion">Sesión</option>
-                  <option value="entrega">Entrega</option>
-                  <option value="reunion">Reunión</option>
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-                <input 
-                  type="text" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Dirección o lugar"
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-                <textarea 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  rows="3"
-                  placeholder="Detalles adicionales"
-                ></textarea>
-              </div>
+        ) : null}
+      </Modal>
+
+      {/* Modal de Crear/Editar Evento */}
+      <Modal
+        isOpen={showEventForm}
+        onClose={() => {
+          setShowEventForm(false);
+          setEditingEvent(null);
+          setEventFormData({
+            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: ''
+          });
+        }}
+        title={editingEvent ? 'Editar Evento' : 'Nueva Sesión'}
+        size="lg"
+      >
+        <div className="space-y-4 py-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
+              <input
+                type="text"
+                name="title"
+                value={eventFormData.title}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                placeholder="Título del evento"
+              />
             </div>
-            
-            <Modal.Footer>
-              <Button variant="outline" onClick={() => setShowEventModal(false)}>
-                Cancelar
-              </Button>
-              <Button>
-                Guardar Evento
-              </Button>
-            </Modal.Footer>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+              <input
+                type="text"
+                name="client"
+                value={eventFormData.client}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                placeholder="Nombre del cliente"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <input
+                type="date"
+                name="date"
+                value={eventFormData.date}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+              <input
+                type="time"
+                name="time"
+                value={eventFormData.time}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Duración</label>
+              <input
+                type="text"
+                name="duration"
+                value={eventFormData.duration}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                placeholder="Ej: 2 horas"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+              <select
+                name="type"
+                value={eventFormData.type}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                <option value="sesion">Sesión</option>
+                <option value="entrega">Entrega</option>
+                <option value="reunion">Reunión</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Participantes</label>
+              <input
+                type="number"
+                min="0"
+                name="participants"
+                value={eventFormData.participants}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: Number(e.target.value) }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                placeholder="Número de participantes"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
+              <input
+                type="text"
+                name="location"
+                value={eventFormData.location}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                placeholder="Dirección o lugar"
+              />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+              <textarea
+                name="notes"
+                value={eventFormData.notes}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                rows="3"
+                placeholder="Detalles adicionales"
+              ></textarea>
+            </div>
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tareas relacionadas</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={taskInput}
+                  onChange={(e) => setTaskInput(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="Nombre de la tarea"
+                />
+                <Button onClick={() => {
+                  const name = taskInput.trim();
+                  if (!name) return;
+                  setEventFormData(prev => ({ ...prev, tasks: [...(prev.tasks || []), { id: Date.now(), name, completed: false }] }));
+                  setTaskInput('');
+                }}>Añadir</Button>
+              </div>
+              {Array.isArray(eventFormData.tasks) && eventFormData.tasks.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {eventFormData.tasks.map((t) => (
+                    <div key={t.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                      <span className="text-sm text-gray-700">{t.name}</span>
+                      <button className="text-red-500 text-sm" onClick={() => setEventFormData(prev => ({ ...prev, tasks: prev.tasks.filter(x => x.id !== t.id) }))}>Eliminar</button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+
+          <Modal.Footer>
+            <Button variant="outline" onClick={() => setShowEventForm(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={() => {
+              if (!eventFormData.title.trim() || !eventFormData.client.trim()) {
+                alert('Título y Cliente son requeridos');
+                return;
+              }
+              if (editingEvent) {
+                // Actualizar
+                setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { 
+                  ...editingEvent, 
+                  ...eventFormData,
+                  status: deriveStatusFromType(eventFormData.type)
+                } : ev));
+              } else {
+                // Crear simulado
+                const nextId = (events.reduce((max, ev) => Math.max(max, Number(ev.id) || 0), 0) + 1) || 1;
+                const newEvent = { 
+                  id: nextId, 
+                  ...eventFormData,
+                  status: deriveStatusFromType(eventFormData.type)
+                };
+                setEvents(prev => [newEvent, ...prev]);
+              }
+              setShowEventForm(false);
+              setEditingEvent(null);
+              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: [] });
+              setTaskInput('');
+              setCurrentPage(1);
+            }}>
+              {editingEvent ? 'Actualizar' : 'Guardar Evento'}
+            </Button>
+          </Modal.Footer>
+        </div>
+      </Modal>
+
+      {/* Confirmación Eliminar */}
+      <Modal
+        isOpen={confirmDeleteOpen}
+        onClose={() => { setConfirmDeleteOpen(false); setEventToDelete(null); }}
+        title="Eliminar Sesión"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            ¿Estás seguro de eliminar la sesión
+            {eventToDelete ? (<>
+              {' '}<span className="font-semibold">{eventToDelete.title}</span> del cliente{' '}<span className="font-semibold">{eventToDelete.client}</span>?
+            </>) : ' seleccionada?'}
+            <br />
+            <span className="text-red-500">Esta acción no se puede deshacer.</span>
+          </p>
+          <Modal.Footer>
+            <Button variant="outline" onClick={() => { setConfirmDeleteOpen(false); setEventToDelete(null); }}>Cancelar</Button>
+            <Button variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => {
+              if (eventToDelete) {
+                setEvents(prev => prev.filter(ev => ev.id !== eventToDelete.id));
+              }
+              setConfirmDeleteOpen(false);
+              setEventToDelete(null);
+            }}>Eliminar</Button>
+          </Modal.Footer>
+        </div>
+      </Modal>
+
+      {/* Confirmación Editar */}
+      <Modal
+        isOpen={confirmEditOpen}
+        onClose={() => { setConfirmEditOpen(false); setEventToEdit(null); }}
+        title="Editar Sesión"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-700">
+            ¿Deseas editar la sesión
+            {eventToEdit ? (<>
+              {' '}<span className="font-semibold">{eventToEdit.title}</span> del cliente{' '}<span className="font-semibold">{eventToEdit.client}</span>?
+            </>) : ' seleccionada?'}
+          </p>
+          <Modal.Footer>
+            <Button variant="outline" onClick={() => { setConfirmEditOpen(false); setEventToEdit(null); }}>Cancelar</Button>
+            <Button variant="secondary" onClick={() => {
+              if (eventToEdit) {
+                setEditingEvent(eventToEdit);
+                setEventFormData({
+                  title: eventToEdit.title || '',
+                  client: eventToEdit.client || '',
+                  date: eventToEdit.date || '',
+                  time: eventToEdit.time || '',
+                  duration: eventToEdit.duration || '',
+                  location: eventToEdit.location || '',
+                  type: eventToEdit.type || 'sesion',
+                  status: eventToEdit.status || 'pendiente',
+                  participants: eventToEdit.participants || 0,
+                  notes: eventToEdit.notes || '',
+                  tasks: Array.isArray(eventToEdit.tasks) ? eventToEdit.tasks : []
+                });
+                setShowEventForm(true);
+              }
+              setConfirmEditOpen(false);
+              setEventToEdit(null);
+            }}>Continuar</Button>
+          </Modal.Footer>
+        </div>
       </Modal>
     </div>
   );
