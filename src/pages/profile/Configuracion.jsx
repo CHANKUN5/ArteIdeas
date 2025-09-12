@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Bell, Shield, Palette, Database, Download, Upload, Globe, Sun, Users, DollarSign, Plus, Edit, Trash2, Eye } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
@@ -42,8 +42,10 @@ const Configuracion = () => {
 
   const [showUserModal, setShowUserModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
+  const [deleteItem, setDeleteItem] = useState(null);
 
   const handleSettingChange = (category, field, value) => {
     setSettings(prev => ({
@@ -80,6 +82,55 @@ const Configuracion = () => {
       </button>
     </div>
   );
+
+  // Funciones para manejar usuarios
+  const handleAddUser = (userData) => {
+    const newUser = {
+      id: users.length + 1,
+      ...userData,
+      ultimoAcceso: new Date().toISOString().slice(0, 16).replace('T', ' ')
+    };
+    setUsers([...users, newUser]);
+    setShowUserModal(false);
+  };
+
+  const handleEditUser = (userData) => {
+    setUsers(users.map(user => 
+      user.id === selectedUser.id ? { ...user, ...userData } : user
+    ));
+    setSelectedUser(null);
+    setShowUserModal(false);
+  };
+
+  // Funciones para manejar servicios
+  const handleAddService = (serviceData) => {
+    const newService = {
+      id: services.length + 1,
+      ...serviceData,
+      estado: 'Activo'
+    };
+    setServices([...services, newService]);
+    setShowServiceModal(false);
+  };
+
+  const handleEditService = (serviceData) => {
+    setServices(services.map(service => 
+      service.id === selectedService.id ? { ...service, ...serviceData } : service
+    ));
+    setSelectedService(null);
+    setShowServiceModal(false);
+  };
+
+  // Función para manejar eliminación
+  const handleDelete = () => {
+    if (deleteItem.type === 'user') {
+      setUsers(users.filter(u => u.id !== deleteItem.item.id));
+    } else if (deleteItem.type === 'service') {
+      setServices(services.filter(s => s.id !== deleteItem.item.id));
+    }
+    setShowDeleteModal(false);
+    setDeleteItem(null);
+  };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -158,7 +209,10 @@ const Configuracion = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setSelectedUser(user)}
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowUserModal(true);
+                          }}
                           className="text-yellow-600 hover:bg-yellow-50"
                         >
                           <Edit className="w-4 h-4" />
@@ -167,9 +221,8 @@ const Configuracion = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (window.confirm('¿Estás seguro de desactivar este usuario?')) {
-                              setUsers(users.filter(u => u.id !== user.id));
-                            }
+                            setDeleteItem({ type: 'user', item: user });
+                            setShowDeleteModal(true);
                           }}
                           className="text-red-600 hover:bg-red-50"
                         >
@@ -225,7 +278,7 @@ const Configuracion = () => {
                       {service.servicio}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ${service.precioBase.toFixed(2)}
+                      S/{service.precioBase.toFixed(2)}
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -237,7 +290,10 @@ const Configuracion = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => setSelectedService(service)}
+                          onClick={() => {
+                            setSelectedService(service);
+                            setShowServiceModal(true);
+                          }}
                           className="text-yellow-600 hover:bg-yellow-50"
                         >
                           <Edit className="w-4 h-4" />
@@ -246,9 +302,8 @@ const Configuracion = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => {
-                            if (window.confirm('¿Estás seguro de desactivar este servicio?')) {
-                              setServices(services.filter(s => s.id !== service.id));
-                            }
+                            setDeleteItem({ type: 'service', item: service });
+                            setShowDeleteModal(true);
                           }}
                           className="text-red-600 hover:bg-red-50"
                         >
@@ -278,22 +333,6 @@ const Configuracion = () => {
               description="Añade una capa extra de seguridad a tu cuenta"
             />
             
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tiempo de Sesión (minutos)
-              </label>
-              <input
-                type="number"
-                value={settings.security.sessionTimeout}
-                onChange={(e) => handleSettingChange('security', 'sessionTimeout', parseInt(e.target.value))}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                min="5"
-                max="480"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Tiempo antes de cerrar sesión automáticamente por inactividad
-              </p>
-            </div>
 
             <SettingSwitch
               checked={settings.security.passwordExpiry}
@@ -373,8 +412,6 @@ const Configuracion = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 >
                   <option value="PEN">Soles (S/)</option>
-                  <option value="USD">Dólares ($)</option>
-                  <option value="EUR">Euros (€)</option>
                 </select>
               </div>
             </div>
@@ -428,7 +465,277 @@ const Configuracion = () => {
           </div>
         </div>
       </Card>
-    </div>
+
+      {/* Modal de Usuario */}
+      <Modal
+        isOpen={showUserModal}
+        onClose={() => {
+          setShowUserModal(false);
+          setSelectedUser(null);
+        }}
+        title={selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+      >
+        <UserForm
+          user={selectedUser}
+          onSubmit={selectedUser ? handleEditUser : handleAddUser}
+          onCancel={() => {
+            setShowUserModal(false);
+            setSelectedUser(null);
+          }}
+        />
+      </Modal>
+
+      {/* Modal de Servicio */}
+      <Modal
+        isOpen={showServiceModal}
+        onClose={() => {
+          setShowServiceModal(false);
+          setSelectedService(null);
+        }}
+        title={selectedService ? 'Editar Servicio' : 'Nuevo Servicio'}
+      >
+        <ServiceForm
+          service={selectedService}
+          onSubmit={selectedService ? handleEditService : handleAddService}
+          onCancel={() => {
+            setShowServiceModal(false);
+            setSelectedService(null);
+          }}
+        />
+       </Modal>
+
+       {/* Modal de Confirmación de Eliminación */}
+       <Modal
+         isOpen={showDeleteModal}
+         onClose={() => {
+           setShowDeleteModal(false);
+           setDeleteItem(null);
+         }}
+         title="Confirmar Eliminación"
+       >
+         <div className="space-y-4">
+           <div className="flex items-center space-x-3">
+             <div className="flex-shrink-0">
+               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                 <Trash2 className="w-5 h-5 text-red-600" />
+               </div>
+             </div>
+             <div className="flex-1">
+               <h3 className="text-lg font-medium text-gray-900">
+                 ¿Estás seguro de eliminar este {deleteItem?.type === 'user' ? 'usuario' : 'servicio'}?
+               </h3>
+               <p className="text-sm text-gray-500">
+                  {deleteItem?.type === 'user' 
+                    ? `El usuario "${deleteItem?.item?.usuario}" será eliminado permanentemente.`
+                    : `El servicio "${deleteItem?.item?.servicio}" será eliminado permanentemente.`
+                  }
+                </p>
+             </div>
+           </div>
+           
+           <div className="flex justify-end space-x-3 pt-4">
+             <Button
+               type="button"
+               variant="outline"
+               onClick={() => {
+                 setShowDeleteModal(false);
+                 setDeleteItem(null);
+               }}
+             >
+               Cancelar
+             </Button>
+             <Button
+               type="button"
+               onClick={handleDelete}
+               className="bg-red-600 hover:bg-red-700 text-white"
+             >
+               Eliminar
+             </Button>
+           </div>
+         </div>
+       </Modal>
+     </div>
+   );
+ };
+
+// Componente de formulario para usuarios
+const UserForm = ({ user, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState({
+    usuario: user?.usuario || '',
+    rol: user?.rol || 'Usuario',
+    estado: user?.estado || 'Activo'
+  });
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        usuario: user.usuario,
+        rol: user.rol,
+        estado: user.estado
+      });
+    } else {
+      setFormData({
+        usuario: '',
+        rol: 'Usuario',
+        estado: 'Activo'
+      });
+    }
+  }, [user]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Nombre de Usuario
+        </label>
+        <input
+          type="text"
+          value={formData.usuario}
+          onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Rol
+        </label>
+        <select
+          value={formData.rol}
+          onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+        >
+          <option value="Usuario">Usuario</option>
+          <option value="Administrador">Administrador</option>
+          <option value="Editor">Editor</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Estado
+        </label>
+        <select
+          value={formData.estado}
+          onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+        >
+          Cancelar
+        </Button>
+        <Button type="submit">
+          {user ? 'Actualizar' : 'Crear'} Usuario
+        </Button>
+      </div>
+    </form>
+  );
+};
+
+// Componente de formulario para servicios
+const ServiceForm = ({ service, onSubmit, onCancel }) => {
+  const [formData, setFormData] = useState({
+    servicio: service?.servicio || '',
+    precioBase: service?.precioBase || 0,
+    estado: service?.estado || 'Activo'
+  });
+
+  useEffect(() => {
+    if (service) {
+      setFormData({
+        servicio: service.servicio,
+        precioBase: service.precioBase,
+        estado: service.estado
+      });
+    } else {
+      setFormData({
+        servicio: '',
+        precioBase: 0,
+        estado: 'Activo'
+      });
+    }
+  }, [service]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit({
+      ...formData,
+      precioBase: parseFloat(formData.precioBase)
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Nombre del Servicio
+        </label>
+        <input
+          type="text"
+          value={formData.servicio}
+          onChange={(e) => setFormData({ ...formData, servicio: e.target.value })}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Precio Base
+        </label>
+        <input
+          type="number"
+          step="0.01"
+          min="0"
+          value={formData.precioBase}
+          onChange={(e) => setFormData({ ...formData, precioBase: e.target.value })}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Estado
+        </label>
+        <select
+          value={formData.estado}
+          onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+        >
+          <option value="Activo">Activo</option>
+          <option value="Inactivo">Inactivo</option>
+        </select>
+      </div>
+
+      <div className="flex justify-end space-x-3 pt-4">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+        >
+          Cancelar
+        </Button>
+        <Button type="submit">
+          {service ? 'Actualizar' : 'Crear'} Servicio
+        </Button>
+      </div>
+    </form>
   );
 };
 

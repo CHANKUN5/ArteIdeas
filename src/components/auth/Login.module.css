@@ -1,0 +1,420 @@
+.loginContainer {
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #E0F2FE 0%, #FEF3C7 100%);
+  overflow: hidden;
+}
+
+.header {
+  position: relative;
+  z-index: 20;
+  background-color: white;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  padding: 0 3rem;
+}
+
+.headerLogo {
+  height: 3.5rem;
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .header {
+    padding: 0 4rem;
+    height: 80px;
+  }
+  
+  .headerLogo {
+    height: 4rem;
+  }
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 10;
+}
+
+.leftSection {
+  width: 50%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rightSection {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 15;
+  padding: 2rem;
+}
+
+.formWrapper {
+  width: 100%;
+  max-width: 32rem;
+  z-index: 10;
+  padding: 1rem;
+}
+
+.footer {
+  position: relative;
+  z-index: 20;
+  background-color: #FB923C;
+  height: 57px;
+}
+
+.animatedBackground {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+}
+
+.support {
+  position: absolute;
+  width: 700px;
+  height: 500px;
+  top: 20%;
+  left: 65%;
+  transform: translate(-50%, -50%);
+  z-index: 7;
+}
+
+.supportImg {
+  width: 400%;
+  height: 180%;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
+}
+
+.camera {
+  position: absolute;
+  width: 480px;
+  height: 320px;
+  top: 45%;
+  left: 89%;
+  transform: translate(-50%, -50%);
+  z-index: 30;
+}
+
+.cameraImg {
+  width: 250%;
+  height: 200%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
+  animation: cameraFloat 4s ease-in-out infinite;
+}
+
+.formCard {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: relative;
+  animation: slideInRight 0.6s ease-out;
+  min-height: 600px;
+}
+
+.formCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 1rem;
+  padding: 3px;
+  background: linear-gradient(135deg, #1DD1E3, #FF9912);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: exclude;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  z-index: -1;
+}
+
+.formCard::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border-radius: 1rem;
+  box-shadow: 0 0 40px rgba(29, 209, 227, 0.6), -10px 0 30px rgba(29, 209, 227, 0.4);
+  z-index: -2;
+}
+
+.formHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.welcomeTitle {
+  color: #28afca;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 1.7rem;
+  margin-bottom: 1rem;
+}
+
+.logoContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.formLogo {
+  height: 7rem;
+  width: auto;
+}
+
+.brandText {
+  margin-bottom: 0.2rem;
+  letter-spacing: 0.05rem;
+}
+
+.brandArte {
+  color: #FF9912;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  font-size: 2rem;
+}
+
+.brandIdeas {
+  color: #49BDD4;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 300;
+  font-size: 2rem;
+  margin-left: 0.1rem;
+}
+
+.subtitle {
+  color: #9CA3AF;
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-weight: 400;
+  font-size: 1.1rem;
+  margin-top: 0.1rem;
+}
+
+.errorMessage {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+  border-radius: 0.5rem;
+  animation: fadeInUp 0.3s ease-out;
+}
+
+.errorText {
+  font-size: 0.875rem;
+  color: #DC2626;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.inputGroup {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.inputGroup:nth-child(1) {
+  animation-delay: 0.1s;
+}
+
+.inputGroup:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  outline: none;
+  background-color: #E0F2FE;
+  transition: all 0.2s;
+}
+
+.input:focus {
+  ring: 2;
+  ring-color: #DBEAFE;
+  background-color: #DBEAFE;
+}
+
+.inputError {
+  background-color: #FEF2F2;
+  border: 1px solid #FECACA;
+}
+
+.passwordContainer {
+  position: relative;
+}
+
+.passwordInput {
+  padding-right: 3rem;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.passwordToggle:hover {
+  color: #6B7280;
+}
+
+.errorMessageField {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: #DC2626;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 9999px;
+  color: white;
+  font-weight: 500;
+  background: linear-gradient(90deg, #FF9912 0%, #FF6B35 100%);
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  animation: fadeInUp 0.6s ease-out;
+  animation-delay: 0.3s;
+}
+
+.submitButton:hover:not(:disabled) {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  transform: scale(1.05);
+}
+
+.submitButton:active {
+  transform: scale(0.95);
+}
+
+.submitButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+@keyframes cameraFloat {
+  0%, 100% {
+    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
+  }
+  33% {
+    transform: translate(-50%, -50%) translateY(-15px) rotate(2deg);
+  }
+  66% {
+    transform: translate(-50%, -50%) translateY(-5px) rotate(-1deg);
+  }
+}
+
+@keyframes slideInRight {
+  0% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes fadeInUp {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .mainContent {
+    flex-direction: column;
+    padding: 1rem;
+  }
+  
+  .leftSection,
+  .rightSection {
+    width: 100%;
+  }
+  
+  .camera {
+    width: 200px;
+    height: 200px;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+   
+  .support {
+    width: 400px;
+    height: 300px;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  .formCard {
+    padding: 2rem;
+    min-height: auto;
+  }
+  
+  .formLogo {
+    height: 4rem;
+  }
+  
+  .welcomeTitle {
+    font-size: 1.25rem;
+  }
+  
+  .brandArte,
+  .brandIdeas {
+    font-size: 1.5rem;
+  }
+  
+  .header {
+    padding: 0 1.5rem;
+  }
+}
