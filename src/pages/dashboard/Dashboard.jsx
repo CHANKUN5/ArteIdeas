@@ -1,8 +1,7 @@
-import React from 'react';
-import { DollarSign, Users, Camera, ShoppingBag, TrendingUp, Calendar } from 'lucide-react';
-import StatsCard from '../../components/dashboard/StatsCard';
+import { Camera, DollarSign, ShoppingBag, TrendingUp, Users } from 'lucide-react';
 import Chart from '../../components/dashboard/Chart';
 import MetricsPanel from '../../components/dashboard/MetricsPanel';
+import StatsCard from '../../components/dashboard/StatsCard';
 
 const Dashboard = () => {
   const statsData = [
