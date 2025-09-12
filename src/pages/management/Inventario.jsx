@@ -145,8 +145,11 @@ const Inventario = () => {
     }
   };
 
-  const handleAddItem = () => {
+  const [isAlertMode, setIsAlertMode] = useState(false);
+
+  const handleAddItem = (alertMode = false) => {
     setSelectedItem(null);
+    setIsAlertMode(alertMode);
     setShowItemModal(true);
   };
 
@@ -205,9 +208,21 @@ const Inventario = () => {
       </div>
 
       {/* Sección de Alertas de Stock */}
-      {lowStockItems.length > 0 && (
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Alertas de Stock</h2>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Alertas de Stock</h2>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleAddItem(true)}
+            className="text-blue-600 border-blue-600 hover:bg-blue-50"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Añadir Alerta
+          </Button>
+        </div>
+        
+        {lowStockItems.length > 0 ? (
           <div className="space-y-2">
             {lowStockItems.map((item, index) => (
               <div 
@@ -239,8 +254,14 @@ const Inventario = () => {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+            <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+            <p className="text-gray-600">No hay alertas de stock actualmente</p>
+            <p className="text-sm text-gray-500 mt-1">Añade una alerta para monitorear productos con stock bajo</p>
+          </div>
+        )}
+      </div>
 
       {/* Pestañas principales */}
       <div className="mb-6">
@@ -401,100 +422,164 @@ const Inventario = () => {
         onClose={() => {
           setShowItemModal(false);
           setSelectedItem(null);
+          setIsAlertMode(false);
         }}
-        title={selectedItem ? 'Editar Producto' : 'Nuevo Producto'}
+        title={selectedItem ? 'Editar Producto' : isAlertMode ? 'Nueva Alerta de Stock' : 'Nuevo Producto'}
         size="lg"
       >
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="form-label">Nombre del Producto</label>
-              <input 
-                defaultValue={selectedItem?.nombre || ''} 
-                id="inv_nombre" 
-                type="text" 
-                className="form-input" 
-                placeholder="Nombre del producto" 
-              />
+          {isAlertMode ? (
+            <div className="grid grid-cols-1 gap-4">
+              <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200 mb-2">
+                <div className="flex items-center space-x-2 mb-2">
+                  <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                  <h3 className="font-medium text-gray-900">Configuración de Alerta de Stock</h3>
+                </div>
+                <p className="text-sm text-gray-600">Configura una alerta para recibir notificaciones cuando el stock de un producto esté por debajo del mínimo establecido.</p>
+              </div>
+              
+              <div>
+                <label className="form-label">Producto</label>
+                <select id="inv_nombre" className="form-select">
+                  {inventory.map(item => (
+                    <option key={item.id} value={item.nombre}>{item.nombre}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="form-label">Stock Mínimo para Alerta</label>
+                <input 
+                  defaultValue={5} 
+                  id="inv_stock_min" 
+                  type="number" 
+                  className="form-input" 
+                />
+              </div>
+              
+              <div>
+                <label className="form-label">Nivel de Prioridad</label>
+                <select id="inv_prioridad" className="form-select">
+                  <option value="alta">Alta (Crítico)</option>
+                  <option value="media" selected>Media (Advertencia)</option>
+                  <option value="baja">Baja (Informativo)</option>
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="form-label">Tipo</label>
-              <input 
-                defaultValue={selectedItem?.tipo || ''} 
-                id="inv_tipo" 
-                type="text" 
-                className="form-input" 
-                placeholder="Tipo de producto" 
-              />
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="form-label">Nombre del Producto</label>
+                <input 
+                  defaultValue={selectedItem?.nombre || ''} 
+                  id="inv_nombre" 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Nombre del producto" 
+                />
+              </div>
+              <div>
+                <label className="form-label">Tipo</label>
+                <input 
+                  defaultValue={selectedItem?.tipo || ''} 
+                  id="inv_tipo" 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Tipo de producto" 
+                />
+              </div>
+              <div>
+                <label className="form-label">Stock Actual</label>
+                <input 
+                  defaultValue={selectedItem?.stock || 0} 
+                  id="inv_stock" 
+                  type="number" 
+                  className="form-input" 
+                />
+              </div>
+              <div>
+                <label className="form-label">Stock Mínimo</label>
+                <input 
+                  defaultValue={selectedItem?.stockMinimo || 0} 
+                  id="inv_stock_min" 
+                  type="number" 
+                  className="form-input" 
+                />
+              </div>
+              <div>
+                <label className="form-label">Unidad</label>
+                <select defaultValue={selectedItem?.unidad || 'unidades'} id="inv_unidad" className="form-select">
+                  <option value="unidades">Unidades</option>
+                  <option value="L">Litros</option>
+                  <option value="rollos">Rollos</option>
+                  <option value="kg">Kilogramos</option>
+                </select>
+              </div>
+              <div>
+                <label className="form-label">Precio Unitario</label>
+                <input 
+                  defaultValue={selectedItem?.precio || 0} 
+                  id="inv_precio" 
+                  type="number" 
+                  step="0.01" 
+                  className="form-input" 
+                />
+              </div>
             </div>
-            <div>
-              <label className="form-label">Stock Actual</label>
-              <input 
-                defaultValue={selectedItem?.stock || 0} 
-                id="inv_stock" 
-                type="number" 
-                className="form-input" 
-              />
-            </div>
-            <div>
-              <label className="form-label">Stock Mínimo</label>
-              <input 
-                defaultValue={selectedItem?.stockMinimo || 0} 
-                id="inv_stock_min" 
-                type="number" 
-                className="form-input" 
-              />
-            </div>
-            <div>
-              <label className="form-label">Unidad</label>
-              <select defaultValue={selectedItem?.unidad || 'unidades'} id="inv_unidad" className="form-select">
-                <option value="unidades">Unidades</option>
-                <option value="L">Litros</option>
-                <option value="rollos">Rollos</option>
-                <option value="kg">Kilogramos</option>
-              </select>
-            </div>
-            <div>
-              <label className="form-label">Precio Unitario</label>
-              <input 
-                defaultValue={selectedItem?.precio || 0} 
-                id="inv_precio" 
-                type="number" 
-                step="0.01" 
-                className="form-input" 
-              />
-            </div>
-          </div>
+          )}
 
           <Modal.Footer>
-            <Button variant="outline" onClick={() => setShowItemModal(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowItemModal(false);
+              setIsAlertMode(false);
+              setSelectedItem(null);
+            }}>
               Cancelar
             </Button>
             <Button onClick={() => {
-              const updated = {
-                id: selectedItem?.id || `INV${String(inventory.length + 1).padStart(3,'0')}`,
-                nombre: document.getElementById('inv_nombre').value,
-                categoria: activeSubTab,
-                tipo: document.getElementById('inv_tipo').value,
-                stock: parseInt(document.getElementById('inv_stock').value || '0', 10),
-                stockMinimo: parseInt(document.getElementById('inv_stock_min').value || '0', 10),
-                unidad: document.getElementById('inv_unidad').value,
-                precio: parseFloat(document.getElementById('inv_precio').value || '0'),
-                proveedor: selectedItem?.proveedor || '',
-                fechaIngreso: selectedItem?.fechaIngreso || new Date().toISOString().split('T')[0],
-                ultimaVenta: selectedItem?.ultimaVenta || ''
-              };
-              
-              if (selectedItem) {
-                setInventory(prev => prev.map(i => i.id === selectedItem.id ? updated : i));
+              if (isAlertMode) {
+                // Buscar el producto seleccionado en el inventario
+                const nombreProducto = document.getElementById('inv_nombre').value;
+                const stockMinimo = parseInt(document.getElementById('inv_stock_min').value || '5', 10);
+                const productoExistente = inventory.find(item => item.nombre === nombreProducto);
+                
+                if (productoExistente) {
+                  // Actualizar el stock mínimo del producto existente
+                  const updated = {
+                    ...productoExistente,
+                    stockMinimo: stockMinimo
+                  };
+                  
+                  setInventory(prev => prev.map(i => i.id === productoExistente.id ? updated : i));
+                }
               } else {
-                setInventory(prev => [updated, ...prev]);
+                // Lógica normal para agregar/editar producto
+                const updated = {
+                  id: selectedItem?.id || `INV${String(inventory.length + 1).padStart(3,'0')}`,
+                  nombre: document.getElementById('inv_nombre').value,
+                  categoria: activeSubTab,
+                  tipo: document.getElementById('inv_tipo').value,
+                  stock: parseInt(document.getElementById('inv_stock').value || '0', 10),
+                  stockMinimo: parseInt(document.getElementById('inv_stock_min').value || '0', 10),
+                  unidad: document.getElementById('inv_unidad').value,
+                  precio: parseFloat(document.getElementById('inv_precio').value || '0'),
+                  proveedor: selectedItem?.proveedor || '',
+                  fechaIngreso: selectedItem?.fechaIngreso || new Date().toISOString().split('T')[0],
+                  ultimaVenta: selectedItem?.ultimaVenta || ''
+                };
+                
+                if (selectedItem) {
+                  setInventory(prev => prev.map(i => i.id === selectedItem.id ? updated : i));
+                } else {
+                  setInventory(prev => [updated, ...prev]);
+                }
               }
               
               setShowItemModal(false);
               setSelectedItem(null);
+              setIsAlertMode(false);
             }}>
-              {selectedItem ? 'Guardar Cambios' : 'Agregar Producto'}
+              {selectedItem ? 'Guardar Cambios' : isAlertMode ? 'Crear Alerta' : 'Agregar Producto'}
             </Button>
           </Modal.Footer>
         </div>
