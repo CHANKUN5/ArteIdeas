@@ -1,24 +1,23 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import Header from './components/common/Header';
+import LoadingSpinner from './components/common/LoadingSpinner';
+import Sidebar from './components/common/Sidebar';
 import { AppProvider } from './context/AppContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './pages/auth/Login';
 import Dashboard from './pages/dashboard/Dashboard';
-import Header from './components/common/Header';
-import Sidebar from './components/common/Sidebar';
-import LoadingSpinner from './components/common/LoadingSpinner';
-import NotificationContainer from './components/common/NotificationContainer';
 
 // Importar componentes de páginas
+import Reportes from './pages/analytics/Reportes';
 import Agenda from './pages/management/Agenda';
 import Clientes from './pages/management/Clientes';
+import Contratos from './pages/management/Contratos';
 import Inventario from './pages/management/Inventario';
 import Pedidos from './pages/management/Pedidos';
 import Produccion from './pages/management/Produccion';
-import Contratos from './pages/management/Contratos';
-import Reportes from './pages/analytics/Reportes';
-import MiPerfil from './pages/profile/MiPerfil';
 import Configuracion from './pages/profile/Configuracion';
+import MiPerfil from './pages/profile/MiPerfil';
 
 // Componente interno que maneja la lógica de autenticación
 function AppContent() {
@@ -68,6 +67,7 @@ function AppContent() {
           <Header
             onToggleSidebar={() => setSidebarOpen(true)}
             user={user}
+            onSectionChange={handleSectionChange}
           />
           
           <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
@@ -85,9 +85,6 @@ function AppContent() {
             </div>
           </main>
         </div>
-        
-        {/* Notification Container */}
-        <NotificationContainer />
       </div>
     </AppProvider>
   );
