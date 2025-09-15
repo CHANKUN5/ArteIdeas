@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ShoppingCart, User, Calendar, Package, DollarSign, FileText } from 'lucide-react';
+import { Calendar, DollarSign, FileText, Package, ShoppingCart, User } from 'lucide-react';
+import { useState } from 'react';
 import Button from '../common/Button';
 
 const OrderForm = ({ order = null, onSubmit, onCancel }) => {
