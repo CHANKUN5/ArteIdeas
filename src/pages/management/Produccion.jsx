@@ -12,6 +12,7 @@ import {
   Truck
 } from 'lucide-react';
 import { useState } from 'react';
+import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 
 const Produccion = () => {
   const [activeMainTab, setActiveMainTab] = useState('Producción Interna');
@@ -22,6 +23,16 @@ const Produccion = () => {
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [data, setData] = useState({});
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [itemToSave, setItemToSave] = useState(null);
+  const [saveAction, setSaveAction] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [showSaveChangesDialog, setShowSaveChangesDialog] = useState(false);
+  const [itemToSaveChanges, setItemToSaveChanges] = useState(null);
+  const [isSavingChanges, setIsSavingChanges] = useState(false);
 
   // Configuración de pestañas principales
   const mainTabs = [
@@ -669,9 +680,9 @@ const Produccion = () => {
   };
 
   const handleEditItem = (item) => {
-    setSelectedItem(item);
-    setModalType('edit');
-    setShowModal(true);
+    setItemToSave(item);
+    setSaveAction('edit');
+    setShowSaveDialog(true);
   };
 
   const handleSwitchToEdit = () => {
@@ -679,7 +690,15 @@ const Produccion = () => {
   };
 
   const handleDeleteItem = (item) => {
-    if (window.confirm('¿Estás seguro de eliminar este elemento?')) {
+    setItemToDelete(item);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!itemToDelete) return;
+    
+    setIsDeleting(true);
+    try {
       // Actualizar los datos eliminando el elemento
       setData(prevData => {
         const newData = { ...prevData };
@@ -687,35 +706,104 @@ const Produccion = () => {
         if (!newData[activeMainTab][activeSubTab]) {
           newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
         }
-        newData[activeMainTab][activeSubTab] = newData[activeMainTab][activeSubTab].filter(i => i.id !== item.id);
+        newData[activeMainTab][activeSubTab] = newData[activeMainTab][activeSubTab].filter(i => i.id !== itemToDelete.id);
         return newData;
       });
       
       // Quitar de seleccionados si estaba seleccionado
-      setSelectedItems(prev => prev.filter(id => id !== item.id));
-      alert('Elemento eliminado correctamente');
+      setSelectedItems(prev => prev.filter(id => id !== itemToDelete.id));
+      
+      setShowDeleteDialog(false);
+      setItemToDelete(null);
+    } catch (error) {
+      console.error('Error during deletion:', error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
+  const handleDeleteCancel = () => {
+    setShowDeleteDialog(false);
+    setItemToDelete(null);
+  };
+
   const handleSaveItem = (updatedItem) => {
-    setData(prevData => {
-      const newData = { ...prevData };
-      if (!newData[activeMainTab]) newData[activeMainTab] = {};
-      if (!newData[activeMainTab][activeSubTab]) {
-        newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
-      }
-      
-      const index = newData[activeMainTab][activeSubTab].findIndex(item => item.id === updatedItem.id);
-      if (index !== -1) {
-        newData[activeMainTab][activeSubTab][index] = updatedItem;
-      }
-      
-      return newData;
-    });
+    setItemToSaveChanges(updatedItem);
+    setShowSaveChangesDialog(true);
+  };
+
+  const handleSaveConfirm = async () => {
+    if (!itemToSave) return;
     
-    setShowModal(false);
-    setSelectedItem(null);
-    alert('Cambios guardados correctamente');
+    setIsSaving(true);
+    try {
+      if (saveAction === 'edit') {
+        setSelectedItem(itemToSave);
+        setModalType('edit');
+        setShowModal(true);
+      } else if (saveAction === 'add') {
+        setData(prevData => {
+          const newData = { ...prevData };
+          if (!newData[activeMainTab]) newData[activeMainTab] = {};
+          if (!newData[activeMainTab][activeSubTab]) {
+            newData[activeMainTab][activeSubTab] = [...(initialData[activeMainTab]?.[activeSubTab] || [])];
+          }
+          
+          newData[activeMainTab][activeSubTab].push(itemToSave);
+          return newData;
+        });
+      }
+      
+      setShowSaveDialog(false);
+      setItemToSave(null);
+      setSaveAction('');
+    } catch (error) {
+      console.error('Error during save:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveCancel = () => {
+    setShowSaveDialog(false);
+    setItemToSave(null);
+    setSaveAction('');
+  };
+
+  const handleSaveChangesConfirm = async () => {
+    if (!itemToSaveChanges) return;
+    
+    setIsSavingChanges(true);
+    try {
+      setData(prevData => {
+        const newData = { ...prevData };
+        if (!newData[activeMainTab]) newData[activeMainTab] = {};
+        if (!newData[activeMainTab][activeSubTab]) {
+          newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
+        }
+        
+        const index = newData[activeMainTab][activeSubTab].findIndex(item => item.id === itemToSaveChanges.id);
+        if (index !== -1) {
+          newData[activeMainTab][activeSubTab][index] = itemToSaveChanges;
+        }
+        
+        return newData;
+      });
+      
+      setShowModal(false);
+      setSelectedItem(null);
+      setShowSaveChangesDialog(false);
+      setItemToSaveChanges(null);
+    } catch (error) {
+      console.error('Error during save changes:', error);
+    } finally {
+      setIsSavingChanges(false);
+    }
+  };
+
+  const handleSaveChangesCancel = () => {
+    setShowSaveChangesDialog(false);
+    setItemToSaveChanges(null);
   };
 
   const handleAddNew = () => {
@@ -752,20 +840,9 @@ const Produccion = () => {
   };
 
   const handleSaveNewItem = (newItem) => {
-    setData(prevData => {
-      const newData = { ...prevData };
-      if (!newData[activeMainTab]) newData[activeMainTab] = {};
-      if (!newData[activeMainTab][activeSubTab]) {
-        newData[activeMainTab][activeSubTab] = [...(initialData[activeMainTab]?.[activeSubTab] || [])];
-      }
-      
-      newData[activeMainTab][activeSubTab].push(newItem);
-      return newData;
-    });
-    
-    setShowModal(false);
-    setSelectedItem(null);
-    alert('Elemento agregado correctamente');
+    setItemToSave(newItem);
+    setSaveAction('add');
+    setShowSaveDialog(true);
   };
 
   const handleSendToProductos = () => {
@@ -1119,6 +1196,45 @@ const Produccion = () => {
           onSwitchToEdit={modalType === 'view' ? handleSwitchToEdit : undefined}
         />
       )}
+
+      {/* Confirmation Dialog para eliminar */}
+      <ConfirmationDialog
+        isOpen={showDeleteDialog}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Eliminar Elemento"
+        message="¿Estás seguro de que quieres eliminar este elemento? Esta acción no se puede deshacer."
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        type="danger"
+        isLoading={isDeleting}
+      />
+
+      {/* Confirmation Dialog para guardar */}
+      <ConfirmationDialog
+        isOpen={showSaveDialog}
+        onClose={handleSaveCancel}
+        onConfirm={handleSaveConfirm}
+        title={saveAction === 'add' ? "Agregar Elemento" : "Editar Elemento"}
+        message={saveAction === 'add' ? "¿Estás seguro de que quieres agregar este elemento?" : "¿Estás seguro de que quieres editar este elemento?"}
+        confirmText={saveAction === 'add' ? "Sí, agregar" : "Sí, editar"}
+        cancelText="Cancelar"
+        type="info"
+        isLoading={isSaving}
+      />
+
+      {/* Confirmation Dialog para guardar cambios */}
+      <ConfirmationDialog
+        isOpen={showSaveChangesDialog}
+        onClose={handleSaveChangesCancel}
+        onConfirm={handleSaveChangesConfirm}
+        title="Guardar Cambios"
+        message="¿Estás seguro de que quieres guardar los cambios realizados?"
+        confirmText="Sí, guardar"
+        cancelText="Cancelar"
+        type="warning"
+        isLoading={isSavingChanges}
+      />
     </div>
   );
 };
