@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
-import { Calendar, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X } from 'lucide-react';
+// CORRECTO ✅
+import { Calendar, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X, ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
@@ -174,6 +175,7 @@ const Contratos = () => {
   });
   const [errors, setErrors] = useState({});
   const [editErrors, setEditErrors] = useState({});
+  const [currentPage, setCurrentPage] = useState(1); // <-- estado para la página actual
 
   const statusConfig = {
     'Activo': { color: 'bg-green-100 text-green-800', textColor: 'text-green-600' },
@@ -550,118 +552,163 @@ const Contratos = () => {
   };
 
   const ContractCard = ({ contract }) => {
+    // Estado para controlar si el acordeón está abierto o cerrado
+    const [isOpen, setIsOpen] = useState(false);
+    
+    // Tus cálculos existentes
     const saldoPendiente = contract.valor - contract.pagado;
     const diasRestantes = Math.ceil((new Date(contract.fechaFin) - new Date()) / (1000 * 60 * 60 * 24));
-    
+
     return (
+      // La Card principal no cambia
       <Card className="hover:shadow-lg transition-all duration-200">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center space-x-3">
+        
+        {/* ================================== */}
+        {/* 1. HEADER DEL ACORDEÓN (Clickeable) */}
+        {/* ================================== */}
+        <div 
+          className="flex justify-between items-center cursor-pointer" 
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <div className="flex items-center space-x-3 flex-1 min-w-0"> {/* 👈 clave */}
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
               <FileText className="w-6 h-6 text-primary" />
             </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">{contract.cliente}</h3>
-              <p className="text-sm text-gray-500">#{contract.id} - {contract.tipo}</p>
+            <div className="flex-1 min-w-0"> {/* 👈 obliga al texto a truncar */}
+              <h3 className="font-semibold text-gray-900 truncate">
+                {contract.cliente}
+              </h3>
+              <p className="text-sm text-gray-500 truncate">
+                #{contract.id} - {contract.tipo}
+              </p>
             </div>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusConfig[contract.estado].color}`}>
-            {contract.estado}
-          </span>
+          <div className="flex items-center space-x-3 flex-shrink-0">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusConfig[contract.estado].color}`}>
+              {contract.estado}
+            </span>
+            <ChevronDown 
+              className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} 
+            />
+          </div>
         </div>
 
-        <div className="mb-4">
-          <h4 className="font-medium text-gray-900 mb-1">{contract.servicio}</h4>
-          {contract.estudiantes > 0 && (
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Users className="w-4 h-4" />
-              <span>{contract.estudiantes} estudiantes</span>
+        {/* ================================= */}
+        {/* 2. BODY DEL ACORDEÓN (Contenido desplegable) */}
+        {/* ================================= */}
+        <div 
+          className={`overflow-hidden transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'}`}
+        >
+          {/* Este div agrega un espacio y línea superior cuando está abierto */}
+          <div className="pt-4 mt-4 border-t border-gray-100">
+
+            <div className="mb-4">
+              <h4 className="font-medium text-gray-900 mb-1">{contract.servicio}</h4>
+              {contract.estudiantes > 0 && (
+                <div className="flex items-center space-x-2 text-sm text-gray-600">
+                  <Users className="w-4 h-4" />
+                  <span>{contract.estudiantes} estudiantes</span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
 
-        <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-          <div>
-            <span className="text-gray-500">Valor Total:</span>
-            <p className="font-semibold text-gray-900">S/ {contract.valor.toLocaleString()}</p>
-          </div>
-          <div>
-            <span className="text-gray-500">Pagado:</span>
-            <p className="font-semibold text-green-600">S/ {contract.pagado.toLocaleString()}</p>
-          </div>
-          <div>
-            <span className="text-gray-500">Saldo:</span>
-            <p className={`font-semibold ${saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
-              S/ {saldoPendiente.toLocaleString()}
-            </p>
-          </div>
-          <div>
-            <span className="text-gray-500">Vencimiento:</span>
-            <p className={`font-medium ${diasRestantes < 30 ? 'text-red-600' : 'text-gray-900'}`}>
-              {diasRestantes > 0 ? `${diasRestantes} días` : 'Vencido'}
-            </p>
-          </div>
-        </div>
+            <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
+              <div>
+                <span className="text-gray-500">Valor Total:</span>
+                <p className="font-semibold text-gray-900">S/ {contract.valor.toLocaleString()}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Pagado:</span>
+                <p className="font-semibold text-green-600">S/ {contract.pagado.toLocaleString()}</p>
+              </div>
+              <div>
+                <span className="text-gray-500">Saldo:</span>
+                <p className={`font-semibold ${saldoPendiente > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  S/ {saldoPendiente.toLocaleString()}
+                </p>
+              </div>
+              <div>
+                <span className="text-gray-500">Vencimiento:</span>
+                <p className={`font-medium ${diasRestantes < 30 ? 'text-red-600' : 'text-gray-900'}`}>
+                  {diasRestantes > 0 ? `${diasRestantes} días` : 'Vencido'}
+                </p>
+              </div>
+            </div>
 
-        {/* Progress Bar */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between text-sm mb-1">
-            <span className="text-gray-500">Progreso de Pago</span>
-            <span className="font-medium">{contract.porcentajePagado}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className={`h-2 rounded-full transition-all duration-300 ${
-                contract.porcentajePagado === 100 ? 'bg-green-500' : 
-                contract.porcentajePagado >= 50 ? 'bg-blue-500' : 'bg-yellow-500'
-              }`}
-              style={{ width: `${contract.porcentajePagado}%` }}
-            />
-          </div>
-        </div>
+            {/* Progress Bar */}
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-sm mb-1">
+                <span className="text-gray-500">Progreso de Pago</span>
+                <span className="font-medium">{contract.porcentajePagado}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    contract.porcentajePagado === 100 ? 'bg-green-500' : 
+                    contract.porcentajePagado >= 50 ? 'bg-blue-500' : 'bg-yellow-500'
+                  }`}
+                  style={{ width: `${contract.porcentajePagado}%` }}
+                />
+              </div>
+            </div>
 
-        <div className="flex items-center space-x-2 mb-4 text-sm text-gray-600">
-          <Calendar className="w-4 h-4" />
-          <span>{contract.fechaInicio} - {contract.fechaFin}</span>
-        </div>
+            <div className="flex items-center space-x-2 mb-4 text-sm text-gray-600">
+              <Calendar className="w-4 h-4" />
+              <span>{contract.fechaInicio} - {contract.fechaFin}</span>
+            </div>
 
-        <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-          <Button
-            variant="outline"
-            size="sm"
-            icon={<Eye className="w-4 h-4" />}
-            onClick={() => {
-              setSelectedContract(contract);
-              setShowContractModal(true);
-            }}
-          >
-            Ver Detalles
-          </Button>
-          
-          <div className="flex space-x-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Download className="w-4 h-4" />}
-              className="text-blue-600 hover:bg-blue-50"
-              onClick={() => generatePDF(contract)}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              icon={<Edit className="w-4 h-4" />}
-              onClick={() => openEditModal(contract)}
-            />
+            <div className="flex justify-between items-center pt-3 border-t border-gray-100">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    icon={<Eye className="w-4 h-4" />}
+                    onClick={() => {
+                      setSelectedContract(contract);
+                      setShowContractModal(true);
+                    }}
+                >
+                    Ver Detalles
+                </Button>
+              
+                <div className="flex space-x-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Download className="w-4 h-4" />}
+                      className="text-blue-600 hover:bg-blue-50"
+                      onClick={() => generatePDF(contract)}
+                    />
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      icon={<Edit className="w-4 h-4" />}
+                      onClick={() => openEditModal(contract)}
+                    />
+                </div>
+            </div>
           </div>
         </div>
       </Card>
     );
-  };
+};
 
   const totalContratos = contracts.length;
   const contratosActivos = contracts.filter(c => c.estado === 'Activo').length;
   const valorTotal = contracts.reduce((sum, c) => sum + c.valor, 0);
   const totalPagado = contracts.reduce((sum, c) => sum + c.pagado, 0);
+
+  // ===================================
+  // LÓGICA DE PAGINACIÓN - AÑADIR ESTO
+  // ===================================
+  const ITEMS_PER_PAGE = 21;
+  const totalPages = Math.ceil(filteredContracts.length / ITEMS_PER_PAGE);
+
+  // Calcular los contratos a mostrar en la página actual
+  const contractsOnCurrentPage = filteredContracts.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+  // ===================================
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -770,12 +817,37 @@ const Contratos = () => {
       </Card>
 
       {/* Contracts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {filteredContracts.map((contract) => (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 items-start">
+        {contractsOnCurrentPage.map((contract) => ( // <-- CAMBIAR AQUÍ
           <ContractCard key={contract.id} contract={contract} />
         ))}
       </div>
-
+      
+      {/* ===================================== */}
+      {/* CONTROLES DE PAGINACIÓN - AÑADIR ESTO */}
+      {/* ===================================== */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center space-x-4 mt-8">
+          <Button
+            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+            disabled={currentPage === 1}
+            variant="outline"
+          >
+            Anterior
+          </Button>
+          <span className="text-gray-700 font-medium">
+            Página {currentPage} de {totalPages}
+          </span>
+          <Button
+            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            variant="outline"
+          >
+            Siguiente
+          </Button>
+        </div>
+      )}
+      
       {filteredContracts.length === 0 && (
         <div className="text-center py-12">
           <FileText className="w-16 h-16 text-gray-300 mx-auto mb-4" />
