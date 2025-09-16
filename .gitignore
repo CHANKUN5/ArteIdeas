@@ -10,15 +10,15 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Archivos de lock (se regeneran en cada instalación)
+# Archivos de lock (evitar conflictos en equipos)
 package-lock.json
 yarn.lock
 pnpm-lock.yaml
 
-# Archivos de entorno (variables privadas)
+# Archivos de entorno
 .env
 .env.*
-!.env.example   # Se permite un archivo de ejemplo para guiar al equipo
+!.env.example   # Se permite un archivo de ejemplo
 
 # Archivos del sistema
 .DS_Store
@@ -29,6 +29,10 @@ Thumbs.db
 .idea/
 *.swp
 
-# Cache de frameworks/herramientas
+# Cache
 .cache/
 .parcel-cache/
+
+# Archivos generados por Vite
+*.tsbuildinfo
+*.map
