@@ -11,7 +11,7 @@ import {
   Users
 } from 'lucide-react';
 import { useState } from 'react';
-import logoImage from '../../assets/logo.svg'; // Importamos la imagen del logo
+import logoImage from '../../assets/logo.svg';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -22,7 +22,6 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  // Handle logout confirmation
   const handleLogoutClick = () => {
     setShowLogoutDialog(true);
   };
@@ -92,10 +91,11 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
         w-64 lg:w-64 lg:h-screen
+        flex flex-col
       `}>
-        <div className="p-6 border-b border-gray-100">
+        {/* Header fijo */}
+        <div className="flex-shrink-0 p-6 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            {/* Logo con imagen en lugar de icono Camera */}
             <div className="flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden">
               <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
             </div>
@@ -106,7 +106,8 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
           </div>
         </div>
 
-        <div className="p-4 border-b border-gray-100">
+        {/* User info fijo */}
+        <div className="flex-shrink-0 p-4 border-b border-gray-100">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
               <User className="w-5 h-5 text-white" />
@@ -118,50 +119,54 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 overflow-y-auto">
-          {menuSections.map((section) => (
-            <div key={section.title} className="mb-6">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                {section.title}
-              </h3>
-              <ul className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  
-                  const handleClick = () => {
-                    if (item.id === 'logout') {
-                      handleLogoutClick();
-                    } else {
-                      onSectionChange(item.id);
-                    }
-                  };
+        {/* Menú con scroll */}
+        <div className="flex-1 overflow-hidden">
+          <nav className="h-full overflow-y-auto scrollbar-hide">
+            <div className="px-4 py-6">
+              {menuSections.map((section) => (
+                <div key={section.title} className="mb-6">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    {section.title}
+                  </h3>
+                  <ul className="space-y-1">
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeSection === item.id;
+                      
+                      const handleClick = () => {
+                        if (item.id === 'logout') {
+                          handleLogoutClick();
+                        } else {
+                          onSectionChange(item.id);
+                        }
+                      };
 
-                  return (
-                    <li key={item.id}>
-                      <button
-                        onClick={handleClick}
-                        className={`
-                          w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                          ${isActive 
-                            ? 'bg-primary text-white shadow-md' 
-                            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                          }
-                        `}
-                      >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                        <span>{item.label}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                      return (
+                        <li key={item.id}>
+                          <button
+                            onClick={handleClick}
+                            className={`
+                              w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                              ${isActive 
+                                ? 'bg-primary text-white shadow-md' 
+                                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                              }
+                            `}
+                          >
+                            <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                            <span>{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
             </div>
-          ))}
-        </nav>
+          </nav>
+        </div>
       </aside>
 
-      {/* Logout Confirmation Dialog */}
       <ConfirmationDialog
         isOpen={showLogoutDialog}
         onClose={handleLogoutCancel}
