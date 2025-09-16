@@ -1,7 +1,7 @@
-import { AtSign, Camera, Edit, Key, Mail, MapPin, Phone, Save, Shield, User, X } from 'lucide-react';
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
+import { User, Mail, Phone, MapPin, Camera, Edit, Save, X, Key, Shield } from 'lucide-react';
 import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 
 const MiPerfil = () => {
@@ -16,23 +16,14 @@ const MiPerfil = () => {
     biografia: 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.',
     avatar: null
   });
-  
-  // Referencia para el input de archivo
-  const fileInputRef = React.useRef(null);
 
   const [editMode, setEditMode] = useState(false);
   const [tempProfile, setTempProfile] = useState({ ...userProfile });
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
-  });
-  const [emailData, setEmailData] = useState({
-    currentPassword: '',
-    newEmail: '',
-    confirmEmail: ''
   });
   const [errors, setErrors] = useState({});
 
@@ -123,93 +114,6 @@ const MiPerfil = () => {
     }
   };
 
-  const handleEmailChange = (field, value) => {
-    setEmailData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const validateEmail = () => {
-    const newErrors = {};
-    
-    if (!emailData.currentPassword) {
-      newErrors.currentPassword = 'Contraseña actual requerida';
-    }
-    
-    if (!emailData.newEmail) {
-      newErrors.newEmail = 'Nuevo email requerido';
-    } else if (!/\S+@\S+\.\S+/.test(emailData.newEmail)) {
-      newErrors.newEmail = 'Email inválido';
-    }
-    
-    if (emailData.newEmail !== emailData.confirmEmail) {
-      newErrors.confirmEmail = 'Los emails no coinciden';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleEmailSubmit = () => {
-    if (validateEmail()) {
-      // Aquí iría la lógica para cambiar el email
-      setUserProfile(prev => ({
-        ...prev,
-        email: emailData.newEmail
-      }));
-      setEmailData({ currentPassword: '', newEmail: '', confirmEmail: '' });
-      setShowEmailModal(false);
-      setErrors({});
-      alert('Email actualizado correctamente');
-    }
-  };
-  
-  // Función para manejar la selección de archivo de avatar
-  const handleAvatarClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
-  // Función para validar y procesar el archivo de imagen
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    // Validar tipo de archivo
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      alert('Formato de archivo no válido. Por favor, sube una imagen en formato JPG, PNG, GIF o WebP.');
-      return;
-    }
-    
-    // Validar tamaño (máximo 5MB)
-    const maxSize = 5 * 1024 * 1024; // 5MB en bytes
-    if (file.size > maxSize) {
-      alert('La imagen es demasiado grande. El tamaño máximo permitido es 5MB.');
-      return;
-    }
-    
-    // Crear URL para previsualización
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setTempProfile(prev => ({
-        ...prev,
-        avatar: event.target.result
-      }));
-      
-      if (!editMode) {
-        // Si no estamos en modo edición, aplicamos el cambio directamente
-        setUserProfile(prev => ({
-          ...prev,
-          avatar: event.target.result
-        }));
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
   const activityStats = [
     { label: 'Pedidos Procesados', value: '234', period: 'Este mes' },
     { label: 'Clientes Atendidos', value: '89', period: 'Este mes' },
@@ -237,22 +141,13 @@ const MiPerfil = () => {
         </div>
         
         <div className="flex space-x-3">
-          <div className="flex space-x-2">
-            <Button 
-              variant="outline"
-              icon={<AtSign className="w-4 h-4" />}
-              onClick={() => setShowEmailModal(true)}
-            >
-              Cambiar Email
-            </Button>
-            <Button 
-              variant="outline"
-              icon={<Key className="w-4 h-4" />}
-              onClick={() => setShowPasswordModal(true)}
-            >
-              Cambiar Contraseña
-            </Button>
-          </div>
+          <Button 
+            variant="outline"
+            icon={<Key className="w-4 h-4" />}
+            onClick={() => setShowPasswordModal(true)}
+          >
+            Cambiar Contraseña
+          </Button>
           {!editMode ? (
             <Button 
               icon={<Edit className="w-4 h-4" />}
@@ -286,10 +181,10 @@ const MiPerfil = () => {
           <Card>
             <div className="flex items-center space-x-6 mb-8">
               <div className="relative">
-                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
-                  {(editMode ? tempProfile.avatar : userProfile.avatar) ? (
+                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
+                  {userProfile.avatar ? (
                     <img 
-                      src={editMode ? tempProfile.avatar : userProfile.avatar} 
+                      src={userProfile.avatar} 
                       alt="Avatar" 
                       className="w-24 h-24 rounded-full object-cover"
                     />
@@ -298,21 +193,9 @@ const MiPerfil = () => {
                   )}
                 </div>
                 {editMode && (
-                  <>
-                    <input 
-                      type="file" 
-                      ref={fileInputRef}
-                      className="hidden" 
-                      accept="image/jpeg,image/png,image/gif,image/webp"
-                      onChange={handleFileChange}
-                    />
-                    <button 
-                      onClick={handleAvatarClick}
-                      className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/80 transition-colors"
-                    >
-                      <Camera className="w-4 h-4" />
-                    </button>
-                  </>
+                  <button className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/80 transition-colors">
+                    <Camera className="w-4 h-4" />
+                  </button>
                 )}
               </div>
               
@@ -583,96 +466,6 @@ const MiPerfil = () => {
           </Button>
           <Button onClick={handlePasswordSubmit}>
             Actualizar Contraseña
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Email Change Modal */}
-      <Modal
-        isOpen={showEmailModal}
-        onClose={() => {
-          setShowEmailModal(false);
-          setEmailData({ currentPassword: '', newEmail: '', confirmEmail: '' });
-          setErrors({});
-        }}
-        title="Cambiar Email"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña Actual
-            </label>
-            <input
-              type="password"
-              value={emailData.currentPassword}
-              onChange={(e) => handleEmailChange('currentPassword', e.target.value)}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
-                errors.currentPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'
-              }`}
-              placeholder="Ingresa tu contraseña actual"
-            />
-            {errors.currentPassword && (
-              <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nuevo Email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="email"
-                value={emailData.newEmail}
-                onChange={(e) => handleEmailChange('newEmail', e.target.value)}
-                className={`w-full pl-10 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
-                  errors.newEmail ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}
-                placeholder="nuevo@email.com"
-              />
-            </div>
-            {errors.newEmail && (
-              <p className="mt-1 text-sm text-red-600">{errors.newEmail}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Nuevo Email
-            </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="email"
-                value={emailData.confirmEmail}
-                onChange={(e) => handleEmailChange('confirmEmail', e.target.value)}
-                className={`w-full pl-10 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
-                  errors.confirmEmail ? 'border-red-500 bg-red-50' : 'border-gray-300'
-                }`}
-                placeholder="Confirma tu nuevo email"
-              />
-            </div>
-            {errors.confirmEmail && (
-              <p className="mt-1 text-sm text-red-600">{errors.confirmEmail}</p>
-            )}
-          </div>
-        </div>
-
-        <Modal.Footer>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setShowEmailModal(false);
-              setEmailData({ currentPassword: '', newEmail: '', confirmEmail: '' });
-              setErrors({});
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button onClick={handleEmailSubmit}>
-            Actualizar Email
           </Button>
         </Modal.Footer>
       </Modal>
