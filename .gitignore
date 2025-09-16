@@ -1,0 +1,34 @@
+# Dependencias
+node_modules/
+
+# Build
+build/
+
+# Archivos de logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos de lock (se regeneran en cada instalación)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Archivos de entorno (variables privadas)
+.env
+.env.*
+!.env.example   # Se permite un archivo de ejemplo para guiar al equipo
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Configuraciones de IDEs/editores
+.vscode/
+.idea/
+*.swp
+
+# Cache de frameworks/herramientas
+.cache/
+.parcel-cache/
