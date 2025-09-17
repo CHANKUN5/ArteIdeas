@@ -11,6 +11,8 @@ const AUTH_ACTIONS = {
   CLEAR_AUTH: 'CLEAR_AUTH',
   SET_ERROR: 'SET_ERROR',
   CLEAR_ERROR: 'CLEAR_ERROR',
+  UPDATE_PROFILE_IMAGE: 'UPDATE_PROFILE_IMAGE',
+  SET_PROFILE_IMAGE: 'SET_PROFILE_IMAGE',
 };
 
 // Estado inicial
@@ -67,6 +69,24 @@ const authReducer = (state, action) => {
         error: null,
       };
 
+    case AUTH_ACTIONS.UPDATE_PROFILE_IMAGE:
+      return {
+        ...state,
+        user: {
+          ...state.user,
+          profileImage: action.payload
+        }
+      };
+
+    case AUTH_ACTIONS.SET_PROFILE_IMAGE:
+      return {
+        ...state,
+        user: state.user ? {
+          ...state.user,
+          profileImage: action.payload
+        } : null
+      };
+
     default:
       return state;
   }
@@ -93,6 +113,11 @@ export const AuthProvider = ({ children }) => {
       try {
         if (authService.isAuthenticated()) {
           const user = authService.getUser();
+          // Cargar imagen de perfil desde localStorage si existe
+          const savedImage = localStorage.getItem('userProfileImage');
+          if (savedImage) {
+            user.profileImage = savedImage;
+          }
           dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
         } else {
           dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
@@ -134,6 +159,8 @@ export const AuthProvider = ({ children }) => {
 
     try {
       await authService.logout();
+      // Limpiar imagen de perfil del localStorage al hacer logout
+      localStorage.removeItem('userProfileImage');
       dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
       return { success: true };
     } catch (error) {
@@ -164,6 +191,43 @@ export const AuthProvider = ({ children }) => {
     } finally {
       dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
     }
+  };
+
+  // Actualizar imagen de perfil
+  const updateProfileImage = async (imageFile) => {
+    dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
+    dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
+
+    try {
+      // Simular upload de imagen (en producción, aquí subirías al servidor)
+      const imageUrl = URL.createObjectURL(imageFile);
+      
+      // Actualizar en el contexto
+      dispatch({ 
+        type: AUTH_ACTIONS.UPDATE_PROFILE_IMAGE, 
+        payload: imageUrl 
+      });
+      
+      // Guardar en localStorage para persistencia
+      localStorage.setItem('userProfileImage', imageUrl);
+      
+      return { success: true, imageUrl };
+    } catch (error) {
+      const errorMessage = error.message || 'Error actualizando imagen de perfil';
+      dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: errorMessage });
+      return { success: false, error: errorMessage };
+    } finally {
+      dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
+    }
+  };
+
+  // Establecer imagen de perfil directamente
+  const setProfileImage = (imageUrl) => {
+    dispatch({ 
+      type: AUTH_ACTIONS.SET_PROFILE_IMAGE, 
+      payload: imageUrl 
+    });
+    localStorage.setItem('userProfileImage', imageUrl);
   };
 
   // Cambiar contraseña
@@ -215,6 +279,11 @@ export const AuthProvider = ({ children }) => {
       
       if (result.success) {
         const user = authService.getUser();
+        // Mantener la imagen de perfil al refrescar
+        const savedImage = localStorage.getItem('userProfileImage');
+        if (savedImage) {
+          user.profileImage = savedImage;
+        }
         dispatch({ type: AUTH_ACTIONS.SET_USER, payload: user });
       } else {
         dispatch({ type: AUTH_ACTIONS.CLEAR_AUTH });
@@ -238,6 +307,8 @@ export const AuthProvider = ({ children }) => {
     login,
     logout,
     updateProfile,
+    updateProfileImage,
+    setProfileImage,
     changePassword,
     clearError,
     refreshToken,

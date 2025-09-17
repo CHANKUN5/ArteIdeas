@@ -21,6 +21,7 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
   const { showSuccess } = useApp();
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { user } = useAuth();
 
   const handleLogoutClick = () => {
     setShowLogoutDialog(true);
@@ -109,12 +110,24 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
         {/* User info fijo */}
         <div className="flex-shrink-0 p-4 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+              <img 
+                src={user?.profileImage || '/src/assets/elberc149-profile.jpg'} 
+                alt={user?.name || 'Usuario'} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              {/* Fallback si la imagen no carga */}
+              <div className="w-full h-full hidden items-center justify-center bg-primary">
+                <User className="w-5 h-5 text-white" />
+              </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Elberc149</p>
-              <p className="text-xs text-gray-500">Administrador</p>
+              <p className="text-sm font-medium text-gray-900">{user?.name || 'Elberc149'}</p>
+              <p className="text-xs text-gray-500">{user?.role || 'Administrador'}</p>
             </div>
           </div>
         </div>

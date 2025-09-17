@@ -8,7 +8,7 @@ const NotificationContainer = () => {
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'success':
-        return <CheckCircle className="w-5 h-5 text-primary" />;
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'error':
         return <XCircle className="w-5 h-5 text-red-500" />;
       case 'warning':
@@ -22,7 +22,8 @@ const NotificationContainer = () => {
   const getNotificationStyles = (type) => {
     switch (type) {
       case 'success':
-        return 'bg-primary/10 border-primary/20 text-primary';
+        // Estilos para la notificación de éxito (fondo blanco, borde verde)
+        return 'bg-white border-green-200 text-gray-900';
       case 'error':
         return 'bg-red-50 border-red-200 text-red-800';
       case 'warning':
