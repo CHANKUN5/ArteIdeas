@@ -190,7 +190,6 @@ const Pedidos = () => {
         </div>
       </div>
 
-      /*mopvimiento del boton*/
       <div className="flex justify-end items-center mb-6">
         <button
           onClick={openCreateOrder}
