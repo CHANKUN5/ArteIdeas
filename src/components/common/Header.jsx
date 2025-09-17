@@ -1,71 +1,59 @@
-import { Bell, Search, Settings, User, X } from 'lucide-react';
+import { Bell, Settings, User } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-const Header = ({ onToggleSidebar, user, onSectionChange }) => {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [showSearchResults, setShowSearchResults] = useState(false);
+const Header = ({ onToggleSidebar, onSectionChange }) => {
+  const [showNotifications, setShowNotifications] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  // Datos de ejemplo para la búsqueda
-  const searchData = {
-    clientes: [
-      { id: 1, name: 'Juan Pérez', type: 'cliente', email: 'juan@email.com' },
-      { id: 2, name: 'María López', type: 'cliente', email: 'maria@email.com' },
-      { id: 3, name: 'Carlos Sánchez', type: 'cliente', email: 'carlos@email.com' }
-    ],
-    pedidos: [
-      { id: 'P001', name: 'Pedido P001 - Impresión Minilab', type: 'pedido', cliente: 'Juan Pérez' },
-      { id: 'P002', name: 'Pedido P002 - Enmarcado', type: 'pedido', cliente: 'María López' },
-      { id: 'P003', name: 'Pedido P003 - Retoque', type: 'pedido', cliente: 'Carlos Sánchez' }
-    ],
-    inventario: [
-      { id: 1, name: 'Moldura Clásica Negra', type: 'inventario', stock: 15 },
-      { id: 2, name: 'Vidrio 30x40', type: 'inventario', stock: 8 },
-      { id: 3, name: 'Passe-partout Blanco', type: 'inventario', stock: 25 }
-    ]
-  };
+  // Datos de ejemplo para notificaciones
+  const notifications = [
+    {
+      id: 1,
+      title: 'Nuevo pedido recibido',
+      message: 'Juan Pérez ha realizado un nuevo pedido de impresión',
+      time: 'Hace 5 minutos',
+      read: false,
+      type: 'pedido'
+    },
+    {
+      id: 2,
+      title: 'Stock bajo',
+      message: 'Moldura Clásica Negra tiene solo 5 unidades en stock',
+      time: 'Hace 2 horas',
+      read: false,
+      type: 'inventario'
+    },
+    {
+      id: 3,
+      title: 'Cita programada',
+      message: 'Tienes una cita con María López mañana a las 10:00 AM',
+      time: 'Hace 1 día',
+      read: true,
+      type: 'agenda'
+    }
+  ];
 
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    setShowSearchResults(value.length > 0);
-  };
+  const unreadNotifications = notifications.filter(notif => !notif.read).length;
 
-  const handleResultClick = (item) => {
-    setSearchTerm('');
-    setShowSearchResults(false);
-    
-    // Redirigir según el tipo
-    switch (item.type) {
-      case 'cliente':
-        navigate('/clientes');
-        break;
+  const handleNotificationClick = (notification) => {
+    // Redirigir según el tipo de notificación
+    switch (notification.type) {
       case 'pedido':
         navigate('/pedidos');
         break;
       case 'inventario':
         navigate('/inventario');
         break;
+      case 'agenda':
+        navigate('/agenda');
+        break;
       default:
         break;
     }
-  };
-
-  const filteredResults = () => {
-    if (!searchTerm) return [];
-    
-    const allResults = [
-      ...searchData.clientes,
-      ...searchData.pedidos,
-      ...searchData.inventario
-    ];
-    
-    return allResults.filter(item => 
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.email && item.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (item.cliente && item.cliente.toLowerCase().includes(searchTerm.toLowerCase()))
-    ).slice(0, 5);
+    setShowNotifications(false);
   };
 
   return (
@@ -82,67 +70,81 @@ const Header = ({ onToggleSidebar, user, onSectionChange }) => {
           </div>
         </button>
         
-        <div className="flex-1 max-w-2xl">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Buscar clientes, pedidos, inventario..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="pl-10 pr-10 py-2 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
-            />
-            {searchTerm && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setShowSearchResults(false);
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-            
-            {/* Resultados de búsqueda */}
-            {showSearchResults && filteredResults().length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-                {filteredResults().map((item, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleResultClick(item)}
-                    className="w-full px-4 py-3 text-left hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-gray-900">{item.name}</p>
-                        {item.email && <p className="text-sm text-gray-500">{item.email}</p>}
-                        {item.cliente && <p className="text-sm text-gray-500">Cliente: {item.cliente}</p>}
-                        {item.stock !== undefined && <p className="text-sm text-gray-500">Stock: {item.stock}</p>}
-                      </div>
-                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-full">
-                        {item.type}
-                      </span>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Eliminada toda la sección de búsqueda */}
       </div>
 
       <div className="flex items-center space-x-4">
-        <button 
-          onClick={() => {
-            // Simular notificaciones
-            alert('Tienes 3 notificaciones nuevas:\n• Nuevo pedido de Juan Pérez\n• Stock bajo en Moldura Clásica\n• Cita programada para mañana');
-          }}
-          className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
-        >
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full"></span>
-        </button>
+        {/* Botón de notificaciones con dropdown */}
+        <div className="relative">
+          <button 
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2 text-gray-600 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
+          >
+            <Bell className="w-5 h-5" />
+            {unreadNotifications > 0 && (
+              <span className="absolute top-1 right-1 w-2 h-2 bg-secondary rounded-full"></span>
+            )}
+          </button>
+          
+          {/* Dropdown de notificaciones */}
+          {showNotifications && (
+            <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+              <div className="p-4 border-b border-gray-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900">Notificaciones</h3>
+                  {unreadNotifications > 0 && (
+                    <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">
+                      {unreadNotifications} nuevas
+                    </span>
+                  )}
+                </div>
+              </div>
+              
+              <div className="max-h-96 overflow-y-auto">
+                {notifications.length === 0 ? (
+                  <div className="p-4 text-center text-gray-500">
+                    No hay notificaciones
+                  </div>
+                ) : (
+                  notifications.map((notification) => (
+                    <button
+                      key={notification.id}
+                      onClick={() => handleNotificationClick(notification)}
+                      className={`w-full text-left p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors ${
+                        !notification.read ? 'bg-blue-50' : ''
+                      }`}
+                    >
+                      <div className="flex items-start space-x-3">
+                        <div className={`w-2 h-2 rounded-full mt-2 ${
+                          !notification.read ? 'bg-primary' : 'bg-gray-300'
+                        }`}></div>
+                        <div className="flex-1">
+                          <h4 className={`font-medium ${
+                            !notification.read ? 'text-gray-900' : 'text-gray-600'
+                          }`}>
+                            {notification.title}
+                          </h4>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {notification.message}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-2">
+                            {notification.time}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+              
+              <div className="p-3 border-t border-gray-200 bg-gray-50">
+                <button className="text-sm text-primary hover:text-primary/80 font-medium">
+                  Marcar todas como leídas
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
           
         <button 
           onClick={() => onSectionChange("configuracion")}
@@ -159,8 +161,20 @@ const Header = ({ onToggleSidebar, user, onSectionChange }) => {
             <p className="text-sm font-medium text-gray-900">{user?.name || 'Elberc149'}</p>
             <p className="text-xs text-gray-500">{user?.role || 'Administrador'}</p>
           </div>
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <User className="w-4 h-4 text-white" />
+          <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-primary">
+            <img 
+              src={user?.profileImage || '/src/assets/elberc149-profile.jpg'} 
+              alt={user?.name || 'Usuario'} 
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+            {/* Fallback si la imagen no carga */}
+            <div className="w-full h-full hidden items-center justify-center bg-primary">
+              <User className="w-4 h-4 text-white" />
+            </div>
           </div>
         </div>
       </div>

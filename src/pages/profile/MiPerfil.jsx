@@ -1,35 +1,63 @@
+import { AtSign, Camera, Edit, Key, Mail, MapPin, Phone, Save, Shield, User, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Camera, Edit, Save, X, Key, Shield } from 'lucide-react';
-import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
+import { useAuth } from '../../context/AuthContext';
 
 const MiPerfil = () => {
-  const [userProfile, setUserProfile] = useState({
-    nombre: 'Elberc149',
-    email: 'elberc149@arteideas.com',
-    telefono: '987654321',
-    direccion: 'Av. Lima 123, San Juan de Lurigancho',
-    rol: 'Administrador',
-    fechaRegistro: '2024-01-15',
-    ultimaConexion: '2025-06-09 14:30',
-    biografia: 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.',
-    avatar: null
-  });
-
+  const { user, updateProfileImage, updateProfile } = useAuth();
+  
   const [editMode, setEditMode] = useState(false);
-  const [tempProfile, setTempProfile] = useState({ ...userProfile });
+  const [tempProfile, setTempProfile] = useState({ 
+    nombre: user?.nombre || 'Elberc149',
+    email: user?.email || 'elberc149@arteideas.com',
+    telefono: user?.telefono || '987654321',
+    direccion: user?.direccion || 'Av. Lima 123, San Juan de Lurigancho',
+    biografia: user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.'
+  });
+  
+  const fileInputRef = React.useRef(null);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   });
+  const [emailData, setEmailData] = useState({
+    currentPassword: '',
+    newEmail: '',
+    confirmEmail: ''
+  });
   const [errors, setErrors] = useState({});
+  const [imageLoading, setImageLoading] = useState(false);
+  
+  // Estado para controlar la alerta
+  const [showAlert, setShowAlert] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertType, setAlertType] = useState('success'); // 'success' o 'error'
+
+  const showNotification = (message, type = 'success') => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setShowAlert(true);
+    
+    // Ocultar automáticamente después de 3 segundos
+    setTimeout(() => {
+      setShowAlert(false);
+    }, 3000);
+  };
 
   const handleEditToggle = () => {
     if (editMode) {
-      setTempProfile({ ...userProfile });
+      setTempProfile({ 
+        nombre: user?.nombre || 'Elberc149',
+        email: user?.email || 'elberc149@arteideas.com',
+        telefono: user?.telefono || '987654321',
+        direccion: user?.direccion || 'Av. Lima 123, San Juan de Lurigancho',
+        biografia: user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.'
+      });
     }
     setEditMode(!editMode);
     setErrors({});
@@ -69,10 +97,15 @@ const MiPerfil = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (validateProfile()) {
-      setUserProfile({ ...tempProfile });
-      setEditMode(false);
+      const result = await updateProfile(tempProfile);
+      if (result.success) {
+        setEditMode(false);
+        showNotification('Perfil actualizado correctamente');
+      } else {
+        showNotification('Error al guardar: ' + result.error, 'error');
+      }
     }
   };
 
@@ -110,7 +143,88 @@ const MiPerfil = () => {
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordModal(false);
       setErrors({});
-      alert('Contraseña actualizada correctamente');
+      showNotification('Contraseña actualizada correctamente');
+    }
+  };
+
+  const handleEmailChange = (field, value) => {
+    setEmailData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const validateEmail = () => {
+    const newErrors = {};
+    
+    if (!emailData.currentPassword) {
+      newErrors.currentPassword = 'Contraseña actual requerida';
+    }
+    
+    if (!emailData.newEmail) {
+      newErrors.newEmail = 'Nuevo email requerido';
+    } else if (!/\S+@\S+\.\S+/.test(emailData.newEmail)) {
+      newErrors.newEmail = 'Email inválido';
+    }
+    
+    if (emailData.newEmail !== emailData.confirmEmail) {
+      newErrors.confirmEmail = 'Los emails no coinciden';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleEmailSubmit = () => {
+    if (validateEmail()) {
+      // Aquí iría la lógica para cambiar el email
+      setEmailData({ currentPassword: '', newEmail: '', confirmEmail: '' });
+      setShowEmailModal(false);
+      setErrors({});
+      showNotification('Email actualizado correctamente');
+    }
+  };
+  
+  // Función para manejar la selección de archivo de avatar
+  const handleAvatarClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  // Función para validar y procesar el archivo de imagen
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    // Validar tipo de archivo
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validTypes.includes(file.type)) {
+      showNotification('Formato de archivo no válido. Por favor, sube una imagen en formato JPG, PNG, GIF o WebP.', 'error');
+      return;
+    }
+    
+    // Validar tamaño (máximo 5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+    if (file.size > maxSize) {
+      showNotification('La imagen es demasiado grande. El tamaño máximo permitido es 5MB.', 'error');
+      return;
+    }
+    
+    setImageLoading(true);
+    
+    try {
+      const result = await updateProfileImage(file);
+      if (result.success) {
+        showNotification('Imagen de perfil actualizada correctamente');
+      } else {
+        showNotification('Error al actualizar la imagen: ' + result.error, 'error');
+      }
+    } catch (error) {
+      showNotification('Error al procesar la imagen', 'error');
+    } finally {
+      setImageLoading(false);
+      e.target.value = ''; // Resetear input
     }
   };
 
@@ -130,6 +244,40 @@ const MiPerfil = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
+      {/* Alerta de notificación */}
+      {showAlert && (
+        <div className={`fixed top-5 right-5 z-50 flex items-center justify-between p-4 rounded-lg shadow-lg min-w-[300px] transform transition-all duration-300 ease-in-out ${
+          alertType === 'success' 
+            ? 'bg-green-50 border-l-4 border-green-500 text-green-700' 
+            : 'bg-red-50 border-l-4 border-red-500 text-red-700'
+        }`}>
+          <div className="flex items-center">
+            <div className={`rounded-full p-1 mr-3 ${
+              alertType === 'success' ? 'bg-green-100 text-green-500' : 'bg-red-100 text-red-500'
+            }`}>
+              {alertType === 'success' ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              )}
+            </div>
+            <span className="text-sm font-medium">{alertMessage}</span>
+          </div>
+          <button 
+            onClick={() => setShowAlert(false)}
+            className={`ml-4 ${
+              alertType === 'success' ? 'text-green-500 hover:text-green-700' : 'text-red-500 hover:text-red-700'
+            }`}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
         <div className="flex items-center space-x-3 mb-4 md:mb-0">
@@ -141,13 +289,22 @@ const MiPerfil = () => {
         </div>
         
         <div className="flex space-x-3">
-          <Button 
-            variant="outline"
-            icon={<Key className="w-4 h-4" />}
-            onClick={() => setShowPasswordModal(true)}
-          >
-            Cambiar Contraseña
-          </Button>
+          <div className="flex space-x-2">
+            <Button 
+              variant="outline"
+              icon={<AtSign className="w-4 h-4" />}
+              onClick={() => setShowEmailModal(true)}
+            >
+              Cambiar Email
+            </Button>
+            <Button 
+              variant="outline"
+              icon={<Key className="w-4 h-4" />}
+              onClick={() => setShowPasswordModal(true)}
+            >
+              Cambiar Contraseña
+            </Button>
+          </div>
           {!editMode ? (
             <Button 
               icon={<Edit className="w-4 h-4" />}
@@ -181,27 +338,41 @@ const MiPerfil = () => {
           <Card>
             <div className="flex items-center space-x-6 mb-8">
               <div className="relative">
-                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center">
-                  {userProfile.avatar ? (
+                <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                  {user?.profileImage ? (
                     <img 
-                      src={userProfile.avatar} 
+                      src={user.profileImage} 
                       alt="Avatar" 
                       className="w-24 h-24 rounded-full object-cover"
                     />
                   ) : (
                     <User className="w-12 h-12 text-primary" />
                   )}
+                  {imageLoading && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                    </div>
+                  )}
                 </div>
-                {editMode && (
-                  <button className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/80 transition-colors">
-                    <Camera className="w-4 h-4" />
-                  </button>
-                )}
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  className="hidden" 
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleFileChange}
+                />
+                <button 
+                  onClick={handleAvatarClick}
+                  disabled={imageLoading}
+                  className="absolute bottom-0 right-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center hover:bg-primary/80 transition-colors disabled:opacity-50"
+                >
+                  <Camera className="w-4 h-4" />
+                </button>
               </div>
               
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{userProfile.nombre}</h2>
-                <p className="text-gray-600">{userProfile.rol}</p>
+                <h2 className="text-2xl font-bold text-gray-900">{user?.nombre || 'Elberc149'}</h2>
+                <p className="text-gray-600">{user?.rol || 'Administrador'}</p>
                 <div className="flex items-center space-x-2 mt-2">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span className="text-sm text-green-600">Cuenta Verificada</span>
@@ -229,7 +400,7 @@ const MiPerfil = () => {
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-900 py-3">{userProfile.nombre}</p>
+                  <p className="text-gray-900 py-3">{user?.nombre || 'Elberc149'}</p>
                 )}
               </div>
 
@@ -254,7 +425,7 @@ const MiPerfil = () => {
                 ) : (
                   <div className="flex items-center space-x-2 py-3">
                     <Mail className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900">{userProfile.email}</span>
+                    <span className="text-gray-900">{user?.email || 'elberc149@arteideas.com'}</span>
                   </div>
                 )}
               </div>
@@ -280,7 +451,7 @@ const MiPerfil = () => {
                 ) : (
                   <div className="flex items-center space-x-2 py-3">
                     <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900">{userProfile.telefono}</span>
+                    <span className="text-gray-900">{user?.telefono || '987654321'}</span>
                   </div>
                 )}
               </div>
@@ -291,7 +462,7 @@ const MiPerfil = () => {
                 </label>
                 <div className="flex items-center space-x-2 py-3">
                   <Shield className="w-4 h-4 text-gray-400" />
-                  <span className="text-gray-900">{userProfile.rol}</span>
+                  <span className="text-gray-900">{user?.rol || 'Administrador'}</span>
                 </div>
               </div>
 
@@ -309,7 +480,7 @@ const MiPerfil = () => {
                 ) : (
                   <div className="flex items-center space-x-2 py-3">
                     <MapPin className="w-4 h-4 text-gray-400" />
-                    <span className="text-gray-900">{userProfile.direccion}</span>
+                    <span className="text-gray-900">{user?.direccion || 'Av. Lima 123, San Juan de Lurigancho'}</span>
                   </div>
                 )}
               </div>
@@ -327,7 +498,7 @@ const MiPerfil = () => {
                     placeholder="Cuéntanos sobre ti y tu experiencia profesional..."
                   />
                 ) : (
-                  <p className="text-gray-900 py-3">{userProfile.biografia}</p>
+                  <p className="text-gray-900 py-3">{user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.'}</p>
                 )}
               </div>
             </div>
@@ -338,11 +509,11 @@ const MiPerfil = () => {
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
                     <span className="text-gray-500">Fecha de Registro:</span>
-                    <p className="font-medium">{userProfile.fechaRegistro}</p>
+                    <p className="font-medium">{user?.fechaRegistro || '2024-01-15'}</p>
                   </div>
                   <div>
                     <span className="text-gray-500">Última Conexión:</span>
-                    <p className="font-medium">{userProfile.ultimaConexion}</p>
+                    <p className="font-medium">{user?.ultimaConexion || '2025-06-09 14:30'}</p>
                   </div>
                 </div>
               </div>
@@ -466,6 +637,96 @@ const MiPerfil = () => {
           </Button>
           <Button onClick={handlePasswordSubmit}>
             Actualizar Contraseña
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Email Change Modal */}
+      <Modal
+        isOpen={showEmailModal}
+        onClose={() => {
+          setShowEmailModal(false);
+          setEmailData({ currentPassword: '', newEmail: '', confirmEmail: '' });
+          setErrors({});
+        }}
+        title="Cambiar Email"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contraseña Actual
+            </label>
+            <input
+              type="password"
+              value={emailData.currentPassword}
+              onChange={(e) => handleEmailChange('currentPassword', e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
+                errors.currentPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
+              placeholder="Ingresa tu contraseña actual"
+            />
+            {errors.currentPassword && (
+              <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nuevo Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="email"
+                value={emailData.newEmail}
+                onChange={(e) => handleEmailChange('newEmail', e.target.value)}
+                className={`w-full pl-10 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
+                  errors.newEmail ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="nuevo@email.com"
+              />
+            </div>
+            {errors.newEmail && (
+              <p className="mt-1 text-sm text-red-600">{errors.newEmail}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Confirmar Nuevo Email
+            </label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="email"
+                value={emailData.confirmEmail}
+                onChange={(e) => handleEmailChange('confirmEmail', e.target.value)}
+                className={`w-full pl-10 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
+                  errors.confirmEmail ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                }`}
+                placeholder="Confirma tu nuevo email"
+              />
+            </div>
+            {errors.confirmEmail && (
+              <p className="mt-1 text-sm text-red-600">{errors.confirmEmail}</p>
+            )}
+          </div>
+        </div>
+
+        <Modal.Footer>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setShowEmailModal(false);
+              setEmailData({ currentPassword: '', newEmail: '', confirmEmail: '' });
+              setErrors({});
+            }}
+          >
+            Cancelar
+          </Button>
+          <Button onClick={handleEmailSubmit}>
+            Actualizar Email
           </Button>
         </Modal.Footer>
       </Modal>
