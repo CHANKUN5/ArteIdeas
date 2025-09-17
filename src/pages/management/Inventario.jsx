@@ -1,28 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Filter, 
-  AlertTriangle, 
-  Edit, 
-  Trash2, 
-  TrendingUp, 
-  TrendingDown, 
-  Eye,
-  Frame,
-  Truck,
-  GraduationCap,
-  Wrench,
-  CheckCircle,
+import {
+  AlertTriangle,
+  Edit,
   FileText,
-  Paintbrush,
-  Printer,
-  Palette
+  Frame,
+  GraduationCap,
+  Package,
+  Palette,
+  Plus,
+  Search,
+  Trash2,
+  TrendingUp,
+  Truck,
+  Wrench
 } from 'lucide-react';
-import logoImage from '../../assets/logo.png';
-import Card from '../../components/common/Card';
+import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
 import { useApp } from '../../context/AppContext';
 
@@ -262,12 +255,6 @@ const Inventario = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Inventario</h1>
             <p className="text-sm text-gray-500">Gestiona tus molduras y materiales</p>
-          </div>
-          <div className="ml-auto flex items-center">
-            <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
-              <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-sm font-medium text-primary">Arte Ideas</span>
           </div>
         </div>
       </div>

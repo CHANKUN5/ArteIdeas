@@ -1,6 +1,6 @@
 import jsPDF from 'jspdf';
 // CORRECTO ✅
-import { Calendar, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X, ChevronDown } from 'lucide-react';
+import { Calendar, ChevronDown, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
