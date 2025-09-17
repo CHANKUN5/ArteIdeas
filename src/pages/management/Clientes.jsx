@@ -227,24 +227,24 @@ const Clientes = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Users className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+              <p className="text-sm text-gray-500">Gestiona tu base de datos de clientes</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-            <p className="text-sm text-gray-500">Gestiona tu base de datos de clientes</p>
-          </div>
+          <Button 
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => setShowClientForm(true)}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            Nuevo Cliente
+          </Button>
         </div>
-      </div>
-
-      <div className="flex justify-between items-center mb-6">
-        <button 
-          onClick={() => setShowClientForm(true)}
-          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-all"
-        >
-          Nuevo Cliente
-        </button>
       </div>
 
       {/* Filtros */}

@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Edit,
   Eye,
+  Plus,
   ShoppingCart,
   Trash2
 } from "lucide-react";
@@ -191,12 +192,13 @@ const Pedidos = () => {
       </div>
 
       <div className="flex justify-end items-center mb-6">
-        <button
+        <Button
+          icon={<Plus className="w-4 h-4" />}
           onClick={openCreateOrder}
-          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-all"
+          className="bg-primary hover:bg-primary/90 text-white"
         >
           Nuevo Pedido
-        </button>
+        </Button>
       </div>
 
       {/* Filtros */}

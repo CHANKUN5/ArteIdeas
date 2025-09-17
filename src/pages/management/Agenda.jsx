@@ -199,21 +199,16 @@ const Agenda = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
+              <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
-            <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Sección de Filtros */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
           <Button 
             icon={<Plus className="w-4 h-4" />}
             onClick={() => setShowEventForm(true)}
@@ -221,6 +216,13 @@ const Agenda = () => {
           >
             Nueva Sesión
           </Button>
+        </div>
+      </div>
+
+      {/* Sección de Filtros */}
+      <div className="mb-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex flex-col md:flex-row gap-4 items-end">
