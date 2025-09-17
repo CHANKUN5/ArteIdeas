@@ -11,7 +11,7 @@ import {
   Users
 } from 'lucide-react';
 import { useState } from 'react';
-import logoImage from '../../assets/logo.svg';
+import logoImage from '../../assets/icono.png';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import ConfirmationDialog from './ConfirmationDialog';
@@ -99,10 +99,6 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
           <div className="flex items-center space-x-3">
             <div className="flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden">
               <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">FotoStudio</h1>
-              <p className="text-xs text-gray-500">Arte Ideas</p>
             </div>
           </div>
         </div>
