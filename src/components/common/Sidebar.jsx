@@ -1,49 +1,22 @@
-import {
-  BarChart3,
-  Calendar,
-  FileText,
-  LayoutDashboard,
-  LogOut,
-  Package,
+import React from 'react';
+import { 
+  LayoutDashboard, 
+  Calendar, 
+  ShoppingCart, 
+  Users, 
+  Package, 
   Settings,
-  ShoppingCart,
+  FileText,
+  BarChart3,
   User,
-  Users
+  LogOut,
+  Camera
 } from 'lucide-react';
-import { useState } from 'react';
-import logoImage from '../../assets/logo.svg'; // Importamos la imagen del logo
-import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
-import ConfirmationDialog from './ConfirmationDialog';
+import logoImage from '../../assets/logo.png'; // Importamos la imagen del logo
 
 const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
   const { logout } = useAuth();
-  const { showSuccess } = useApp();
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  // Handle logout confirmation
-  const handleLogoutClick = () => {
-    setShowLogoutDialog(true);
-  };
-
-  const handleLogoutConfirm = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      setShowLogoutDialog(false);
-      showSuccess('Sesión cerrada exitosamente', { duration: 3000 });
-    } catch (error) {
-      console.error('Error during logout:', error);
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
-
-  const handleLogoutCancel = () => {
-    setShowLogoutDialog(false);
-  };
-
   const menuSections = [
     {
       title: 'PRINCIPAL',
@@ -95,13 +68,12 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
       `}>
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            {/* Logo con imagen en lugar de icono Camera */}
             <div className="flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden">
               <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">FotoStudio</h1>
-              <p className="text-xs text-gray-500">Arte Ideas</p>
+              <h1 className="text-lg font-bold text-gray-900">Arte Ideas</h1>
+              <p className="text-xs text-gray-500">Estudio Fotográfico</p>
             </div>
           </div>
         </div>
@@ -131,7 +103,7 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
                   
                   const handleClick = () => {
                     if (item.id === 'logout') {
-                      handleLogoutClick();
+                      logout();
                     } else {
                       onSectionChange(item.id);
                     }
@@ -160,19 +132,6 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
           ))}
         </nav>
       </aside>
-
-      {/* Logout Confirmation Dialog */}
-      <ConfirmationDialog
-        isOpen={showLogoutDialog}
-        onClose={handleLogoutCancel}
-        onConfirm={handleLogoutConfirm}
-        title="Cerrar Sesión"
-        message="¿Estás seguro de que quieres cerrar sesión? Se perderán los datos no guardados."
-        confirmText="Sí, cerrar sesión"
-        cancelText="Cancelar"
-        type="warning"
-        isLoading={isLoggingOut}
-      />
     </>
   );
 };
