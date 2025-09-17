@@ -97,8 +97,12 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
         {/* Header fijo */}
         <div className="flex-shrink-0 p-6 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg overflow-hidden">
-              <img src={logoImage} alt="Logo" className="w-full h-full object-cover" />
+            <div className="flex items-center justify-center w-50 h-20 rounded-lg overflow-hidden ml-12">
+              <img
+                src={logoImage}
+                alt="Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
