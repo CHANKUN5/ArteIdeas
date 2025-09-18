@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
+import logoImage from '../../assets/icono.png'; // Importar la imagen
 import styles from './Login.module.css';
 
 const LoginForm = ({ onLogin, error, loading }) => {
@@ -60,7 +61,7 @@ const LoginForm = ({ onLogin, error, loading }) => {
         
         <div className={styles.logoContainer}>
           <img 
-            src="/icono.png" 
+            src={logoImage} // Usar la imagen importada
             alt="Logo FOT" 
             className={styles.formLogo}
           />

@@ -1,8 +1,8 @@
-import React from 'react';
-import { useAuth } from '../../context/AuthContext';
+import logoImage from '../../assets/icono.png'; // Importar la imagen
 import AnimatedBackground from '../../components/auth/AnimatedBackground';
-import LoginForm from '../../components/auth/LoginForm';
 import styles from '../../components/auth/Login.module.css';
+import LoginForm from '../../components/auth/LoginForm';
+import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
   const { login, error, loading, clearError } = useAuth();
@@ -25,7 +25,7 @@ const Login = () => {
     <div className={styles.loginContainer}>
       <div className={styles.header}>
         <img 
-          src="/icono.png" 
+          src={logoImage} // Usar la imagen importada
           alt="Logo FOT" 
           className={styles.headerLogo}
         />
