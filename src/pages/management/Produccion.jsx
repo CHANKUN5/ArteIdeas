@@ -941,7 +941,7 @@ const Produccion = () => {
   const columns = getTableColumns();
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="responsive-mobile">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center space-x-3">
@@ -968,7 +968,7 @@ const Produccion = () => {
                   setActiveSubTab(subTabs[tab.id]?.[0]?.id || '');
                   setSelectedItems([]);
                 }}
-                className={`flex items-center space-x-2 px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                className={`flex items-center space-x-1 px-3 py-2 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                   activeMainTab === tab.id
                     ? 'bg-[#1DD1E3] text-white shadow-sm'
                     : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -994,7 +994,7 @@ const Produccion = () => {
         {/* Sub-pestañas */}
         {subTabs[activeMainTab] && (
           <div className="px-6 py-3 border-b border-gray-200">
-            <div className="flex space-x-1">
+            <div className="flex space-x-1 overflow-x-auto">
               {subTabs[activeMainTab].map((subTab) => (
                 <button
                   key={subTab.id}
@@ -1002,7 +1002,7 @@ const Produccion = () => {
                     setActiveSubTab(subTab.id);
                     setSelectedItems([]);
                   }}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                  className={`px-3 py-2 rounded-md text-xs font-medium transition-all whitespace-nowrap ${
                     activeSubTab === subTab.id
                       ? 'bg-[#1DD1E3] text-white'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
@@ -1017,11 +1017,11 @@ const Produccion = () => {
 
         {/* Herramientas */}
         <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center space-x-3">
               <button 
                 onClick={handleAddNew}
-                className="flex items-center space-x-2 px-4 py-2 bg-[#1DD1E3] text-white rounded-lg hover:bg-[#19BED1] transition-colors"
+                className="flex items-center space-x-2 px-3 py-2 bg-[#1DD1E3] text-white rounded-lg hover:bg-[#19BED1] transition-colors text-sm"
               >
                 <Settings className="w-4 h-4" />
                 <span>Registrar Artículo</span>
@@ -1035,7 +1035,7 @@ const Produccion = () => {
                 placeholder={`Buscar ${activeSubTab.toLowerCase()}...`}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1DD1E3] focus:border-transparent outline-none"
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#1DD1E3] focus:border-transparent outline-none text-sm"
               />
             </div>
           </div>
@@ -1043,10 +1043,10 @@ const Produccion = () => {
 
         {/* Tabla */}
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="min-w-full table-auto">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left">
+                <th className="px-3 py-3 text-left">
                   <input
                     type="checkbox"
                     checked={selectedItems.length === filteredData.length && filteredData.length > 0}
@@ -1054,11 +1054,11 @@ const Produccion = () => {
                     className="rounded border-gray-300 focus:ring-[#1DD1E3]"
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ID
                 </th>
                 {columns.map((col) => (
-                  <th key={col.key} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th key={col.key} className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {col.label}
                   </th>
                 ))}
@@ -1067,7 +1067,7 @@ const Produccion = () => {
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredData.map((item) => (
                 <tr key={item.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-4">
                     <input
                       type="checkbox"
                       checked={selectedItems.includes(item.id)}
@@ -1075,11 +1075,11 @@ const Produccion = () => {
                       className="rounded border-gray-300 focus:ring-[#1DD1E3]"
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-3 py-4 text-sm font-medium text-gray-900">
                     {item.id}
                   </td>
                   {columns.map((col) => (
-                    <td key={col.key} className="px-6 py-4 whitespace-nowrap">
+                    <td key={col.key} className="px-3 py-4">
                       {col.key === 'acciones' ? (
                         <div className="flex space-x-2">
                           <button
@@ -1126,7 +1126,7 @@ const Produccion = () => {
                           <span className="text-sm text-gray-600">{item[col.key]}</span>
                         </div>
                       ) : (
-                        <div className="text-sm text-gray-900">
+                        <div className="text-sm text-gray-900 break-words">
                           {item[col.key]}
                         </div>
                       )}
@@ -1172,7 +1172,7 @@ const Produccion = () => {
             <div className="flex justify-center">
               <button 
                 onClick={handleSendToProductos}
-                className="flex items-center space-x-2 px-6 py-3 bg-[#1DD1E3] text-white rounded-lg hover:bg-[#19BED1] transition-colors shadow-sm"
+                className="flex items-center space-x-2 px-4 py-3 bg-[#1DD1E3] text-white rounded-lg hover:bg-[#19BED1] transition-colors shadow-sm text-sm"
               >
                 <Send className="w-4 h-4" />
                 <span>Enviar seleccionados a Productos Terminados</span>
@@ -1301,8 +1301,8 @@ const ModalForm = ({ item, modalType, activeSubTab, onClose, onSave, onSwitchToE
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="px-6 py-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
