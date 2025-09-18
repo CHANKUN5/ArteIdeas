@@ -702,7 +702,14 @@ const Agenda = () => {
           </div>
 
           <Modal.Footer>
-            <Button variant="outline" onClick={() => setShowEventForm(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowEventForm(false);
+              setEditingEvent(null);
+              setEventFormData({
+                title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: []
+              });
+              setTaskInput('');
+            }}>
               Cancelar
             </Button>
             <Button onClick={() => {
