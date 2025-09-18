@@ -9,7 +9,6 @@ const Agenda = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filter, setFilter] = useState('todos');
   const [clientFilter, setClientFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('todos');
   // Fecha de referencia para el calendario (primer día del mes mostrado)
   const [currentMonthDate, setCurrentMonthDate] = useState(() => {
     const base = new Date();
@@ -40,7 +39,6 @@ const Agenda = () => {
     type: 'sesion',
     status: 'pendiente',
     participants: 0,
-    progress: 0,
     notes: '',
     tasks: []
   });
@@ -70,14 +68,16 @@ const Agenda = () => {
   };
 
   const statusColors = {
-    confirmada: 'bg-blue-100 text-blue-800',
+    confirmado: 'bg-green-100 text-green-800',
     pendiente: 'bg-yellow-100 text-yellow-800',
-    completada: 'bg-green-100 text-green-800'
+    cancelado: 'bg-red-100 text-red-800',
+    completado: 'bg-green-100 text-green-800'
   };
 
   const deriveStatusFromType = (type) => {
-    if (type === 'sesion') return 'confirmada';
-    if (type === 'entrega') return 'completada';
+    // Mantener la lógica según lo que ya hay en el código (pendiente, confirmado, completado)
+    if (type === 'sesion') return 'confirmado';
+    if (type === 'entrega') return 'completado';
     if (type === 'reunion') return 'pendiente';
     return 'pendiente';
   };
@@ -95,8 +95,8 @@ const Agenda = () => {
       const term = clientFilter.trim().toLowerCase();
       if (!(event.client || '').toLowerCase().includes(term)) return false;
     }
-    if (statusFilter !== 'todos' && event.status !== statusFilter) return false;
     if (selectedDate) {
+      // Comparación de fecha exacta (YYYY-MM-DD)
       if ((event.date || '').slice(0, 10) !== selectedDate) return false;
     }
     return true;
@@ -110,14 +110,17 @@ const Agenda = () => {
   const pageStart = (currentPage - 1) * itemsPerPage;
   const paginatedEvents = sortedEvents.slice(pageStart, pageStart + itemsPerPage);
 
+  // Progreso según tareas
   const getProgress = (ev) => {
-    return ev?.progress || 0;
+    if (!ev || !Array.isArray(ev.tasks) || ev.tasks.length === 0) return 0;
+    const completed = ev.tasks.filter(t => t.completed).length;
+    return Math.round((completed / ev.tasks.length) * 100);
   };
 
   // Utilidades de calendario
   const monthLabel = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(currentMonthDate);
   const pad2 = (n) => (n < 10 ? `0${n}` : `${n}`);
-  const statusPriority = { pendiente: 1, confirmada: 2, completada: 3 };
+  const statusPriority = { pendiente: 1, confirmado: 2, completado: 3 };
 
   // Generar calendario para el mes en currentMonthDate
   const generateCalendar = () => {
@@ -151,10 +154,10 @@ const Agenda = () => {
       if (dominantStatus === 'pendiente') {
         bgClass = 'bg-yellow-100';
         statusIcon = <Circle className="w-4 h-4 text-yellow-500" />;
-      } else if (dominantStatus === 'confirmada') {
+      } else if (dominantStatus === 'confirmado') {
         bgClass = 'bg-blue-100';
         statusIcon = <AlertCircle className="w-4 h-4 text-blue-500" />;
-      } else if (dominantStatus === 'completada') {
+      } else if (dominantStatus === 'completado') {
         bgClass = 'bg-green-100';
         statusIcon = <CheckCircle className="w-4 h-4 text-green-500" />;
       }
@@ -199,16 +202,21 @@ const Agenda = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
-              <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
-            </div>
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+            <Calendar className="w-6 h-6 text-primary" />
           </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
+            <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Sección de Filtros */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
           <Button 
             icon={<Plus className="w-4 h-4" />}
             onClick={() => setShowEventForm(true)}
@@ -217,15 +225,20 @@ const Agenda = () => {
             Nueva Sesión
           </Button>
         </div>
-      </div>
-
-      {/* Sección de Filtros */}
-      <div className="mb-6">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
-        </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex flex-col md:flex-row gap-4 items-end">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+              <div className="relative">
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+              </div>
+            </div>
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
               <input
@@ -235,26 +248,12 @@ const Agenda = () => {
                 onChange={(e) => setClientFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="completada">Completada</option>
-              </select>
-            </div>
+            </div >
             <div className="flex items-end">
               <Button
                 onClick={() => {
                   setSelectedDate('');
                   setClientFilter('');
-                  setStatusFilter('todos');
                   setFilter('todos');
                 }}
                 className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
@@ -366,11 +365,11 @@ const Agenda = () => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        event.status === 'confirmada' ? 'bg-blue-100 text-blue-800' :
+                        event.status === 'confirmado' ? 'bg-blue-100 text-blue-800' :
                         event.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-green-100 text-green-800'
                       }`}>
-                        {event.status}
+                        {event.status === 'confirmado' ? 'proceso' : event.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -564,7 +563,7 @@ const Agenda = () => {
           setShowEventForm(false);
           setEditingEvent(null);
           setEventFormData({
-            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, progress: 0, notes: ''
+            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: ''
           });
         }}
         title={editingEvent ? 'Editar Evento' : 'Nueva Sesión'}
@@ -639,19 +638,6 @@ const Agenda = () => {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select
-                name="status"
-                value={eventFormData.status}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="completada">Completada</option>
-              </select>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Participantes</label>
               <input
                 type="number"
@@ -661,19 +647,6 @@ const Agenda = () => {
                 onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: Number(e.target.value) }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 placeholder="Número de participantes"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Progreso (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                name="progress"
-                value={eventFormData.progress || 0}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: Number(e.target.value) }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="0-100"
               />
             </div>
             <div className="col-span-2">
@@ -741,20 +714,22 @@ const Agenda = () => {
                 // Actualizar
                 setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { 
                   ...editingEvent, 
-                  ...eventFormData
+                  ...eventFormData,
+                  status: deriveStatusFromType(eventFormData.type)
                 } : ev));
               } else {
                 // Crear simulado
                 const nextId = (events.reduce((max, ev) => Math.max(max, Number(ev.id) || 0), 0) + 1) || 1;
                 const newEvent = { 
                   id: nextId, 
-                  ...eventFormData
+                  ...eventFormData,
+                  status: deriveStatusFromType(eventFormData.type)
                 };
                 setEvents(prev => [newEvent, ...prev]);
               }
               setShowEventForm(false);
               setEditingEvent(null);
-              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, progress: 0, notes: '', tasks: [] });
+              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: [] });
               setTaskInput('');
               setCurrentPage(1);
             }}>
@@ -822,7 +797,6 @@ const Agenda = () => {
                   type: eventToEdit.type || 'sesion',
                   status: eventToEdit.status || 'pendiente',
                   participants: eventToEdit.participants || 0,
-                  progress: eventToEdit.progress || 0,
                   notes: eventToEdit.notes || '',
                   tasks: Array.isArray(eventToEdit.tasks) ? eventToEdit.tasks : []
                 });
