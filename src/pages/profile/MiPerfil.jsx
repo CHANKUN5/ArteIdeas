@@ -10,11 +10,12 @@ const MiPerfil = () => {
   
   const [editMode, setEditMode] = useState(false);
   const [tempProfile, setTempProfile] = useState({ 
-    nombre: user?.nombre || 'Elberc149',
+    name: user?.name || 'Elberc149',
     email: user?.email || 'elberc149@arteideas.com',
     telefono: user?.telefono || '987654321',
     direccion: user?.direccion || 'Av. Lima 123, San Juan de Lurigancho',
-    biografia: user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.'
+    biografia: user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.',
+    profileImage: user?.profileImage || null
   });
   
   const fileInputRef = React.useRef(null);
@@ -32,6 +33,7 @@ const MiPerfil = () => {
   });
   const [errors, setErrors] = useState({});
   const [imageLoading, setImageLoading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   
   // Estado para controlar la alerta
   const [showAlert, setShowAlert] = useState(false);
@@ -52,12 +54,14 @@ const MiPerfil = () => {
   const handleEditToggle = () => {
     if (editMode) {
       setTempProfile({ 
-        nombre: user?.nombre || 'Elberc149',
+        name: user?.name || 'Elberc149',
         email: user?.email || 'elberc149@arteideas.com',
         telefono: user?.telefono || '987654321',
         direccion: user?.direccion || 'Av. Lima 123, San Juan de Lurigancho',
-        biografia: user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.'
+        biografia: user?.biografia || 'Fotógrafo profesional especializado en fotografía escolar y eventos. Con más de 10 años de experiencia en el sector.',
+        profileImage: user?.profileImage || null
       });
+      setSelectedFile(null); // Limpiar el archivo seleccionado al cancelar la edición
     }
     setEditMode(!editMode);
     setErrors({});
@@ -79,8 +83,8 @@ const MiPerfil = () => {
   const validateProfile = () => {
     const newErrors = {};
     
-    if (!tempProfile.nombre.trim()) {
-      newErrors.nombre = 'El nombre es requerido';
+    if (!tempProfile.name.trim()) {
+      newErrors.name = 'El nombre es requerido';
     }
     
     if (!tempProfile.email.trim()) {
@@ -99,12 +103,36 @@ const MiPerfil = () => {
 
   const handleSave = async () => {
     if (validateProfile()) {
-      const result = await updateProfile(tempProfile);
-      if (result.success) {
-        setEditMode(false);
-        showNotification('Perfil actualizado correctamente');
-      } else {
-        showNotification('Error al guardar: ' + result.error, 'error');
+      try {
+        let imageUrl = tempProfile.profileImage;
+        
+        // Si hay un archivo seleccionado, actualizar la imagen primero
+        if (selectedFile) {
+          const imageResult = await updateProfileImage(selectedFile);
+          if (imageResult.success) {
+            imageUrl = imageResult.imageUrl;
+          } else {
+            showNotification('Error al actualizar la imagen de perfil', 'error');
+            return;
+          }
+        }
+        
+        // Actualizar el perfil con todos los datos, incluyendo la imagen si se actualizó
+        const profileData = {
+          ...tempProfile,
+          profileImage: imageUrl
+        };
+        
+        const result = await updateProfile(profileData);
+        if (result.success) {
+          setEditMode(false);
+          setSelectedFile(null); // Limpiar el archivo seleccionado
+          showNotification('Perfil actualizado correctamente');
+        } else {
+          showNotification('Error al guardar: ' + result.error, 'error');
+        }
+      } catch (error) {
+        showNotification('Error al guardar el perfil', 'error');
       }
     }
   };
@@ -214,12 +242,18 @@ const MiPerfil = () => {
     setImageLoading(true);
     
     try {
-      const result = await updateProfileImage(file);
-      if (result.success) {
-        showNotification('Imagen de perfil actualizada correctamente');
-      } else {
-        showNotification('Error al actualizar la imagen: ' + result.error, 'error');
-      }
+      // Crear una URL temporal para la vista previa de la imagen
+      const imageUrl = URL.createObjectURL(file);
+      
+      // Guardar el archivo para usarlo cuando se presione el botón guardar
+      setSelectedFile(file);
+      
+      // Actualizar solo el estado temporal para mostrar la vista previa
+      setTempProfile(prev => ({
+        ...prev,
+        profileImage: imageUrl
+      }));
+      
     } catch (error) {
       showNotification('Error al procesar la imagen', 'error');
     } finally {
@@ -339,7 +373,13 @@ const MiPerfil = () => {
             <div className="flex items-center space-x-6 mb-8">
               <div className="relative">
                 <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
-                  {user?.profileImage ? (
+                  {tempProfile.profileImage ? (
+                    <img 
+                      src={tempProfile.profileImage} 
+                      alt="Avatar" 
+                      className="w-24 h-24 rounded-full object-cover"
+                    />
+                  ) : user?.profileImage ? (
                     <img 
                       src={user.profileImage} 
                       alt="Avatar" 
@@ -354,6 +394,8 @@ const MiPerfil = () => {
                     </div>
                   )}
                 </div>
+                {editMode && (
+              <>
                 <input 
                   type="file" 
                   ref={fileInputRef}
@@ -368,11 +410,13 @@ const MiPerfil = () => {
                 >
                   <Camera className="w-4 h-4" />
                 </button>
+              </>
+            )}
               </div>
               
               <div>
-                <h2 className="text-2xl font-bold text-gray-900">{user?.nombre || 'Elberc149'}</h2>
-                <p className="text-gray-600">{user?.rol || 'Administrador'}</p>
+                <h2 className="text-2xl font-bold text-gray-900">{user?.name || 'Elberc149'}</h2>
+                <p className="text-gray-600">{user?.role || 'Administrador'}</p>
                 <div className="flex items-center space-x-2 mt-2">
                   <Shield className="w-4 h-4 text-green-500" />
                   <span className="text-sm text-green-600">Cuenta Verificada</span>
@@ -389,18 +433,18 @@ const MiPerfil = () => {
                   <div>
                     <input
                       type="text"
-                      value={tempProfile.nombre}
-                      onChange={(e) => handleInputChange('nombre', e.target.value)}
+                      value={tempProfile.name}
+                      onChange={(e) => handleInputChange('name', e.target.value)}
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all ${
-                        errors.nombre ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                        errors.name ? 'border-red-500 bg-red-50' : 'border-gray-300'
                       }`}
                     />
-                    {errors.nombre && (
-                      <p className="mt-1 text-sm text-red-600">{errors.nombre}</p>
+                    {errors.name && (
+                      <p className="mt-1 text-sm text-red-600">{errors.name}</p>
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-900 py-3">{user?.nombre || 'Elberc149'}</p>
+                  <p className="text-gray-900 py-3">{user?.name || 'Elberc149'}</p>
                 )}
               </div>
 

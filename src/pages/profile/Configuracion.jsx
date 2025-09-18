@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Settings, Bell, Shield, Palette, Database, Download, Upload, Globe, Sun, Users, DollarSign, Plus, Edit, Trash2, Eye } from 'lucide-react';
-import Card from '../../components/common/Card';
+import { Database, DollarSign, Download, Edit, Globe, Plus, Settings, Shield, Trash2, Upload, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
 
 const Configuracion = () => {

@@ -175,9 +175,20 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
     try {
+      // Preservar la imagen de perfil si existe
+      if (state.user && state.user.profileImage && !profileData.profileImage) {
+        profileData.profileImage = state.user.profileImage;
+      }
+      
       const result = await authService.updateProfile(profileData);
 
       if (result.success) {
+        // Asegurar que la imagen de perfil se mantenga
+        if (state.user && state.user.profileImage && !result.user.profileImage) {
+          result.user.profileImage = state.user.profileImage;
+        }
+        
+        // Actualizar el estado del usuario para reflejar cambios en la UI
         dispatch({ type: AUTH_ACTIONS.SET_USER, payload: result.user });
         return { success: true, user: result.user };
       } else {
@@ -199,8 +210,13 @@ export const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
     try {
-      // Simular upload de imagen (en producción, aquí subirías al servidor)
-      const imageUrl = URL.createObjectURL(imageFile);
+      // Convertir imagen a base64 para almacenamiento permanente
+      const imageUrl = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(imageFile);
+      });
       
       // Actualizar en el contexto
       dispatch({ 
@@ -210,6 +226,10 @@ export const AuthProvider = ({ children }) => {
       
       // Guardar en localStorage para persistencia
       localStorage.setItem('userProfileImage', imageUrl);
+      
+      // Forzar actualización de componentes que usan el contexto
+      const updatedUser = {...state.user, profileImage: imageUrl};
+      dispatch({ type: AUTH_ACTIONS.SET_USER, payload: updatedUser });
       
       return { success: true, imageUrl };
     } catch (error) {
