@@ -307,8 +307,8 @@
 
 .submitButton {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 9999px;
+  padding: 1.25rem 1.5rem;
+  border-radius: 0.5rem;
   color: white;
   font-weight: 500;
   background: linear-gradient(90deg, #FF9912 0%, #FF6B35 100%);
@@ -319,6 +319,7 @@
   transition: all 0.2s;
   animation: fadeInUp 0.6s ease-out;
   animation-delay: 0.3s;
+  font-size: 1.25rem;
 }
 
 .submitButton:hover:not(:disabled) {
@@ -417,4 +418,20 @@
   .header {
     padding: 0 1.5rem;
   }
+}
+
+.forgotPasswordLink {
+  color: #1DD1E3;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.forgotPasswordLink:hover {
+  color: #0FB8D1;
+  text-decoration: underline;
+}
+
+.forgotPasswordContainer {
+  margin-top: 0.25rem;
+  margin-bottom: 0.125rem;
 }
