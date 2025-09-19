@@ -44,6 +44,21 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
     setShowLogoutDialog(false);
   };
 
+  // Configurar elementos de cuenta basado en el rol del usuario
+  const getAccountItems = () => {
+    const baseItems = [
+      { id: 'perfil', label: 'Mi Perfil', icon: User },
+      { id: 'logout', label: 'Cerrar Sesión', icon: LogOut }
+    ];
+
+    // Solo agregar configuración si el usuario es admin
+    if (user?.role === 'admin') {
+      baseItems.splice(1, 0, { id: 'configuracion', label: 'Configuración', icon: Settings });
+    }
+
+    return baseItems;
+  };
+
   const menuSections = [
     {
       title: 'PRINCIPAL',
@@ -70,11 +85,7 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
     },
     {
       title: 'CUENTA',
-      items: [
-        { id: 'perfil', label: 'Mi Perfil', icon: User },
-        { id: 'configuracion', label: 'Configuración', icon: Settings },
-        { id: 'logout', label: 'Cerrar Sesión', icon: LogOut }
-      ]
+      items: getAccountItems()
     }
   ];
 

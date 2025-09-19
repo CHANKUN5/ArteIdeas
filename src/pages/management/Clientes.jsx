@@ -82,6 +82,8 @@ const Clientes = () => {
   const [showClientModal, setShowClientModal] = useState(false);
   const [selectedClient, setSelectedClient] = useState(null);
   const [showClientForm, setShowClientForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [clientToDelete, setClientToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
   const [currentPage, setCurrentPage] = useState(1);
@@ -114,9 +116,16 @@ const Clientes = () => {
     setShowClientForm(false);
   };
 
-  const handleDeleteClient = (clientId) => {
-    if (window.confirm('¿Estás seguro de eliminar este cliente?')) {
-      setClients(clients.filter(client => client.id !== clientId));
+  const handleDeleteClient = (client) => {
+    setClientToDelete(client);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteClient = () => {
+    if (clientToDelete) {
+      setClients(clients.filter(client => client.id !== clientToDelete.id));
+      setShowDeleteModal(false);
+      setClientToDelete(null);
     }
   };
 
@@ -215,7 +224,7 @@ const Clientes = () => {
             variant="ghost"
             size="sm"
             icon={<Trash2 className="w-4 h-4" />}
-            onClick={() => handleDeleteClient(client.id)}
+            onClick={() => handleDeleteClient(client)}
             className="text-red-600 hover:bg-red-50"
           />
         </div>
@@ -337,7 +346,7 @@ const Clientes = () => {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteClient(client.id)}
+                        onClick={() => handleDeleteClient(client)}
                         className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -516,6 +525,54 @@ const Clientes = () => {
             setSelectedClient(null);
           }}
         />
+      </Modal>
+
+      {/* Modal de Confirmación de Eliminación */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setClientToDelete(null);
+        }}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-gray-900">
+                ¿Estás seguro de eliminar este cliente?
+              </h3>
+              <p className="text-sm text-gray-500">
+                El cliente "{clientToDelete?.nombre}" será eliminado permanentemente junto con todo su historial.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setClientToDelete(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteClient}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Eliminar
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
