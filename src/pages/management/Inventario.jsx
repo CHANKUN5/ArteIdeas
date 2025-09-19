@@ -84,6 +84,8 @@ const Inventario = () => {
   const [showStockModal, setShowStockModal] = useState(false);
   const [stockTargetItem, setStockTargetItem] = useState(null);
   const [stockOperation, setStockOperation] = useState('increase');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Cargar inventario desde localStorage (si existe)
   useEffect(() => {
@@ -156,10 +158,17 @@ const Inventario = () => {
     return matchesSearch && matchesCategory;
   });
 
-  const handleDeleteItem = (itemId) => {
-    if (window.confirm('¿Estás seguro de eliminar este artículo del inventario?')) {
-      setInventory(inventory.filter(item => item.id !== itemId));
+  const handleDeleteItem = (item) => {
+    setItemToDelete(item);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteItem = () => {
+    if (itemToDelete) {
+      setInventory(inventory.filter(item => item.id !== itemToDelete.id));
       showSuccess('Producto eliminado del inventario');
+      setShowDeleteModal(false);
+      setItemToDelete(null);
     }
   };
 
@@ -479,7 +488,7 @@ const Inventario = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDeleteItem(item.id)}
+                        onClick={() => handleDeleteItem(item)}
                         className="text-red-600 hover:bg-red-50"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -774,6 +783,54 @@ const Inventario = () => {
               Guardar
             </Button>
           </Modal.Footer>
+        </div>
+      </Modal>
+
+      {/* Modal de Confirmación de Eliminación */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setItemToDelete(null);
+        }}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-gray-900">
+                ¿Estás seguro de eliminar este artículo?
+              </h3>
+              <p className="text-sm text-gray-500">
+                El artículo "{itemToDelete?.nombre}" será eliminado permanentemente del inventario.
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowDeleteModal(false);
+                setItemToDelete(null);
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmDeleteItem}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Eliminar
+            </Button>
+          </div>
         </div>
       </Modal>
     </div>
