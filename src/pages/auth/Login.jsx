@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import logoImage from '../../assets/icono.png'; // Importar la imagen
 import AnimatedBackground from '../../components/auth/AnimatedBackground';
 import styles from '../../components/auth/Login.module.css';
@@ -6,6 +7,7 @@ import { useAuth } from '../../context/AuthContext';
 
 const Login = () => {
   const { login, error, loading, clearError } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async (credentials) => {
     clearError();
@@ -14,7 +16,15 @@ const Login = () => {
       const result = await login(credentials);
 
       if (result.success) {
-        console.log('Login exitoso:', result.user);
+        // Si el usuario necesita cambiar contraseña, redirigir al flujo de verificación
+        if (result.requiresPasswordChange) {
+          navigate(result.redirectTo, { 
+            state: { user: result.user } 
+          });
+        } else {
+          console.log('Login exitoso:', result.user);
+          // El usuario será redirigido automáticamente por el AuthContext
+        }
       }
     } catch (err) {
       console.error('Error en login:', err);

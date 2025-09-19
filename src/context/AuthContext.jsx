@@ -140,6 +140,19 @@ export const AuthProvider = ({ children }) => {
       const result = await authService.login(credentials);
 
       if (result.success) {
+        // Si el usuario necesita cambiar contraseña, no lo autenticamos completamente
+        if (result.requiresPasswordChange) {
+          dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: false });
+          // Enviar código de verificación automáticamente
+          await authService.sendVerificationCode(result.user.email);
+          return { 
+            success: true, 
+            requiresPasswordChange: true, 
+            redirectTo: '/change-password',
+            user: result.user 
+          };
+        }
+        
         dispatch({ type: AUTH_ACTIONS.SET_USER, payload: result.user });
         return { success: true, user: result.user };
       } else {

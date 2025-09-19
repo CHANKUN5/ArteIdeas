@@ -20,6 +20,7 @@ import Configuracion from "./pages/profile/Configuracion";
 import MiPerfil from "./pages/profile/MiPerfil";
 
 // Importar NUEVAS vistas de autenticación
+import ChangePassword from "./pages/auth/ChangePassword";
 import EnviarCodigo from "./pages/auth/EnviarCodigo";
 import NuevaContrasena from "./pages/auth/NuevaContrasena";
 import ValidarCodigo from "./pages/auth/ValidarCodigo";
@@ -49,6 +50,7 @@ function AppContent() {
     return (
       <Routes>
         <Route path="/" element={<Login />} />
+        <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/enviar-codigo" element={<EnviarCodigo />} />
         <Route path="/validar-codigo" element={<ValidarCodigo />} />
         <Route path="/nueva-contrasena" element={<NuevaContrasena />} />
@@ -60,7 +62,6 @@ function AppContent() {
 
   // Rutas de la aplicación autenticada
   return (
-    <AppProvider>
       <div className="h-screen bg-gray-50 flex overflow-hidden">
         <Sidebar
           isOpen={sidebarOpen}
@@ -87,12 +88,11 @@ function AppContent() {
               {activeSection === "contratos" && <Contratos />}
               {activeSection === "reportes" && <Reportes />}
               {activeSection === "perfil" && <MiPerfil />}
-              {activeSection === "configuracion" && <Configuracion />}
+              {activeSection === "configuracion" && user?.role === 'admin' && <Configuracion />}
             </div>
           </main>
         </div>
       </div>
-    </AppProvider>
   );
 }
 
@@ -100,7 +100,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
+        <AppProvider>
+          <AppContent />
+        </AppProvider>
       </AuthProvider>
     </Router>
   );

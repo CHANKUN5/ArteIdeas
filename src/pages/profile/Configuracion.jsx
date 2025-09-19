@@ -3,8 +3,11 @@ import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
+import { useApp } from '../../context/AppContext';
+import authService from '../../services/authService';
 
 const Configuracion = () => {
+  const { showSuccess, showError } = useApp();
   const [settings, setSettings] = useState({
     security: {
       twoFactor: false,
@@ -21,15 +24,8 @@ const Configuracion = () => {
     }
   });
 
-  const [users, setUsers] = useState([
-    {
-      id: 1,
-      usuario: 'admin',
-      rol: 'Administrador',
-      estado: 'Activo',
-      ultimoAcceso: '2024-03-20 15:30'
-    }
-  ]);
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
 
   const [services, setServices] = useState([
     {
@@ -46,6 +42,37 @@ const Configuracion = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedService, setSelectedService] = useState(null);
   const [deleteItem, setDeleteItem] = useState(null);
+
+  // Cargar usuarios al montar el componente
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      const result = await authService.getUsers();
+      if (result.success) {
+        // Formatear usuarios para la tabla
+        const formattedUsers = result.users.map(user => ({
+          id: user.id,
+          usuario: user.name,
+          email: user.email,
+          rol: user.role === 'admin' ? 'Administrador' : 'Empleado',
+          estado: user.isNewUser ? 'Pendiente' : 'Activo',
+          ultimoAcceso: user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A',
+          originalData: user
+        }));
+        setUsers(formattedUsers);
+      } else {
+        showError(result.error);
+      }
+    } catch (error) {
+      showError('Error al cargar usuarios');
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
 
   const handleSettingChange = (category, field, value) => {
     setSettings(prev => ({
@@ -84,20 +111,29 @@ const Configuracion = () => {
   );
 
   // Funciones para manejar usuarios
-  const handleAddUser = (userData) => {
-    const newUser = {
-      id: users.length + 1,
-      ...userData,
-      ultimoAcceso: new Date().toISOString().slice(0, 16).replace('T', ' ')
-    };
-    setUsers([...users, newUser]);
-    setShowUserModal(false);
+  const handleAddUser = async (userData) => {
+    try {
+      const result = await authService.createUser({
+        name: userData.usuario,
+        email: userData.email,
+        role: userData.rol === 'Administrador' ? 'admin' : 'empleado'
+      });
+
+      if (result.success) {
+        showSuccess(`Usuario ${userData.usuario} creado exitosamente. Contraseña predeterminada: 12345678`);
+        loadUsers(); // Recargar la lista de usuarios
+        setShowUserModal(false);
+      } else {
+        showError(result.error);
+      }
+    } catch (error) {
+      showError('Error al crear usuario');
+    }
   };
 
-  const handleEditUser = (userData) => {
-    setUsers(users.map(user => 
-      user.id === selectedUser.id ? { ...user, ...userData } : user
-    ));
+  const handleEditUser = async (userData) => {
+    // Por ahora, solo mostrar mensaje ya que la edición de usuarios requiere más lógica
+    showError('La edición de usuarios no está implementada en esta versión');
     setSelectedUser(null);
     setShowUserModal(false);
   };
@@ -174,13 +210,16 @@ const Configuracion = () => {
                     Usuario
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Email
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Rol
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Último Acceso
+                    Creado
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
@@ -188,50 +227,81 @@ const Configuracion = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {user.usuario}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.rol}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {user.estado}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {user.ultimoAcceso}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setShowUserModal(true);
-                          }}
-                          className="text-yellow-600 hover:bg-yellow-50"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setDeleteItem({ type: 'user', item: user });
-                            setShowDeleteModal(true);
-                          }}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
+                {loadingUsers ? (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                      Cargando usuarios...
                     </td>
                   </tr>
-                ))}
+                ) : users.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
+                      No hay usuarios registrados
+                    </td>
+                  </tr>
+                ) : (
+                  users.map((user) => (
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {user.usuario}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                        {user.email}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.rol === 'Administrador' 
+                            ? 'bg-purple-100 text-purple-800' 
+                            : 'bg-blue-100 text-blue-800'
+                        }`}>
+                          {user.rol}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.estado === 'Activo' 
+                            ? 'bg-green-100 text-green-800' 
+                            : user.estado === 'Pendiente'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.estado}
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {user.ultimoAcceso}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedUser(user);
+                              setShowUserModal(true);
+                            }}
+                            className="text-yellow-600 hover:bg-yellow-50"
+                            title="Editar usuario"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setDeleteItem({ type: 'user', item: user });
+                              setShowDeleteModal(true);
+                            }}
+                            className="text-red-600 hover:bg-red-50"
+                            title="Eliminar usuario"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -562,44 +632,100 @@ const Configuracion = () => {
 const UserForm = ({ user, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     usuario: user?.usuario || '',
-    rol: user?.rol || 'Usuario',
+    email: user?.email || '',
+    rol: user?.rol || 'Empleado',
     estado: user?.estado || 'Activo'
   });
+
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     if (user) {
       setFormData({
         usuario: user.usuario,
+        email: user.email || '',
         rol: user.rol,
         estado: user.estado
       });
     } else {
       setFormData({
         usuario: '',
-        rol: 'Usuario',
+        email: '',
+        rol: 'Empleado',
         estado: 'Activo'
       });
     }
   }, [user]);
 
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.usuario.trim()) {
+      newErrors.usuario = 'El nombre de usuario es requerido';
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = 'El email es requerido';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'El email no tiene un formato válido';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    if (validateForm()) {
+      onSubmit(formData);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: '' });
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nombre de Usuario
+          Nombre de Usuario *
         </label>
         <input
           type="text"
           value={formData.usuario}
-          onChange={(e) => setFormData({ ...formData, usuario: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          required
+          onChange={(e) => handleChange('usuario', e.target.value)}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none ${
+            errors.usuario ? 'border-red-300' : 'border-gray-300'
+          }`}
+          placeholder="Ingrese el nombre del usuario"
+          disabled={!!user} // Deshabilitar edición del nombre si es edición
         />
+        {errors.usuario && (
+          <p className="mt-1 text-sm text-red-600">{errors.usuario}</p>
+        )}
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">
+          Email *
+        </label>
+        <input
+          type="email"
+          value={formData.email}
+          onChange={(e) => handleChange('email', e.target.value)}
+          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none ${
+            errors.email ? 'border-red-300' : 'border-gray-300'
+          }`}
+          placeholder="usuario@ejemplo.com"
+          disabled={!!user} // Deshabilitar edición del email si es edición
+        />
+        {errors.email && (
+          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+        )}
       </div>
 
       <div>
@@ -608,28 +734,38 @@ const UserForm = ({ user, onSubmit, onCancel }) => {
         </label>
         <select
           value={formData.rol}
-          onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
+          onChange={(e) => handleChange('rol', e.target.value)}
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
         >
-          <option value="Usuario">Usuario</option>
+          <option value="Empleado">Empleado</option>
           <option value="Administrador">Administrador</option>
-          <option value="Editor">Editor</option>
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Estado
-        </label>
-        <select
-          value={formData.estado}
-          onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-        >
-          <option value="Activo">Activo</option>
-          <option value="Inactivo">Inactivo</option>
-        </select>
-      </div>
+      {user && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Estado
+          </label>
+          <select
+            value={formData.estado}
+            onChange={(e) => handleChange('estado', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          >
+            <option value="Activo">Activo</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      )}
+
+      {!user && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            <strong>Nota:</strong> El usuario recibirá la contraseña predeterminada <code className="bg-blue-100 px-1 rounded">12345678</code> y deberá cambiarla en su primer inicio de sesión.
+          </p>
+        </div>
+      )}
 
       <div className="flex justify-end space-x-3 pt-4">
         <Button
