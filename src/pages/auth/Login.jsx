@@ -9,10 +9,10 @@ const Login = () => {
 
   const handleLogin = async (credentials) => {
     clearError();
-    
+
     try {
       const result = await login(credentials);
-      
+
       if (result.success) {
         console.log('Login exitoso:', result.user);
       }
@@ -24,9 +24,9 @@ const Login = () => {
   return (
     <div className={styles.loginContainer}>
       <div className={styles.header}>
-        <img 
+        <img
           src={logoImage} // Usar la imagen importada
-          alt="Logo FOT" 
+          alt="Logo FOT"
           className={styles.headerLogo}
         />
       </div>
@@ -35,11 +35,11 @@ const Login = () => {
         <div className={styles.leftSection}>
           <AnimatedBackground />
         </div>
-        
+
         <div className={styles.rightSection}>
           <div className={styles.formWrapper}>
-            <LoginForm 
-              onLogin={handleLogin} 
+            <LoginForm
+              onLogin={handleLogin}
               error={error}
               loading={loading}
             />
