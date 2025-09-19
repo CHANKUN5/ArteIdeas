@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Camera, Calendar, DollarSign, FileText, User } from 'lucide-react';
+import { Calendar, Camera, DollarSign, FileText, User } from 'lucide-react';
+import { useState } from 'react';
 import Button from '../common/Button';
 
 const ProjectForm = ({ project = null, onSubmit, onCancel }) => {

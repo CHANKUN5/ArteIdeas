@@ -224,27 +224,27 @@ const Clientes = () => {
   );
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="responsive-mobile">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Users className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+              <p className="text-sm text-gray-500">Gestiona tu base de datos de clientes</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
-            <p className="text-sm text-gray-500">Gestiona tu base de datos de clientes</p>
-          </div>
+          <Button 
+            icon={<Plus className="w-4 h-4" />}
+            onClick={() => setShowClientForm(true)}
+            className="bg-primary hover:bg-primary/90 text-white"
+          >
+            Nuevo Cliente
+          </Button>
         </div>
-      </div>
-
-      <div className="flex justify-between items-center mb-6">
-        <button 
-          onClick={() => setShowClientForm(true)}
-          className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-all"
-        >
-          Nuevo Cliente
-        </button>
       </div>
 
       {/* Filtros */}
@@ -277,7 +277,7 @@ const Clientes = () => {
               <option value="Empresa">Empresa</option>
             </select>
           </div>
-          <div className="md:col-span-2 flex items-end">
+          <div className="flex items-end">
             <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all">
               Aplicar Filtros
             </button>
@@ -289,34 +289,34 @@ const Clientes = () => {
       <Card className="border border-primary/10">
         <h3 className="font-semibold text-gray-900 mb-4">Listado de Clientes</h3>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="min-w-full table-auto">
             <thead>
               <tr className="border-b border-gray-200 bg-primary/10">
-                <th className="text-left py-3 px-4 font-medium text-gray-800">ID</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Nombre</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Tipo</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Contacto</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Nombre I.E</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Dirección</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Detalles Adicionales</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">Acciones</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">ID</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Nombre</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Tipo</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Contacto</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Nombre I.E</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Dirección</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Detalles Adicionales</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {paginatedClients.map((client, idx) => (
                 <tr key={client.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-primary/5'} hover:bg-primary/10`}>
-                  <td className="py-3 px-4 text-sm font-medium">
+                  <td className="py-3 px-3 text-sm font-medium">
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">{client.id}</span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{client.nombre}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.nombre}</td>
+                  <td className="py-3 px-3">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${typeColors[client.tipo]}`}>{client.tipo}</span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{client.contacto}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700">{client.ie || '-'}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700 truncate max-w-[220px]">{client.direccion}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700 truncate max-w-[220px]">{client.detalles || '-'}</td>
-                  <td className="py-3 px-4">
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.contacto}</td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.ie || '-'}</td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.direccion}</td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.detalles || '-'}</td>
+                  <td className="py-3 px-3">
                     <div className="flex space-x-2">
                       <button
                         onClick={() => {

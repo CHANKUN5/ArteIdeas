@@ -1,3 +1,4 @@
+import logoImage from '../../assets/icono.png'; // Importar la imagen
 import AnimatedBackground from '../../components/auth/AnimatedBackground';
 import styles from '../../components/auth/Login.module.css';
 import LoginForm from '../../components/auth/LoginForm';
@@ -24,7 +25,7 @@ const Login = () => {
     <div className={styles.loginContainer}>
       <div className={styles.header}>
         <img 
-          src="/icono.png" 
+          src={logoImage} // Usar la imagen importada
           alt="Logo FOT" 
           className={styles.headerLogo}
         />

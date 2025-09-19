@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, CheckCircle, Circle, AlertCircle, ChevronLeft, ChevronRight, Eye, Edit, Trash2 } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Circle, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 
@@ -9,6 +9,8 @@ const Agenda = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filter, setFilter] = useState('todos');
   const [clientFilter, setClientFilter] = useState('');
+  // Nuevo estado para búsqueda de sesiones
+  const [sessionSearch, setSessionSearch] = useState('');
   // Fecha de referencia para el calendario (primer día del mes mostrado)
   const [currentMonthDate, setCurrentMonthDate] = useState(() => {
     const base = new Date();
@@ -94,6 +96,12 @@ const Agenda = () => {
     if (clientFilter.trim()) {
       const term = clientFilter.trim().toLowerCase();
       if (!(event.client || '').toLowerCase().includes(term)) return false;
+    }
+    if (sessionSearch.trim()) {
+      const term = sessionSearch.trim().toLowerCase();
+      if (!(event.title || '').toLowerCase().includes(term) && 
+          !(event.client || '').toLowerCase().includes(term) &&
+          !(event.location || '').toLowerCase().includes(term)) return false;
     }
     if (selectedDate) {
       // Comparación de fecha exacta (YYYY-MM-DD)
@@ -227,16 +235,18 @@ const Agenda = () => {
         </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="flex flex-col md:flex-row gap-4 items-end">
+            {/* Reemplazo del datepicker por búsqueda de sesiones */}
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Sesión</label>
               <div className="relative">
                 <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  type="text"
+                  placeholder="Buscar por título, cliente o ubicación"
+                  value={sessionSearch}
+                  onChange={(e) => setSessionSearch(e.target.value)}
+                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 />
-                <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
               </div>
             </div>
             <div className="flex-1">
@@ -248,12 +258,13 @@ const Agenda = () => {
                 onChange={(e) => setClientFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
-            </div >
+            </div>
             <div className="flex items-end">
               <Button
                 onClick={() => {
                   setSelectedDate('');
                   setClientFilter('');
+                  setSessionSearch('');
                   setFilter('todos');
                 }}
                 className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
@@ -265,6 +276,7 @@ const Agenda = () => {
         </div>
       </div>
 
+      {/* Resto del código permanece igual */}
       {/* Calendario */}
       <div className="mb-6">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -311,6 +323,8 @@ const Agenda = () => {
           </div>
         </div>
       </div>
+      
+      {/* Resto del código permanece igual */}
       {/* Tabla de Sesiones Programadas */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Sesiones Programadas</h2>
@@ -702,7 +716,14 @@ const Agenda = () => {
           </div>
 
           <Modal.Footer>
-            <Button variant="outline" onClick={() => setShowEventForm(false)}>
+            <Button variant="outline" onClick={() => {
+              setShowEventForm(false);
+              setEditingEvent(null);
+              setEventFormData({
+                title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: []
+              });
+              setTaskInput('');
+            }}>
               Cancelar
             </Button>
             <Button onClick={() => {

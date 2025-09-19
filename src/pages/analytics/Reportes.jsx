@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from 'react';
-import { BarChart3, Download, Calendar, Filter, TrendingUp, Users, DollarSign, Package } from 'lucide-react';
-import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import Card from '../../components/common/Card';
+import { BarChart3, Calendar, DollarSign, Download, Filter, Package, TrendingUp, Users } from 'lucide-react';
+import { useMemo, useState } from 'react';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Chart from '../../components/dashboard/Chart';
 
 const Reportes = () => {

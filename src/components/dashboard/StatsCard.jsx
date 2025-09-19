@@ -1,4 +1,5 @@
-import { TrendingDown, TrendingUp } from 'lucide-react';
+import React from 'react';
+import { TrendingUp, TrendingDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const StatsCard = ({ 

@@ -1,21 +1,49 @@
-import React from 'react';
-import { 
-  LayoutDashboard, 
-  Calendar, 
-  ShoppingCart, 
-  Users, 
-  Package, 
-  Settings,
-  FileText,
+import {
   BarChart3,
-  User,
+  Calendar,
+  FileText,
+  LayoutDashboard,
   LogOut,
-  Camera
+  Package,
+  Settings,
+  ShoppingCart,
+  User,
+  Users
 } from 'lucide-react';
+import { useState } from 'react';
+import logoImage from '../../assets/icono.png';
+import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
+import ConfirmationDialog from './ConfirmationDialog';
 
 const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
   const { logout } = useAuth();
+  const { showSuccess } = useApp();
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { user } = useAuth();
+
+  const handleLogoutClick = () => {
+    setShowLogoutDialog(true);
+  };
+
+  const handleLogoutConfirm = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setShowLogoutDialog(false);
+      showSuccess('Sesión cerrada exitosamente', { duration: 3000 });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const handleLogoutCancel = () => {
+    setShowLogoutDialog(false);
+  };
+
   const menuSections = [
     {
       title: 'PRINCIPAL',
@@ -64,73 +92,105 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:z-auto
         w-64 lg:w-64 lg:h-screen
+        flex flex-col
       `}>
-        <div className="p-6 border-b border-gray-100">
+        {/* Header fijo */}
+        <div className="flex-shrink-0 p-6 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-secondary">
-              <Camera className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">FotoStudio</h1>
-              <p className="text-xs text-gray-500">Arte Ideas</p>
+            <div className="flex items-center justify-center w-50 h-20 rounded-lg overflow-hidden ml-12">
+              <img
+                src={logoImage}
+                alt="Logo"
+                className="w-full h-full object-cover"
+              />
             </div>
           </div>
         </div>
 
-        <div className="p-4 border-b border-gray-100">
+        {/* User info fijo */}
+        <div className="flex-shrink-0 p-4 border-b border-gray-100">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary">
+              <img 
+                src={user?.profileImage || '/src/assets/elberc149-profile.jpg'} 
+                alt={user?.name || 'Usuario'} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+              {/* Fallback si la imagen no carga */}
+              <div className="w-full h-full hidden items-center justify-center bg-primary">
+                <User className="w-5 h-5 text-white" />
+              </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-900">Elberc149</p>
-              <p className="text-xs text-gray-500">Administrador</p>
+              <p className="text-sm font-medium text-gray-900">{user?.name || 'Elberc149'}</p>
+              <p className="text-xs text-gray-500">{user?.role || 'Administrador'}</p>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 overflow-y-auto">
-          {menuSections.map((section) => (
-            <div key={section.title} className="mb-6">
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                {section.title}
-              </h3>
-              <ul className="space-y-1">
-                {section.items.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  
-                  const handleClick = () => {
-                    if (item.id === 'logout') {
-                      logout();
-                    } else {
-                      onSectionChange(item.id);
-                    }
-                  };
+        {/* Menú con scroll */}
+        <div className="flex-1 overflow-hidden">
+          <nav className="h-full overflow-y-auto scrollbar-hide">
+            <div className="px-4 py-6">
+              {menuSections.map((section) => (
+                <div key={section.title} className="mb-6">
+                  <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    {section.title}
+                  </h3>
+                  <ul className="space-y-1">
+                    {section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeSection === item.id;
+                      
+                      const handleClick = () => {
+                        if (item.id === 'logout') {
+                          handleLogoutClick();
+                        } else {
+                          onSectionChange(item.id);
+                        }
+                      };
 
-                  return (
-                    <li key={item.id}>
-                      <button
-                        onClick={handleClick}
-                        className={`
-                          w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                          ${isActive 
-                            ? 'bg-primary text-white shadow-md' 
-                            : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-                          }
-                        `}
-                      >
-                        <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
-                        <span>{item.label}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                      return (
+                        <li key={item.id}>
+                          <button
+                            onClick={handleClick}
+                            className={`
+                              w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                              ${isActive 
+                                ? 'bg-primary text-white shadow-md' 
+                                : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                              }
+                            `}
+                          >
+                            <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                            <span>{item.label}</span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
             </div>
-          ))}
-        </nav>
+          </nav>
+        </div>
       </aside>
+
+      <ConfirmationDialog
+        isOpen={showLogoutDialog}
+        onClose={handleLogoutCancel}
+        onConfirm={handleLogoutConfirm}
+        title="Cerrar Sesión"
+        message="¿Estás seguro de que quieres cerrar sesión? Se perderán los datos no guardados."
+        confirmText="Sí, cerrar sesión"
+        cancelText="Cancelar"
+        type="warning"
+        isLoading={isLoggingOut}
+      />
     </>
   );
 };

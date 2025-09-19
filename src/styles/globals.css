@@ -79,6 +79,30 @@ body {
   background: var(--gray-400);
 }
 
+/* ============================================= */
+/* SCROLLBAR INVISIBLE PARA BARRA LATERAL */
+/* ============================================= */
+
+/* 
+  Clase para ocultar completamente la barra de scroll
+  Se usa principalmente en la barra lateral del sidebar
+  para mantener el diseño limpio mientras se permite el scroll
+*/
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Ocultar scrollbar en IE y Edge */
+  scrollbar-width: none;     /* Ocultar scrollbar en Firefox */
+  scroll-behavior: smooth;   /* Scroll suave opcional */
+}
+
+/* Ocultar scrollbar en navegadores WebKit (Chrome, Safari, Opera) */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Completamente invisible pero funcional */
+}
+
+/* ============================================= */
+/* FIN SCROLLBAR INVISIBLE */
+/* ============================================= */
+
 /* Estilos para el tema oscuro */
 [data-theme="dark"] {
   --gray-50: #111827;

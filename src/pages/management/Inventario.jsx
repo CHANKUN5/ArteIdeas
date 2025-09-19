@@ -1,30 +1,26 @@
-import React, { useState } from 'react';
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Filter, 
-  AlertTriangle, 
-  Edit, 
-  Trash2, 
-  TrendingUp, 
-  TrendingDown, 
-  Eye,
-  Frame,
-  Truck,
-  GraduationCap,
-  Wrench,
-  CheckCircle,
+import {
+  AlertTriangle,
+  Edit,
   FileText,
-  Paintbrush,
-  Printer,
-  Palette
+  Frame,
+  GraduationCap,
+  Package,
+  Palette,
+  Plus,
+  Search,
+  Trash2,
+  TrendingUp,
+  Truck,
+  Wrench
 } from 'lucide-react';
-import Card from '../../components/common/Card';
+import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
+import { useApp } from '../../context/AppContext';
 
 const Inventario = () => {
+  const { showSuccess, showError } = useApp();
   const [inventory, setInventory] = useState([
     {
       id: 'INV001',
@@ -85,6 +81,27 @@ const Inventario = () => {
   const [activeSubTab, setActiveSubTab] = useState('Pinturas y Acabados');
   const [showItemModal, setShowItemModal] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [showStockModal, setShowStockModal] = useState(false);
+  const [stockTargetItem, setStockTargetItem] = useState(null);
+  const [stockOperation, setStockOperation] = useState('increase');
+
+  // Cargar inventario desde localStorage (si existe)
+  useEffect(() => {
+    const saved = localStorage.getItem('inventoryData');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length) {
+          setInventory(parsed);
+        }
+      } catch {}
+    }
+  }, []);
+
+  // Guardar inventario en localStorage ante cambios
+  useEffect(() => {
+    localStorage.setItem('inventoryData', JSON.stringify(inventory));
+  }, [inventory]);
 
   // Configuración de pestañas principales
   const mainTabs = [
@@ -142,6 +159,7 @@ const Inventario = () => {
   const handleDeleteItem = (itemId) => {
     if (window.confirm('¿Estás seguro de eliminar este artículo del inventario?')) {
       setInventory(inventory.filter(item => item.id !== itemId));
+      showSuccess('Producto eliminado del inventario');
     }
   };
 
@@ -151,11 +169,72 @@ const Inventario = () => {
     setSelectedItem(null);
     setIsAlertMode(alertMode);
     setShowItemModal(true);
+    // Limpiar búsqueda para que el nuevo producto sea visible inmediatamente
+    setSearchTerm('');
+  };
+  
+  // Función específica para registrar producto sin modo alerta
+  const handleAddProduct = () => {
+    setSelectedItem(null);
+    setIsAlertMode(false);
+    setShowItemModal(true);
+    setSearchTerm('');
   };
 
   const handleEditItem = (item) => {
     setSelectedItem(item);
     setShowItemModal(true);
+  };
+
+  // Abrir modal para registrar/ajustar stock
+  const handleOpenStockModal = (item) => {
+    setStockTargetItem(item);
+    setStockOperation('increase');
+    setShowStockModal(true);
+  };
+  
+  // Función específica para abrir el modal de stock sin un item preseleccionado
+  const handleRegisterStock = () => {
+    setStockTargetItem(null);
+    setStockOperation('increase');
+    setShowStockModal(true);
+  };
+
+  // Aplicar cambio de stock
+  const applyStockChange = () => {
+    if (!stockTargetItem) {
+      showError('Por favor selecciona un producto primero');
+      return;
+    }
+    const qtyInput = document.getElementById('inv_stock_qty');
+    const qty = parseInt(qtyInput?.value || '0', 10);
+    if (isNaN(qty) || qty < 0) {
+      showError('Por favor ingresa una cantidad válida');
+      return;
+    }
+    
+    let newStock = stockTargetItem.stock;
+    
+    // Calcular nuevo stock según la operación
+    if (stockOperation === 'increase') {
+      newStock += qty;
+    } else if (stockOperation === 'decrease') {
+      newStock = Math.max(0, newStock - qty);
+    } else if (stockOperation === 'set') {
+      newStock = qty;
+    }
+    
+    // Actualizar el inventario
+    const updatedInventory = inventory.map(item => 
+      item.id === stockTargetItem.id 
+        ? {...item, stock: newStock, ultimaVenta: new Date().toISOString().split('T')[0]} 
+        : item
+    );
+    
+    setInventory(updatedInventory);
+    showSuccess(`Stock actualizado: ${stockTargetItem.nombre} - ${newStock} ${stockTargetItem.unidad}`);
+    setShowStockModal(false);
+    setStockTargetItem(null);
   };
 
   // Función para obtener el color de alerta según el nivel de stock
@@ -182,28 +261,28 @@ const Inventario = () => {
 
       {/* Tarjetas de resumen */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        <Card className="text-center">
-          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-            <Package className="w-6 h-6 text-blue-600" />
+        <Card className="text-center hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Package className="w-6 h-6 text-primary" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900">{totalInsumos}</h3>
           <p className="text-sm text-gray-500">Insumos</p>
         </Card>
         
-        <Card className="text-center">
-          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-            <Frame className="w-6 h-6 text-blue-600" />
+        <Card className="text-center hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <Frame className="w-6 h-6 text-primary" />
           </div>
           <h3 className="text-2xl font-bold text-gray-900">{totalStockProductos}</h3>
           <p className="text-sm text-gray-500">Stock de Productos</p>
         </Card>
         
-        <Card className="text-center bg-orange-50 border-orange-200">
-          <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-            <AlertTriangle className="w-6 h-6 text-orange-600" />
+        <Card className="text-center hover:shadow-md transition-shadow">
+          <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+            <AlertTriangle className="w-6 h-6 text-red-600" />
           </div>
-          <h3 className="text-2xl font-bold text-orange-600">{totalAlertas}</h3>
-          <p className="text-sm text-gray-500">Alertas</p>
+          <h3 className="text-2xl font-bold text-gray-900">{totalAlertas}</h3>
+          <p className="text-sm text-gray-500">Alertas de Stock</p>
         </Card>
       </div>
 
@@ -383,6 +462,15 @@ const Inventario = () => {
                       <Button
                         variant="ghost"
                         size="sm"
+                        onClick={() => handleOpenStockModal(item)}
+                        className="text-green-600 hover:bg-green-50"
+                      >
+                        <TrendingUp className="w-4 h-4" />
+                        <span className="ml-1">Stock</span>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => handleEditItem(item)}
                         className="text-blue-600 hover:bg-blue-50"
                       >
@@ -404,15 +492,25 @@ const Inventario = () => {
           </table>
         </div>
 
-        {/* Botón de agregar */}
+        {/* Acciones inferiores */}
         <div className="px-6 py-4 border-t border-gray-200">
-          <Button
-            onClick={handleAddItem}
-            icon={<Plus className="w-4 h-4" />}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Agregar Producto
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button
+              onClick={handleAddProduct}
+              icon={<Plus className="w-4 h-4" />}
+              className="bg-primary hover:bg-primary/90 text-white font-medium"
+            >
+              Registrar Producto
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleRegisterStock}
+              className="border-green-600 text-green-600 hover:bg-green-50 font-medium"
+              icon={<TrendingUp className="w-4 h-4" />}
+            >
+              Registrar Stock
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -476,6 +574,8 @@ const Inventario = () => {
                   type="text" 
                   className="form-input" 
                   placeholder="Nombre del producto" 
+                  required
+                  autoFocus
                 />
               </div>
               <div>
@@ -486,6 +586,7 @@ const Inventario = () => {
                   type="text" 
                   className="form-input" 
                   placeholder="Tipo de producto" 
+                  required
                 />
               </div>
               <div>
@@ -553,12 +654,20 @@ const Inventario = () => {
                   setInventory(prev => prev.map(i => i.id === productoExistente.id ? updated : i));
                 }
               } else {
+                // Validación básica
+                const nombreVal = document.getElementById('inv_nombre').value.trim();
+                const tipoVal = document.getElementById('inv_tipo').value.trim();
+                if (!nombreVal || !tipoVal) {
+                  showError('Completa al menos Nombre y Tipo del producto');
+                  return;
+                }
+
                 // Lógica normal para agregar/editar producto
                 const updated = {
                   id: selectedItem?.id || `INV${String(inventory.length + 1).padStart(3,'0')}`,
-                  nombre: document.getElementById('inv_nombre').value,
+                  nombre: nombreVal,
                   categoria: activeSubTab,
-                  tipo: document.getElementById('inv_tipo').value,
+                  tipo: tipoVal,
                   stock: parseInt(document.getElementById('inv_stock').value || '0', 10),
                   stockMinimo: parseInt(document.getElementById('inv_stock_min').value || '0', 10),
                   unidad: document.getElementById('inv_unidad').value,
@@ -570,8 +679,10 @@ const Inventario = () => {
                 
                 if (selectedItem) {
                   setInventory(prev => prev.map(i => i.id === selectedItem.id ? updated : i));
+                  showSuccess('Producto actualizado');
                 } else {
                   setInventory(prev => [updated, ...prev]);
+                  showSuccess('Producto registrado');
                 }
               }
               
@@ -579,7 +690,88 @@ const Inventario = () => {
               setSelectedItem(null);
               setIsAlertMode(false);
             }}>
-              {selectedItem ? 'Guardar Cambios' : isAlertMode ? 'Crear Alerta' : 'Agregar Producto'}
+              {selectedItem ? 'Guardar Cambios' : isAlertMode ? 'Crear Alerta' : 'Registrar Producto'}
+            </Button>
+          </Modal.Footer>
+        </div>
+      </Modal>
+
+      {/* Modal para registrar/ajustar stock */}
+      <Modal
+        isOpen={showStockModal}
+        onClose={() => {
+          setShowStockModal(false);
+          setStockTargetItem(null);
+        }}
+        title={stockTargetItem ? `Registrar Stock: ${stockTargetItem.nombre}` : 'Registrar Stock'}
+        size="md"
+      >
+        <div className="space-y-4">
+          {!stockTargetItem && (
+            <div>
+              <label className="form-label">Seleccionar Producto</label>
+              <select 
+                className="form-select" 
+                onChange={(e) => {
+                  const selectedId = e.target.value;
+                  const item = inventory.find(item => item.id === selectedId);
+                  setStockTargetItem(item);
+                }}
+                defaultValue=""
+              >
+                <option value="" disabled>Selecciona un producto</option>
+                {inventory.map(item => (
+                  <option key={item.id} value={item.id}>
+                    {item.nombre} - Stock actual: {item.stock}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          <div>
+            <label className="form-label">Operación</label>
+            <div className="flex gap-2">
+              <button
+                className={`px-3 py-1.5 rounded-md text-sm border ${stockOperation === 'increase' ? 'bg-green-600 text-white border-green-600' : 'border-gray-300 text-gray-700'}`}
+                onClick={() => setStockOperation('increase')}
+              >
+                Aumentar
+              </button>
+              <button
+                className={`px-3 py-1.5 rounded-md text-sm border ${stockOperation === 'decrease' ? 'bg-red-600 text-white border-red-600' : 'border-gray-300 text-gray-700'}`}
+                onClick={() => setStockOperation('decrease')}
+              >
+                Disminuir
+              </button>
+              <button
+                className={`px-3 py-1.5 rounded-md text-sm border ${stockOperation === 'set' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 text-gray-700'}`}
+                onClick={() => setStockOperation('set')}
+              >
+                Establecer
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="form-label">Cantidad</label>
+            <input id="inv_stock_qty" type="number" min="0" className="form-input" defaultValue={0} />
+          </div>
+
+          {stockTargetItem && (
+            <div className="text-sm text-gray-600">
+              Stock actual: <span className="font-medium text-gray-900">{stockTargetItem.stock}</span>
+            </div>
+          )}
+
+          <Modal.Footer>
+            <Button variant="outline" onClick={() => {
+              setShowStockModal(false);
+              setStockTargetItem(null);
+            }}>
+              Cancelar
+            </Button>
+            <Button onClick={applyStockChange}>
+              Guardar
             </Button>
           </Modal.Footer>
         </div>
