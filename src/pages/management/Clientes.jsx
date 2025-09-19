@@ -346,7 +346,7 @@ const Clientes = () => {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteClient(client.id)}
+                        onClick={() => handleDeleteClient(client)}
                         className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
                       >
                         <Trash2 className="w-4 h-4" />
