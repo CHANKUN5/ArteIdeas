@@ -8,9 +8,10 @@ const Agenda = () => {
   const [showEventModal, setShowEventModal] = useState(false); // Detalles del evento
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [filter, setFilter] = useState('todos');
-  const [clientFilter, setClientFilter] = useState('');
   // Nuevo estado para búsqueda de sesiones
   const [sessionSearch, setSessionSearch] = useState('');
+  // Estado para filtro de estado
+  const [statusFilter, setStatusFilter] = useState('todos');
   // Fecha de referencia para el calendario (primer día del mes mostrado)
   const [currentMonthDate, setCurrentMonthDate] = useState(() => {
     const base = new Date();
@@ -93,15 +94,15 @@ const Agenda = () => {
 
   const filteredEvents = events.filter(event => {
     if (filter !== 'todos' && event.type !== filter) return false;
-    if (clientFilter.trim()) {
-      const term = clientFilter.trim().toLowerCase();
-      if (!(event.client || '').toLowerCase().includes(term)) return false;
-    }
     if (sessionSearch.trim()) {
       const term = sessionSearch.trim().toLowerCase();
       if (!(event.title || '').toLowerCase().includes(term) && 
           !(event.client || '').toLowerCase().includes(term) &&
           !(event.location || '').toLowerCase().includes(term)) return false;
+    }
+    if (statusFilter !== 'todos') {
+      const eventStatus = event.status || deriveStatusFromType(event.type);
+      if (eventStatus !== statusFilter) return false;
     }
     if (selectedDate) {
       // Comparación de fecha exacta (YYYY-MM-DD)
@@ -210,21 +211,16 @@ const Agenda = () => {
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-primary" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
+              <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
-            <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Sección de Filtros */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
           <Button 
             icon={<Plus className="w-4 h-4" />}
             onClick={() => setShowEventForm(true)}
@@ -233,9 +229,15 @@ const Agenda = () => {
             Nueva Sesión
           </Button>
         </div>
+      </div>
+
+      {/* Sección de Filtros */}
+      <div className="mb-6">
+        <div className="mb-4">
+          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
+        </div>
         <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex flex-col md:flex-row gap-4 items-end">
-            {/* Reemplazo del datepicker por búsqueda de sesiones */}
+          <div className="flex flex-col md:flex-row gap-6 items-end">
             <div className="flex-1">
               <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Sesión</label>
               <div className="relative">
@@ -250,21 +252,24 @@ const Agenda = () => {
               </div>
             </div>
             <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cliente</label>
-              <input
-                type="text"
-                placeholder="Buscar por cliente"
-                value={clientFilter}
-                onChange={(e) => setClientFilter(e.target.value)}
+              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
+              >
+                <option value="todos">Todos los estados</option>
+                <option value="pendiente">Pendiente</option>
+                <option value="confirmado">Confirmada</option>
+                <option value="completado">Completada</option>
+              </select>
             </div>
             <div className="flex items-end">
               <Button
                 onClick={() => {
                   setSelectedDate('');
-                  setClientFilter('');
                   setSessionSearch('');
+                  setStatusFilter('todos');
                   setFilter('todos');
                 }}
                 className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
@@ -383,7 +388,9 @@ const Agenda = () => {
                         event.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
                         'bg-green-100 text-green-800'
                       }`}>
-                        {event.status === 'confirmado' ? 'proceso' : event.status}
+                        {event.status === 'confirmado' ? 'Confirmada' : 
+                         event.status === 'pendiente' ? 'Pendiente' :
+                         event.status === 'completado' ? 'Completada' : event.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -521,7 +528,20 @@ const Agenda = () => {
             )}
             
             <div className="mt-6">
-              <h4 className="text-sm font-medium text-gray-700 mb-2">Tareas relacionadas</h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-medium text-gray-700">Tareas relacionadas</h4>
+                <div className="text-xs text-gray-500">
+                  {Array.isArray(selectedEvent.tasks) ? selectedEvent.tasks.filter(t => t.completed).length : 0} de {Array.isArray(selectedEvent.tasks) ? selectedEvent.tasks.length : 0} completadas
+                </div>
+              </div>
+              <div className="mb-3">
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                    style={{ width: `${getProgress(selectedEvent)}%` }}
+                  ></div>
+                </div>
+              </div>
               <div className="space-y-2 bg-gray-50 p-3 rounded-lg">
                 {Array.isArray(selectedEvent.tasks) && selectedEvent.tasks.length > 0 ? (
                   selectedEvent.tasks.map((t) => (
@@ -529,7 +549,6 @@ const Agenda = () => {
                       key={t.id}
                       task={t}
                       onToggle={() => {
-                        // Solo actualizar en memoria del modal; guardar con "Confirmar"
                         setSelectedEvent(prev => {
                           if (!prev) return prev;
                           const updatedTasks = (prev.tasks || []).map(task => task.id === t.id ? { ...task, completed: !task.completed } : task);
@@ -652,6 +671,19 @@ const Agenda = () => {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <select
+                name="status"
+                value={eventFormData.status}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                <option value="pendiente">Pendiente</option>
+                <option value="confirmado">Confirmada</option>
+                <option value="completado">Completada</option>
+              </select>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Participantes</label>
               <input
                 type="number"
@@ -687,13 +719,21 @@ const Agenda = () => {
             </div>
             <div className="col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Tareas relacionadas</label>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mb-3">
                 <input
                   type="text"
                   value={taskInput}
                   onChange={(e) => setTaskInput(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                   placeholder="Nombre de la tarea"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const name = taskInput.trim();
+                      if (!name) return;
+                      setEventFormData(prev => ({ ...prev, tasks: [...(prev.tasks || []), { id: Date.now(), name, completed: false }] }));
+                      setTaskInput('');
+                    }
+                  }}
                 />
                 <Button onClick={() => {
                   const name = taskInput.trim();
@@ -703,11 +743,44 @@ const Agenda = () => {
                 }}>Añadir</Button>
               </div>
               {Array.isArray(eventFormData.tasks) && eventFormData.tasks.length > 0 && (
-                <div className="mt-2 space-y-2">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-gray-500">
+                      {eventFormData.tasks.filter(t => t.completed).length} de {eventFormData.tasks.length} completadas
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
+                    <div 
+                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                      style={{ width: `${getProgress({ tasks: eventFormData.tasks })}%` }}
+                    ></div>
+                  </div>
                   {eventFormData.tasks.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
-                      <span className="text-sm text-gray-700">{t.name}</span>
-                      <button className="text-red-500 text-sm" onClick={() => setEventFormData(prev => ({ ...prev, tasks: prev.tasks.filter(x => x.id !== t.id) }))}>Eliminar</button>
+                    <div key={t.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div 
+                          className={`w-4 h-4 rounded-full border flex items-center justify-center cursor-pointer ${
+                            t.completed ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
+                          }`}
+                          onClick={() => setEventFormData(prev => ({
+                            ...prev,
+                            tasks: prev.tasks.map(task => 
+                              task.id === t.id ? { ...task, completed: !task.completed } : task
+                            )
+                          }))}
+                        >
+                          {t.completed && <div className="w-2 h-2 bg-white rounded-full"></div>}
+                        </div>
+                        <span className={`text-sm ${t.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                          {t.name}
+                        </span>
+                      </div>
+                      <button 
+                        className="text-red-500 text-sm hover:text-red-700" 
+                        onClick={() => setEventFormData(prev => ({ ...prev, tasks: prev.tasks.filter(x => x.id !== t.id) }))}
+                      >
+                        Eliminar
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -735,16 +808,14 @@ const Agenda = () => {
                 // Actualizar
                 setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { 
                   ...editingEvent, 
-                  ...eventFormData,
-                  status: deriveStatusFromType(eventFormData.type)
+                  ...eventFormData
                 } : ev));
               } else {
                 // Crear simulado
                 const nextId = (events.reduce((max, ev) => Math.max(max, Number(ev.id) || 0), 0) + 1) || 1;
                 const newEvent = { 
                   id: nextId, 
-                  ...eventFormData,
-                  status: deriveStatusFromType(eventFormData.type)
+                  ...eventFormData
                 };
                 setEvents(prev => [newEvent, ...prev]);
               }
