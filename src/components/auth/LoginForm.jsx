@@ -127,8 +127,8 @@ const LoginForm = ({ onLogin, error, loading }) => {
           )}
         </div>
 
-        <div className="text-right mb-3">
-          <Link to="/enviar-codigo" className="text-blue-600 hover:underline text-sm">
+        <div className={`text-right ${styles.forgotPasswordContainer}`}>
+          <Link to="/enviar-codigo" className={`${styles.forgotPasswordLink} text-sm`}>
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
