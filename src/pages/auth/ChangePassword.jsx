@@ -86,7 +86,6 @@ const ChangePassword = () => {
     try {
       const result = await authService.changeNewUserPassword(
         userData.email, 
-        verificationCode, 
         passwordData.newPassword
       );
       
