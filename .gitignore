@@ -1,0 +1,38 @@
+# Dependencias
+node_modules/
+
+# Build
+build/
+
+# Archivos de logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos de lock (evitar conflictos en equipos)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Archivos de entorno
+.env
+.env.*
+!.env.example   # Se permite un archivo de ejemplo
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Configuraciones de IDEs/editores
+.vscode/
+.idea/
+*.swp
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Archivos generados por Vite
+*.tsbuildinfo
+*.map
