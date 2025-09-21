@@ -12,8 +12,10 @@ import {
 import Button from "../../components/common/Button";
 import Card from "../../components/common/Card";
 import Modal from "../../components/common/Modal";
+import { useApp } from "../../context/AppContext";
 
 const Pedidos = () => {
+  const { notifyNewOrder, notifyOrderAction } = useApp();
   const [orders, setOrders] = useState([]);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
@@ -128,6 +130,9 @@ const Pedidos = () => {
       setOrders((prev) =>
         prev.map((o) => (o.id === selectedOrder.id ? { ...o, ...formData } : o))
       );
+      
+      // Notificación persistente para edición
+      notifyOrderAction('edit', { ...selectedOrder, ...formData });
     } else {
       // Crear nuevo
       const newOrder = {
@@ -135,6 +140,9 @@ const Pedidos = () => {
         ...formData,
       };
       setOrders((prev) => [newOrder, ...prev]);
+      
+      // Notificación persistente para nuevo pedido
+        notifyNewOrder(newOrder, formData.cliente);
     }
 
     setShowOrderForm(false);
@@ -144,7 +152,14 @@ const Pedidos = () => {
 
   const handleDeleteOrder = (orderId) => {
     // Eliminar sin window.confirm; el control se hace vía Modal
+    const orderToRemove = orders.find(order => order.id === orderId);
     setOrders(orders.filter((order) => order.id !== orderId));
+    
+    // Notificación persistente para eliminación de pedido
+    if (orderToRemove) {
+      notifyOrderAction('delete', orderToRemove);
+    }
+    
     setConfirmDeleteOpen(false);
     setOrderToDelete(null);
   };

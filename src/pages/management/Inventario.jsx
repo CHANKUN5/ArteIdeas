@@ -20,7 +20,13 @@ import Modal from '../../components/common/Modal';
 import { useApp } from '../../context/AppContext';
 
 const Inventario = () => {
-  const { showSuccess, showError } = useApp();
+  const { 
+    showSuccess, 
+    showError, 
+    notifyNewProduct, 
+    notifyProductAction, 
+    notifyLowStock 
+  } = useApp();
   const [inventory, setInventory] = useState([
     {
       id: 'INV001',
@@ -167,6 +173,10 @@ const Inventario = () => {
     if (itemToDelete) {
       setInventory(inventory.filter(item => item.id !== itemToDelete.id));
       showSuccess('Producto eliminado del inventario');
+      
+      // Notificación persistente para eliminación
+       notifyProductAction('delete', itemToDelete);
+      
       setShowDeleteModal(false);
       setItemToDelete(null);
     }
@@ -242,6 +252,12 @@ const Inventario = () => {
     
     setInventory(updatedInventory);
     showSuccess(`Stock actualizado: ${stockTargetItem.nombre} - ${newStock} ${stockTargetItem.unidad}`);
+    
+    // Verificar si el stock está bajo y enviar notificación
+     if (newStock <= stockTargetItem.stockMinimo) {
+       notifyLowStock({...stockTargetItem, stock: newStock});
+     }
+    
     setShowStockModal(false);
     setStockTargetItem(null);
   };
@@ -689,9 +705,15 @@ const Inventario = () => {
                 if (selectedItem) {
                   setInventory(prev => prev.map(i => i.id === selectedItem.id ? updated : i));
                   showSuccess('Producto actualizado');
+                  
+                  // Notificación persistente para edición
+                   notifyProductAction('edit', updated);
                 } else {
                   setInventory(prev => [updated, ...prev]);
                   showSuccess('Producto registrado');
+                  
+                  // Notificación persistente para creación
+                   notifyNewProduct(updated);
                 }
               }
               

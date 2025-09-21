@@ -1,59 +1,69 @@
-import { Bell, Settings, User } from 'lucide-react';
+import { Bell, Settings, User, X, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useApp } from '../../context/AppContext';
+import NotificationModal from './NotificationModal';
 
 const Header = ({ onToggleSidebar, onSectionChange }) => {
   const [showNotifications, setShowNotifications] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { 
+    persistentNotifications, 
+    unreadCount, 
+    markNotificationAsRead, 
+    markAllNotificationsAsRead,
+    removePersistentNotification,
+    clearAllNotifications
+  } = useApp();
 
-  // Datos de ejemplo para notificaciones
-  const notifications = [
-    {
-      id: 1,
-      title: 'Nuevo pedido recibido',
-      message: 'Juan Pérez ha realizado un nuevo pedido de impresión',
-      time: 'Hace 5 minutos',
-      read: false,
-      type: 'pedido'
-    },
-    {
-      id: 2,
-      title: 'Stock bajo',
-      message: 'Moldura Clásica Negra tiene solo 5 unidades en stock',
-      time: 'Hace 2 horas',
-      read: false,
-      type: 'inventario'
-    },
-    {
-      id: 3,
-      title: 'Cita programada',
-      message: 'Tienes una cita con María López mañana a las 10:00 AM',
-      time: 'Hace 1 día',
-      read: true,
-      type: 'agenda'
-    }
-  ];
-
-  const unreadNotifications = notifications.filter(notif => !notif.read).length;
+  const notifications = persistentNotifications || [];
+  const unreadNotifications = unreadCount;
 
   const handleNotificationClick = (notification) => {
-    // Redirigir según el tipo de notificación
-    switch (notification.type) {
-      case 'pedido':
-        navigate('/pedidos');
-        break;
-      case 'inventario':
-        navigate('/inventario');
-        break;
-      case 'agenda':
-        navigate('/agenda');
-        break;
-      default:
-        break;
-    }
+    setSelectedNotification(notification);
+    setShowModal(true);
     setShowNotifications(false);
+  };
+
+  const handleModalClose = () => {
+    setShowModal(false);
+    setSelectedNotification(null);
+  };
+
+  const handleMarkAsRead = (notificationId) => {
+    markNotificationAsRead(notificationId);
+  };
+
+  const handleMarkAllAsRead = () => {
+    markAllNotificationsAsRead();
+  };
+
+  const handleDeleteNotification = (e, notificationId) => {
+    e.stopPropagation(); // Evitar que se abra el modal
+    removePersistentNotification(notificationId);
+  };
+
+  const handleClearAllNotifications = () => {
+    clearAllNotifications();
+  };
+
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const notificationTime = new Date(timestamp);
+    const diffInMinutes = Math.floor((now - notificationTime) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Ahora mismo';
+    if (diffInMinutes < 60) return `Hace ${diffInMinutes} minuto${diffInMinutes > 1 ? 's' : ''}`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `Hace ${diffInHours} hora${diffInHours > 1 ? 's' : ''}`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `Hace ${diffInDays} día${diffInDays > 1 ? 's' : ''}`;
   };
 
   return (
@@ -92,11 +102,22 @@ const Header = ({ onToggleSidebar, onSectionChange }) => {
               <div className="p-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900">Notificaciones</h3>
-                  {unreadNotifications > 0 && (
-                    <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">
-                      {unreadNotifications} nuevas
-                    </span>
-                  )}
+                  <div className="flex items-center space-x-2">
+                    {unreadNotifications > 0 && (
+                      <span className="bg-primary text-white text-xs px-2 py-1 rounded-full">
+                        {unreadNotifications} nuevas
+                      </span>
+                    )}
+                    {notifications.length > 0 && (
+                      <button
+                        onClick={handleClearAllNotifications}
+                        className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                        title="Eliminar todas las notificaciones"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
               
@@ -115,33 +136,50 @@ const Header = ({ onToggleSidebar, onSectionChange }) => {
                       }`}
                     >
                       <div className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                          !notification.read ? 'bg-primary' : 'bg-gray-300'
-                        }`}></div>
-                        <div className="flex-1">
-                          <h4 className={`font-medium ${
-                            !notification.read ? 'text-gray-900' : 'text-gray-600'
-                          }`}>
-                            {notification.title}
-                          </h4>
-                          <p className="text-sm text-gray-600 mt-1">
+                        <div className="flex-shrink-0 mt-1">
+                          <span className="text-lg">{notification.icon || '📢'}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2">
+                            <h4 className={`font-medium text-sm ${
+                              !notification.read ? 'text-gray-900' : 'text-gray-600'
+                            }`}>
+                              {notification.title}
+                            </h4>
+                            {!notification.read && (
+                              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
                             {notification.message}
                           </p>
                           <p className="text-xs text-gray-400 mt-2">
-                            {notification.time}
+                            {formatTimeAgo(notification.timestamp)}
                           </p>
                         </div>
+                        <button
+                          onClick={(e) => handleDeleteNotification(e, notification.id)}
+                          className="flex-shrink-0 p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
+                          title="Eliminar notificación"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
                       </div>
                     </button>
                   ))
                 )}
               </div>
               
-              <div className="p-3 border-t border-gray-200 bg-gray-50">
-                <button className="text-sm text-primary hover:text-primary/80 font-medium">
-                  Marcar todas como leídas
-                </button>
-              </div>
+              {notifications.length > 0 && (
+                <div className="p-3 border-t border-gray-200 bg-gray-50">
+                  <button 
+                    onClick={handleMarkAllAsRead}
+                    className="text-sm text-primary hover:text-primary/80 font-medium"
+                  >
+                    Marcar todas como leídas
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -178,6 +216,15 @@ const Header = ({ onToggleSidebar, onSectionChange }) => {
           </div>
         </div>
       </div>
+
+      {/* Modal de notificaciones */}
+      <NotificationModal
+        notification={selectedNotification}
+        isOpen={showModal}
+        onClose={handleModalClose}
+        onMarkAsRead={handleMarkAsRead}
+        onDelete={handleDeleteNotification}
+      />
     </header>
   );
 };
