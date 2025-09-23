@@ -79,6 +79,71 @@ const Inventario = () => {
       proveedor: 'Acabados Pro',
       fechaIngreso: '2025-05-25',
       ultimaVenta: '2025-06-06'
+    },
+    {
+      id: 'INV005',
+      nombre: 'Papel Fotográfico 15x20',
+      categoria: 'Papel',
+      tipo: 'Papel',
+      stock: 25,
+      stockMinimo: 10,
+      unidad: 'rollos',
+      precio: 0.65,
+      proveedor: 'Kodak Perú',
+      fechaIngreso: '2025-06-10',
+      ultimaVenta: '2025-06-12'
+    },
+    {
+      id: 'INV006',
+      nombre: 'Revelador C-41',
+      categoria: 'Químicos',
+      tipo: 'Químico',
+      stock: 8,
+      stockMinimo: 5,
+      unidad: 'L',
+      precio: 45.00,
+      proveedor: 'Químicos Fotográficos SAC',
+      fechaIngreso: '2025-06-08',
+      ultimaVenta: '2025-06-15'
+    },
+    {
+      id: 'INV007',
+      nombre: 'Fijador Universal',
+      categoria: 'Químicos',
+      tipo: 'Químico',
+      stock: 6,
+      stockMinimo: 3,
+      unidad: 'L',
+      precio: 32.50,
+      proveedor: 'Químicos Fotográficos SAC',
+      fechaIngreso: '2025-06-08',
+      ultimaVenta: '2025-06-15'
+    },
+    {
+      id: 'INV008',
+      nombre: 'Papel Fotográfico Blanco/Negro',
+      categoria: 'Papel',
+      tipo: 'Papel',
+      stock: 15,
+      stockMinimo: 8,
+      unidad: 'rollos',
+      precio: 0.55,
+      proveedor: 'Ilford Perú',
+      fechaIngreso: '2025-06-12',
+      ultimaVenta: '2025-06-16'
+    },
+    {
+      id: 'INV009',
+      nombre: 'Revelador D-76',
+      categoria: 'Químicos',
+      tipo: 'Químico',
+      stock: 4,
+      stockMinimo: 2,
+      unidad: 'L',
+      precio: 28.00,
+      proveedor: 'Químicos Fotográficos SAC',
+      fechaIngreso: '2025-06-12',
+      ultimaVenta: '2025-06-16'
     }
   ]);
 
