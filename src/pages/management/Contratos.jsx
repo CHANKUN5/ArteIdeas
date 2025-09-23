@@ -1,10 +1,12 @@
 import jsPDF from 'jspdf';
 // CORRECTO ✅
-import { Calendar, ChevronDown, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X } from 'lucide-react';
+import { Calendar, ChevronDown, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X, Settings, Package, Paperclip } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
+import Drawer from '../../components/common/Drawer';
+import ContractTabs from '../../components/contracts/ContractTabs';
 
 const Contratos = () => {
   // Datos iniciales por defecto
@@ -140,10 +142,10 @@ const Contratos = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('todos');
   const [typeFilter, setTypeFilter] = useState('todos');
-  const [showContractModal, setShowContractModal] = useState(false);
+  const [showContractDrawer, setShowContractDrawer] = useState(false);
   const [selectedContract, setSelectedContract] = useState(null);
-  const [showNewContractModal, setShowNewContractModal] = useState(false);
-  const [showEditContractModal, setShowEditContractModal] = useState(false);
+  const [showNewContractDrawer, setShowNewContractDrawer] = useState(false);
+  const [showEditContractDrawer, setShowEditContractDrawer] = useState(false);
   const [editingContract, setEditingContract] = useState(null);
   const [newContract, setNewContract] = useState({
     cliente: '',
@@ -153,11 +155,16 @@ const Contratos = () => {
     fechaFin: '',
     valor: '',
     pagado: '',
-    estado: 'Pendiente',
+    estado: 'Borrador',
     estudiantes: '',
+    estudiantesAtendidos: '',
+    productosIncluidos: '',
+    fechaEntregaPactada: '',
+    formaPago: 'Efectivo',
     observaciones: '',
     clausulas: [''],
-    responsable: ''
+    responsable: '',
+    pagos: []
   });
   const [editContract, setEditContract] = useState({
     cliente: '',
@@ -167,20 +174,31 @@ const Contratos = () => {
     fechaFin: '',
     valor: '',
     pagado: '',
-    estado: 'Pendiente',
+    estado: 'Borrador',
     estudiantes: '',
+    estudiantesAtendidos: '',
+    productosIncluidos: '',
+    fechaEntregaPactada: '',
+    formaPago: 'Efectivo',
     observaciones: '',
     clausulas: [''],
-    responsable: ''
+    responsable: '',
+    pagos: []
   });
   const [errors, setErrors] = useState({});
   const [editErrors, setEditErrors] = useState({});
   const [currentPage, setCurrentPage] = useState(1); // <-- estado para la página actual
 
   const statusConfig = {
+    'Borrador': { color: 'bg-gray-100 text-gray-800', textColor: 'text-gray-600' },
+    'Firmado': { color: 'bg-blue-100 text-blue-800', textColor: 'text-blue-600' },
     'Activo': { color: 'bg-green-100 text-green-800', textColor: 'text-green-600' },
+    'En Ejecución': { color: 'bg-purple-100 text-purple-800', textColor: 'text-purple-600' },
+    'Finalizado': { color: 'bg-orange-100 text-orange-800', textColor: 'text-orange-600' },
+    'Entregado': { color: 'bg-indigo-100 text-indigo-800', textColor: 'text-indigo-600' },
+    'Pagado': { color: 'bg-emerald-100 text-emerald-800', textColor: 'text-emerald-600' },
+    'Cerrado': { color: 'bg-gray-100 text-gray-800', textColor: 'text-gray-600' },
     'Pendiente': { color: 'bg-yellow-100 text-yellow-800', textColor: 'text-yellow-600' },
-    'Pagado': { color: 'bg-blue-100 text-blue-800', textColor: 'text-blue-600' },
     'Vencido': { color: 'bg-red-100 text-red-800', textColor: 'text-red-600' },
     'Completado': { color: 'bg-gray-100 text-gray-800', textColor: 'text-gray-600' }
   };
@@ -247,10 +265,15 @@ const Contratos = () => {
       valor: parseFloat(newContract.valor),
       pagado: parseFloat(newContract.pagado) || 0,
       estudiantes: parseInt(newContract.estudiantes) || 0,
+      estudiantesAtendidos: parseInt(newContract.estudiantesAtendidos) || 0,
+      productosIncluidos: newContract.productosIncluidos,
+      fechaEntregaPactada: newContract.fechaEntregaPactada,
+      formaPago: newContract.formaPago,
       porcentajePagado: newContract.valor > 0 ? 
         Math.round((parseFloat(newContract.pagado) / parseFloat(newContract.valor)) * 100) : 0,
       fechaCreacion: new Date().toISOString().split('T')[0],
-      clausulas: newContract.clausulas.filter(c => c.trim() !== '')
+      clausulas: newContract.clausulas.filter(c => c.trim() !== ''),
+      pagos: newContract.pagos
     };
     
     setContracts([...contracts, contractToAdd]);
@@ -264,14 +287,19 @@ const Contratos = () => {
       fechaFin: '',
       valor: '',
       pagado: '',
-      estado: 'Pendiente',
+      estado: 'Borrador',
       estudiantes: '',
+      estudiantesAtendidos: '',
+      productosIncluidos: '',
+      fechaEntregaPactada: '',
+      formaPago: 'Efectivo',
       observaciones: '',
       clausulas: [''],
-      responsable: ''
+      responsable: '',
+      pagos: []
     });
     setErrors({});
-    setShowNewContractModal(false);
+    setShowNewContractDrawer(false);
   };
 
   // Función para agregar nueva cláusula
@@ -301,7 +329,7 @@ const Contratos = () => {
     });
   };
 
-  // Función para abrir modal de edición
+  // Función para abrir drawer de edición
   const openEditModal = (contract) => {
     setEditingContract(contract);
     setEditContract({
@@ -314,12 +342,17 @@ const Contratos = () => {
       pagado: contract.pagado.toString(),
       estado: contract.estado,
       estudiantes: contract.estudiantes.toString(),
+      estudiantesAtendidos: contract.estudiantesAtendidos?.toString() || '',
+      productosIncluidos: contract.productosIncluidos || '',
+      fechaEntregaPactada: contract.fechaEntregaPactada || '',
+      formaPago: contract.formaPago || 'Efectivo',
       observaciones: contract.observaciones || '',
       clausulas: contract.clausulas.length > 0 ? contract.clausulas : [''],
-      responsable: contract.responsable
+      responsable: contract.responsable,
+      pagos: contract.pagos || []
     });
     setEditErrors({});
-    setShowEditContractModal(true);
+    setShowEditContractDrawer(true);
   };
 
   // Función para validar formulario de edición
@@ -366,15 +399,20 @@ const Contratos = () => {
       pagado: parseFloat(editContract.pagado) || 0,
       estado: editContract.estado,
       estudiantes: parseInt(editContract.estudiantes) || 0,
+      estudiantesAtendidos: parseInt(editContract.estudiantesAtendidos) || 0,
+      productosIncluidos: editContract.productosIncluidos,
+      fechaEntregaPactada: editContract.fechaEntregaPactada,
+      formaPago: editContract.formaPago,
       observaciones: editContract.observaciones,
       clausulas: editContract.clausulas.filter(c => c.trim() !== ''),
       responsable: editContract.responsable,
+      pagos: editContract.pagos,
       porcentajePagado: editContract.valor > 0 ? 
         Math.round((parseFloat(editContract.pagado) / parseFloat(editContract.valor)) * 100) : 0
     };
     
     setContracts(contracts.map(c => c.id === editingContract.id ? updatedContract : c));
-    setShowEditContractModal(false);
+    setShowEditContractDrawer(false);
     setEditingContract(null);
     setEditErrors({});
   };
@@ -664,7 +702,7 @@ const Contratos = () => {
                     icon={<Eye className="w-4 h-4" />}
                     onClick={() => {
                       setSelectedContract(contract);
-                      setShowContractModal(true);
+                      setShowContractDrawer(true);
                     }}
                 >
                     Ver Detalles
@@ -725,7 +763,7 @@ const Contratos = () => {
         <div className="flex space-x-3">
           <Button 
             icon={<Plus className="w-4 h-4" />}
-            onClick={() => setShowNewContractModal(true)}
+            onClick={() => setShowNewContractDrawer(true)}
           >
             Nuevo Contrato
           </Button>
@@ -794,10 +832,15 @@ const Contratos = () => {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             >
               <option value="todos">Todos los estados</option>
+              <option value="Borrador">Borrador</option>
+              <option value="Firmado">Firmado</option>
               <option value="Activo">Activo</option>
-              <option value="Pendiente">Pendiente</option>
+              <option value="En Ejecución">En Ejecución</option>
+              <option value="Finalizado">Finalizado</option>
+              <option value="Entregado">Entregado</option>
               <option value="Pagado">Pagado</option>
-              <option value="Completado">Completado</option>
+              <option value="Cerrado">Cerrado</option>
+              <option value="Pendiente">Pendiente</option>
               <option value="Vencido">Vencido</option>
             </select>
             
@@ -855,18 +898,18 @@ const Contratos = () => {
           <p className="text-gray-500 mb-4">Ajusta los filtros o crea un nuevo contrato</p>
           <Button 
             icon={<Plus className="w-4 h-4" />}
-            onClick={() => setShowNewContractModal(true)}
+            onClick={() => setShowNewContractDrawer(true)}
           >
             Nuevo Contrato
           </Button>
         </div>
       )}
 
-      {/* Contract Detail Modal */}
-      <Modal
-        isOpen={showContractModal}
+      {/* Contract Detail Drawer */}
+      <Drawer
+        isOpen={showContractDrawer}
         onClose={() => {
-          setShowContractModal(false);
+          setShowContractDrawer(false);
           setSelectedContract(null);
         }}
         title={`Contrato ${selectedContract?.id}`}
@@ -874,7 +917,8 @@ const Contratos = () => {
       >
         {selectedContract && (
           <div className="space-y-6">
-            <div className="flex items-center space-x-4">
+            {/* Header del contrato */}
+            <div className="flex items-center space-x-4 pb-4 border-b border-gray-200">
               <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
                 <FileText className="w-8 h-8 text-primary" />
               </div>
@@ -887,82 +931,22 @@ const Contratos = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
-                <p className="text-gray-900">{selectedContract.tipo}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
-                <p className="text-gray-900">{selectedContract.responsable}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
-                <p className="text-gray-900">{selectedContract.fechaInicio}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
-                <p className="text-gray-900">{selectedContract.fechaFin}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
-                <p className="text-gray-900 font-semibold">S/ {selectedContract.valor.toLocaleString()}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Pagado</label>
-                <p className="text-green-600 font-semibold">S/ {selectedContract.pagado.toLocaleString()}</p>
-              </div>
-              {selectedContract.estudiantes > 0 && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de Estudiantes</label>
-                  <p className="text-gray-900">{selectedContract.estudiantes}</p>
-                </div>
-              )}
-            </div>
+            {/* Pestañas del contrato */}
+            <ContractTabs 
+              contract={selectedContract} 
+              onUpdateContract={(updatedContract) => {
+                setContracts(contracts.map(c => c.id === updatedContract.id ? updatedContract : c));
+                setSelectedContract(updatedContract);
+              }}
+              editable={true}
+            />
 
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">Resumen Financiero</h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-primary">S/ {selectedContract.valor.toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">Valor Total</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">S/ {selectedContract.pagado.toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">Pagado ({selectedContract.porcentajePagado}%)</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">S/ {(selectedContract.valor - selectedContract.pagado).toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">Saldo Pendiente</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cláusulas del Contrato</label>
-              <div className="space-y-2">
-                {selectedContract.clausulas.map((clausula, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <p className="text-gray-700 text-sm">{clausula}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {selectedContract.observaciones && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                  <p className="text-gray-700">{selectedContract.observaciones}</p>
-                </div>
-              </div>
-            )}
-
-            <Modal.Footer>
+            {/* Botones de acción */}
+            <div className="flex space-x-3 pt-4 border-t border-gray-200">
               <Button 
                 variant="outline" 
-                onClick={() => setShowContractModal(false)}
+                onClick={() => setShowContractDrawer(false)}
+                className="flex-1"
               >
                 Cerrar
               </Button>
@@ -971,28 +955,28 @@ const Contratos = () => {
                 icon={<Download className="w-4 h-4" />}
                 onClick={() => generatePDF(selectedContract)}
               >
-                Descargar PDF
+                PDF
               </Button>
               <Button 
                 variant="secondary"
                 icon={<Edit className="w-4 h-4" />}
                 onClick={() => {
-                  setShowContractModal(false);
+                  setShowContractDrawer(false);
                   openEditModal(selectedContract);
                 }}
               >
                 Editar
               </Button>
-            </Modal.Footer>
+            </div>
           </div>
         )}
-      </Modal>
+      </Drawer>
 
-      {/* New Contract Modal */}
-      <Modal
-        isOpen={showNewContractModal}
+      {/* New Contract Drawer */}
+      <Drawer
+        isOpen={showNewContractDrawer}
         onClose={() => {
-          setShowNewContractModal(false);
+          setShowNewContractDrawer(false);
           setErrors({});
         }}
         title="Nuevo Contrato"
@@ -1166,26 +1150,50 @@ const Contratos = () => {
                   onChange={(e) => setNewContract({...newContract, estado: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 >
-                  <option value="Pendiente">Pendiente</option>
+                  <option value="Borrador">Borrador</option>
+                  <option value="Firmado">Firmado</option>
                   <option value="Activo">Activo</option>
+                  <option value="En Ejecución">En Ejecución</option>
+                  <option value="Finalizado">Finalizado</option>
+                  <option value="Entregado">Entregado</option>
                   <option value="Pagado">Pagado</option>
-                  <option value="Completado">Completado</option>
+                  <option value="Cerrado">Cerrado</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Forma de Pago
+                </label>
+                <select
+                  value={newContract.formaPago}
+                  onChange={(e) => setNewContract({...newContract, formaPago: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                  <option value="Tarjeta de Débito">Tarjeta de Débito</option>
+                  <option value="Yape">Yape</option>
+                  <option value="Plin">Plin</option>
+                  <option value="Otro">Otro</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Información Adicional */}
+          {/* Datos de Ejecución */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-4 flex items-center">
               <Users className="w-5 h-5 mr-2" />
-              Información Adicional
+              Datos de Ejecución
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Estudiantes
+                  Nº Estudiantes Contratados
                 </label>
                 <input
                   type="number"
@@ -1199,6 +1207,54 @@ const Contratos = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nº Estudiantes Atendidos
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  value={newContract.estudiantesAtendidos}
+                  onChange={(e) => setNewContract({...newContract, estudiantesAtendidos: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="0"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Productos Incluidos
+                </label>
+                <input
+                  type="text"
+                  value={newContract.productosIncluidos}
+                  onChange={(e) => setNewContract({...newContract, productosIncluidos: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="Fotografías individuales, grupales, etc."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de Entrega Pactada
+                </label>
+                <input
+                  type="date"
+                  value={newContract.fechaEntregaPactada}
+                  onChange={(e) => setNewContract({...newContract, fechaEntregaPactada: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Información Adicional */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Información Adicional
+            </h4>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Observaciones
                 </label>
                 <textarea
@@ -1208,7 +1264,6 @@ const Contratos = () => {
                   rows="3"
                   placeholder="Observaciones adicionales..."
                 />
-              </div>
             </div>
           </div>
 
@@ -1256,13 +1311,14 @@ const Contratos = () => {
           </div>
         </div>
 
-        <Modal.Footer>
+        <div className="flex space-x-3 pt-4 border-t border-gray-200">
           <Button 
             variant="outline" 
             onClick={() => {
-              setShowNewContractModal(false);
+              setShowNewContractDrawer(false);
               setErrors({});
             }}
+            className="flex-1"
           >
             Cancelar
           </Button>
@@ -1270,17 +1326,18 @@ const Contratos = () => {
             variant="primary"
             icon={<Save className="w-4 h-4" />}
             onClick={handleSubmitNewContract}
+            className="flex-1"
           >
             Guardar Contrato
           </Button>
-        </Modal.Footer>
-      </Modal>
+        </div>
+      </Drawer>
 
-      {/* Edit Contract Modal */}
-      <Modal
-        isOpen={showEditContractModal}
+      {/* Edit Contract Drawer */}
+      <Drawer
+        isOpen={showEditContractDrawer}
         onClose={() => {
-          setShowEditContractModal(false);
+          setShowEditContractDrawer(false);
           setEditErrors({});
           setEditingContract(null);
         }}
@@ -1455,26 +1512,50 @@ const Contratos = () => {
                   onChange={(e) => setEditContract({...editContract, estado: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
                 >
-                  <option value="Pendiente">Pendiente</option>
+                  <option value="Borrador">Borrador</option>
+                  <option value="Firmado">Firmado</option>
                   <option value="Activo">Activo</option>
+                  <option value="En Ejecución">En Ejecución</option>
+                  <option value="Finalizado">Finalizado</option>
+                  <option value="Entregado">Entregado</option>
                   <option value="Pagado">Pagado</option>
-                  <option value="Completado">Completado</option>
+                  <option value="Cerrado">Cerrado</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Forma de Pago
+                </label>
+                <select
+                  value={editContract.formaPago}
+                  onChange={(e) => setEditContract({...editContract, formaPago: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Transferencia Bancaria">Transferencia Bancaria</option>
+                  <option value="Cheque">Cheque</option>
+                  <option value="Tarjeta de Crédito">Tarjeta de Crédito</option>
+                  <option value="Tarjeta de Débito">Tarjeta de Débito</option>
+                  <option value="Yape">Yape</option>
+                  <option value="Plin">Plin</option>
+                  <option value="Otro">Otro</option>
                 </select>
               </div>
             </div>
           </div>
 
-          {/* Información Adicional */}
+          {/* Datos de Ejecución */}
           <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
             <h4 className="font-medium text-gray-900 mb-4 flex items-center">
               <Users className="w-5 h-5 mr-2" />
-              Información Adicional
+              Datos de Ejecución
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Número de Estudiantes
+                  Nº Estudiantes Contratados
                 </label>
                 <input
                   type="number"
@@ -1488,16 +1569,63 @@ const Contratos = () => {
               
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Observaciones
+                  Nº Estudiantes Atendidos
                 </label>
-                <textarea
-                  value={editContract.observaciones}
-                  onChange={(e) => setEditContract({...editContract, observaciones: e.target.value})}
+                <input
+                  type="number"
+                  min="0"
+                  value={editContract.estudiantesAtendidos}
+                  onChange={(e) => setEditContract({...editContract, estudiantesAtendidos: e.target.value})}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  rows="3"
-                  placeholder="Observaciones adicionales..."
+                  placeholder="0"
                 />
               </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Productos Incluidos
+                </label>
+                <input
+                  type="text"
+                  value={editContract.productosIncluidos}
+                  onChange={(e) => setEditContract({...editContract, productosIncluidos: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="Fotografías individuales, grupales, etc."
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha de Entrega Pactada
+                </label>
+                <input
+                  type="date"
+                  value={editContract.fechaEntregaPactada}
+                  onChange={(e) => setEditContract({...editContract, fechaEntregaPactada: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Información Adicional */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-4 flex items-center">
+              <FileText className="w-5 h-5 mr-2" />
+              Información Adicional
+            </h4>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Observaciones
+              </label>
+              <textarea
+                value={editContract.observaciones}
+                onChange={(e) => setEditContract({...editContract, observaciones: e.target.value})}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                rows="3"
+                placeholder="Observaciones adicionales..."
+              />
             </div>
           </div>
 
@@ -1545,14 +1673,15 @@ const Contratos = () => {
           </div>
         </div>
 
-        <Modal.Footer>
+        <div className="flex space-x-3 pt-4 border-t border-gray-200">
           <Button 
             variant="outline" 
             onClick={() => {
-              setShowEditContractModal(false);
+              setShowEditContractDrawer(false);
               setEditErrors({});
               setEditingContract(null);
             }}
+            className="flex-1"
           >
             Cancelar
           </Button>
@@ -1560,11 +1689,12 @@ const Contratos = () => {
             variant="primary"
             icon={<Save className="w-4 h-4" />}
             onClick={handleSaveEdit}
+            className="flex-1"
           >
             Guardar Cambios
           </Button>
-        </Modal.Footer>
-      </Modal>
+        </div>
+      </Drawer>
     </div>
   );
 };

@@ -8,7 +8,8 @@ import {
   Settings,
   ShoppingCart,
   User,
-  Users
+  Users,
+  Wrench
 } from 'lucide-react';
 import { useState } from 'react';
 import logoImage from '../../assets/icono.png';
@@ -74,7 +75,8 @@ const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
       items: [
         { id: 'inventario', label: 'Inventario', icon: Package },
         { id: 'produccion', label: 'Producción', icon: Settings },
-        { id: 'contratos', label: 'Contratos', icon: FileText }
+        { id: 'contratos', label: 'Contratos', icon: FileText },
+        { id: 'activos', label: 'Activos y Maquinaria', icon: Wrench }
       ]
     },
     {
