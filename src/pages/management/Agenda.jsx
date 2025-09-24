@@ -1,9 +1,11 @@
-import { AlertCircle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Circle, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Circle, Clock, Edit, Eye, Plus, Search, Trash2, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 
 const Agenda = () => {
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [showEventModal, setShowEventModal] = useState(false); // Detalles del evento
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -12,10 +14,33 @@ const Agenda = () => {
   const [sessionSearch, setSessionSearch] = useState('');
   // Estado para filtro de estado
   const [statusFilter, setStatusFilter] = useState('todos');
+  // Estado para filtro de tipo de sesión
+  const [sessionTypeFilter, setSessionTypeFilter] = useState('todos');
   // Fecha de referencia para el calendario (primer día del mes mostrado)
   const [currentMonthDate, setCurrentMonthDate] = useState(() => {
     const base = new Date();
     return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+
+  // Estado para contratos y pedidos
+  const [contracts, setContracts] = useState(() => {
+    try {
+      const stored = localStorage.getItem('contracts');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.error('Error leyendo contratos de localStorage', e);
+      return [];
+    }
+  });
+  
+  const [orders, setOrders] = useState(() => {
+    try {
+      const stored = localStorage.getItem('orders');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.error('Error leyendo pedidos de localStorage', e);
+      return [];
+    }
   });
 
   // Estado de eventos (persistencia inmediata con lazy initializer)
@@ -40,10 +65,15 @@ const Agenda = () => {
     duration: '',
     location: '',
     type: 'sesion',
+    sessionType: 'escolar', // Nuevo campo para tipo de sesión
     status: 'pendiente',
     participants: 0,
     notes: '',
-    tasks: []
+    tasks: [],
+    contractId: '', // ID del contrato relacionado
+    orderId: '', // ID del pedido relacionado
+    isContractEvent: false, // Indica si el evento está vinculado a un contrato
+    isOrderEvent: false // Indica si el evento está vinculado a un pedido
   });
   const [editingEvent, setEditingEvent] = useState(null);
   const [taskInput, setTaskInput] = useState('');
@@ -63,26 +93,154 @@ const Agenda = () => {
     }
   }, [events]);
 
+  // Cargar contratos y pedidos al montar el componente
+  useEffect(() => {
+    try {
+      const storedContracts = localStorage.getItem('contracts');
+      if (storedContracts) {
+        setContracts(JSON.parse(storedContracts));
+      }
+      
+      const storedOrders = localStorage.getItem('orders');
+      if (storedOrders) {
+        setOrders(JSON.parse(storedOrders));
+      }
+    } catch (e) {
+      console.error('Error cargando contratos/pedidos', e);
+    }
+  }, []);
+
+  // Cargar automáticamente las sesiones programadas de contratos/pedidos
+  useEffect(() => {
+    // Verificar si ya existen eventos para los contratos/pedidos
+    const contractEvents = events.filter(event => event.isContractEvent);
+    const orderEvents = events.filter(event => event.isOrderEvent);
+    
+    const contractIds = contractEvents.map(event => event.contractId);
+    const orderIds = orderEvents.map(event => event.orderId);
+    
+    // Crear eventos automáticos para contratos que no tienen eventos
+    const newContractEvents = contracts
+      .filter(contract => !contractIds.includes(contract.id) && contract.estado === 'Activo')
+      .map(contract => ({
+        id: `auto-contract-${contract.id}-${Date.now()}`,
+        title: `Sesión - ${contract.servicio}`,
+        client: contract.cliente,
+        date: new Date().toISOString().split('T')[0], // Fecha actual como fecha provisional
+        time: '10:00',
+        duration: '2 horas',
+        location: '',
+        type: 'sesion',
+        sessionType: 'escolar',
+        status: 'pendiente',
+        participants: contract.estudiantes || 0,
+        notes: `Sesión automática programada para el contrato: ${contract.servicio}`,
+        tasks: [],
+        contractId: contract.id,
+        orderId: '',
+        isContractEvent: true,
+        isOrderEvent: false
+      }));
+    
+    // Crear eventos automáticos para pedidos que no tienen eventos
+    const newOrderEvents = orders
+      .filter(order => !orderIds.includes(order.id) && order.estado === 'Nuevo')
+      .map(order => ({
+        id: `auto-order-${order.id}-${Date.now()}`,
+        title: `Sesión - ${order.servicio}`,
+        client: order.cliente,
+        date: new Date().toISOString().split('T')[0], // Fecha actual como fecha provisional
+        time: '15:00',
+        duration: '1 hora',
+        location: '',
+        type: 'sesion',
+        sessionType: order.servicio.toLowerCase().includes('familiar') ? 'familiar' : 'otro',
+        status: 'pendiente',
+        participants: 0,
+        notes: `Sesión automática programada para el pedido: ${order.servicio}`,
+        tasks: [],
+        contractId: '',
+        orderId: order.id,
+        isContractEvent: false,
+        isOrderEvent: true
+      }));
+    
+    // Añadir los nuevos eventos si hay alguno
+    if (newContractEvents.length > 0 || newOrderEvents.length > 0) {
+      setEvents(prev => [...prev, ...newContractEvents, ...newOrderEvents]);
+    }
+  }, [contracts, orders]);
+
 
   const eventTypes = {
-    reunion: { color: 'bg-orange-500', label: 'Reunión' },
-    sesion: { color: 'bg-blue-500', label: 'Sesión' },
-    entrega: { color: 'bg-green-500', label: 'Entrega' }
+    reunion: { color: 'bg-orange-500', label: 'Reunión', icon: '🤝' },
+    sesion_escolar: { color: 'bg-blue-500', label: 'Sesión escolar', icon: '🎓' },
+    sesion_familiar: { color: 'bg-purple-500', label: 'Sesión familiar', icon: '👨‍👩‍👧' },
+    sesion_retrato: { color: 'bg-pink-500', label: 'Retrato individual', icon: '👤' },
+    sesion_grupal: { color: 'bg-indigo-500', label: 'Sesión grupal', icon: '👥' },
+    sesion_corporativa: { color: 'bg-gray-600', label: 'Sesión corporativa', icon: '🏢' },
+    sesion_oleo: { color: 'bg-amber-500', label: 'Óleo', icon: '🎨' },
+    recordatorio_escolar: { color: 'bg-green-500', label: 'Recordatorio escolar', icon: '📚' },
+    evento_social: { color: 'bg-red-500', label: 'Evento social', icon: '🎉' },
+    producto: { color: 'bg-teal-500', label: 'Producto', icon: '📦' },
+    otro: { color: 'bg-gray-400', label: 'Otro', icon: '📅' },
+    promocion: { color: 'bg-indigo-500', label: 'Promoción', icon: '🎓' },
+    entrega: { color: 'bg-green-500', label: 'Entrega', icon: '📦' }
+  };
+  
+  // Tipos de sesión para filtrado y análisis
+  const sessionTypes = [
+    'escolar',
+    'familiar',
+    'retrato individual',
+    'grupal',
+    'corporativa',
+    'óleo',
+    'recordatorio escolar',
+    'evento social',
+    'producto',
+    'otro'
+  ];
+  
+  // Mapeo de tipos de sesión a claves de eventTypes
+  const sessionTypeToEventType = {
+    'escolar': 'sesion_escolar',
+    'familiar': 'sesion_familiar',
+    'retrato individual': 'sesion_retrato',
+    'grupal': 'sesion_grupal',
+    'corporativa': 'sesion_corporativa',
+    'óleo': 'sesion_oleo',
+    'recordatorio escolar': 'recordatorio_escolar',
+    'evento social': 'evento_social',
+    'producto': 'producto',
+    'otro': 'otro'
+  };
+  
+  // Función para obtener el tipo de evento basado en sessionType
+  const getEventTypeFromSession = (sessionType, baseType = 'sesion') => {
+    if (baseType === 'entrega') return 'entrega';
+    if (baseType === 'reunion') return 'reunion';
+    if (baseType === 'promocion') return 'promocion';
+    
+    return sessionTypeToEventType[sessionType] || 'otro';
   };
 
   const statusColors = {
-    confirmado: 'bg-green-100 text-green-800',
-    pendiente: 'bg-yellow-100 text-yellow-800',
-    cancelado: 'bg-red-100 text-red-800',
-    completado: 'bg-green-100 text-green-800'
+    'pendiente_confirmacion': 'bg-yellow-500 text-white border-yellow-600',
+    'confirmada': 'bg-blue-500 text-white border-blue-600',
+    'en_ejecucion': 'bg-orange-500 text-white border-orange-600',
+    'en_edicion': 'bg-purple-500 text-white border-purple-600',
+    'entregado': 'bg-green-500 text-white border-green-600',
+    'pendiente': 'bg-red-500 text-white border-red-600',
+    'cancelada': 'bg-red-500 text-white border-red-600'
   };
 
   const deriveStatusFromType = (type) => {
-    // Mantener la lógica según lo que ya hay en el código (pendiente, confirmado, completado)
-    if (type === 'sesion') return 'confirmado';
-    if (type === 'entrega') return 'completado';
-    if (type === 'reunion') return 'pendiente';
-    return 'pendiente';
+    // Actualizado para usar los nuevos estados
+    if (type === 'sesion') return 'pendiente_confirmacion';
+    if (type === 'entrega') return 'entregado';
+    if (type === 'reunion') return 'confirmada';
+    return 'pendiente_confirmacion';
   };
 
   // Sincronizar el calendario con el filtro de fecha
@@ -104,6 +262,9 @@ const Agenda = () => {
       const eventStatus = event.status || deriveStatusFromType(event.type);
       if (eventStatus !== statusFilter) return false;
     }
+    if (sessionTypeFilter !== 'todos' && event.type === 'sesion') {
+      if (event.sessionType !== sessionTypeFilter) return false;
+    }
     if (selectedDate) {
       // Comparación de fecha exacta (YYYY-MM-DD)
       if ((event.date || '').slice(0, 10) !== selectedDate) return false;
@@ -114,6 +275,21 @@ const Agenda = () => {
   // Orden y paginación
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
+  
+  // Asegurarse de que los eventos se muestren correctamente
+  useEffect(() => {
+    console.log("Eventos actuales:", events);
+    console.log("Eventos filtrados:", filteredEvents);
+    
+    // Verificar localStorage para depuración
+    try {
+      const storedEvents = localStorage.getItem('agenda_events');
+      console.log("Eventos en localStorage:", storedEvents ? JSON.parse(storedEvents) : []);
+    } catch (error) {
+      console.error("Error al leer eventos de localStorage:", error);
+    }
+  }, [events, filteredEvents]);
+  
   const sortedEvents = [...filteredEvents].sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
   const totalPages = Math.max(1, Math.ceil(sortedEvents.length / itemsPerPage));
   const pageStart = (currentPage - 1) * itemsPerPage;
@@ -129,7 +305,14 @@ const Agenda = () => {
   // Utilidades de calendario
   const monthLabel = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(currentMonthDate);
   const pad2 = (n) => (n < 10 ? `0${n}` : `${n}`);
-  const statusPriority = { pendiente: 1, confirmado: 2, completado: 3 };
+  const statusPriority = { 
+    pendiente_confirmacion: 1, 
+    confirmada: 2, 
+    en_ejecucion: 3, 
+    en_edicion: 4, 
+    entregado: 5,
+    cancelado: 0 
+  };
 
   // Generar calendario para el mes en currentMonthDate
   const generateCalendar = () => {
@@ -160,15 +343,24 @@ const Agenda = () => {
 
       let bgClass = '';
       let statusIcon = null;
-      if (dominantStatus === 'pendiente') {
-        bgClass = 'bg-yellow-100';
+      if (dominantStatus === 'pendiente_confirmacion') {
+        bgClass = 'bg-yellow-200';
         statusIcon = <Circle className="w-4 h-4 text-yellow-500" />;
-      } else if (dominantStatus === 'confirmado') {
-        bgClass = 'bg-blue-100';
+      } else if (dominantStatus === 'confirmada') {
+        bgClass = 'bg-blue-200';
         statusIcon = <AlertCircle className="w-4 h-4 text-blue-500" />;
-      } else if (dominantStatus === 'completado') {
-        bgClass = 'bg-green-100';
+      } else if (dominantStatus === 'en_ejecucion') {
+        bgClass = 'bg-orange-200';
+        statusIcon = <Clock className="w-4 h-4 text-orange-500" />;
+      } else if (dominantStatus === 'en_edicion') {
+        bgClass = 'bg-purple-200';
+        statusIcon = <Edit className="w-4 h-4 text-purple-500" />;
+      } else if (dominantStatus === 'entregado') {
+        bgClass = 'bg-green-200';
         statusIcon = <CheckCircle className="w-4 h-4 text-green-500" />;
+      } else if (dominantStatus === 'cancelado') {
+        bgClass = 'bg-red-200';
+        statusIcon = <X className="w-4 h-4 text-red-500" />;
       }
 
       days.push(
@@ -181,6 +373,62 @@ const Agenda = () => {
             <div className="text-sm font-medium">{d}</div>
             {statusIcon && (
               <div className="absolute -top-1 -right-1">{statusIcon}</div>
+            )}
+            
+            {/* Mostrar eventos del día con iconos según tipo */}
+            {eventsInDay.length > 0 && (
+              <div className="mt-1 px-1">
+                {eventsInDay.slice(0, 2).map((ev, idx) => {
+                  // Determinar el tipo de evento real basado en sessionType y type
+                  const eventTypeKey = getEventTypeFromSession(ev.sessionType, ev.type);
+                  const eventType = eventTypes[eventTypeKey] || eventTypes.otro;
+                  
+                  // Determinar el estado para el borde de forma segura
+                  let statusClass = '';
+                  if (ev.status && statusColors && statusColors[ev.status]) {
+                    statusClass = `border-2 border-${ev.status === 'confirmada' ? 'blue' : 
+                                  ev.status === 'pendiente_confirmacion' ? 'yellow' : 
+                                  ev.status === 'en_ejecucion' ? 'orange' : 
+                                  ev.status === 'en_edicion' ? 'purple' : 
+                                  ev.status === 'entregado' ? 'green' : 
+                                  ev.status === 'cancelado' ? 'red' : 'gray'}-500`;
+                  }
+                  
+                  return (
+                    <div 
+                      key={idx} 
+                      className={`text-xs truncate mb-1 px-1 py-0.5 rounded ${eventType.color} text-white cursor-pointer flex items-center ${statusClass}`}
+                      title={`${ev.title} - ${ev.client || 'Sin cliente'}`}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Evitar que se active el onClick del día
+                        // Redirigir a la ficha del contrato o pedido asociado
+                        if (ev.isContractEvent && ev.contractId) {
+                          navigate(`/contratos/${ev.contractId}`);
+                        } else if (ev.isOrderEvent && ev.orderId) {
+                          navigate(`/pedidos/${ev.orderId}`);
+                        } else {
+                          setSelectedEvent(ev);
+                          setShowEventModal(true);
+                        }
+                      }}
+                    >
+                      <span className="mr-1">{eventType.icon}</span>
+                      <span className="truncate">
+                        {ev.client} – {ev.title}
+                        {ev.sessionType && <span className="opacity-75"> ({ev.sessionType.charAt(0).toUpperCase() + ev.sessionType.slice(1)})</span>}
+                      </span>
+                      {(ev.isContractEvent || ev.isOrderEvent) && (
+                        <span className="ml-auto text-xs">
+                          {ev.isContractEvent ? `📄 #${ev.contractId?.slice(-3) || ''}` : `🛒 #${ev.orderId?.slice(-3) || ''}`}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+                {eventsInDay.length > 2 && (
+                  <div className="text-xs text-gray-500 text-center">+{eventsInDay.length - 2} más</div>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -215,6 +463,90 @@ const Agenda = () => {
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
               <Calendar className="w-6 h-6 text-primary" />
+            </div>
+            <div className="col-span-2 grid grid-cols-2 gap-4">
+              <div>
+                <div className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="isContractEvent"
+                    name="isContractEvent"
+                    checked={eventFormData.isContractEvent}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        // Si se marca contrato, desmarcamos pedido
+                        setEventFormData(prev => ({ 
+                          ...prev, 
+                          isContractEvent: true,
+                          isOrderEvent: false 
+                        }));
+                      } else {
+                        setEventFormData(prev => ({ ...prev, isContractEvent: false }));
+                      }
+                    }}
+                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  />
+                  <label htmlFor="isContractEvent" className="ml-2 block text-sm text-gray-700">
+                    Vincular a un contrato
+                  </label>
+                </div>
+                {eventFormData.isContractEvent && (
+                  <select
+                    name="contractId"
+                    value={eventFormData.contractId}
+                    onChange={(e) => setEventFormData(prev => ({ ...prev, contractId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  >
+                    <option value="">Seleccionar contrato</option>
+                    {contracts.map(contract => (
+                      <option key={contract.id} value={contract.id}>
+                        {contract.id} - {contract.client}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center mb-2">
+                  <input
+                    type="checkbox"
+                    id="isOrderEvent"
+                    name="isOrderEvent"
+                    checked={eventFormData.isOrderEvent}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        // Si se marca pedido, desmarcamos contrato
+                        setEventFormData(prev => ({ 
+                          ...prev, 
+                          isOrderEvent: true,
+                          isContractEvent: false 
+                        }));
+                      } else {
+                        setEventFormData(prev => ({ ...prev, isOrderEvent: false }));
+                      }
+                    }}
+                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                  />
+                  <label htmlFor="isOrderEvent" className="ml-2 block text-sm text-gray-700">
+                    Vincular a un pedido
+                  </label>
+                </div>
+                {eventFormData.isOrderEvent && (
+                  <select
+                    name="orderId"
+                    value={eventFormData.orderId}
+                    onChange={(e) => setEventFormData(prev => ({ ...prev, orderId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  >
+                    <option value="">Seleccionar pedido</option>
+                    {orders.map(order => (
+                      <option key={order.id} value={order.id}>
+                        {order.id} - {order.client}
+                      </option>
+                    ))}
+                  </select>
+                )}
+              </div>
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
@@ -259,9 +591,26 @@ const Agenda = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               >
                 <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmado">Confirmada</option>
-                <option value="completado">Completada</option>
+                <option value="pendiente_confirmacion">Pendiente de confirmación</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="en_ejecucion">En ejecución</option>
+                <option value="en_edicion">En edición/retoque</option>
+                <option value="entregado">Entregado</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex flex-col md:flex-row gap-6 items-end mt-4">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de sesión</label>
+              <select
+                value={sessionTypeFilter}
+                onChange={(e) => setSessionTypeFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                <option value="todos">Todos los tipos</option>
+                {sessionTypes.map(type => (
+                  <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                ))}
               </select>
             </div>
             <div className="flex items-end">
@@ -270,6 +619,7 @@ const Agenda = () => {
                   setSelectedDate('');
                   setSessionSearch('');
                   setStatusFilter('todos');
+                  setSessionTypeFilter('todos');
                   setFilter('todos');
                 }}
                 className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
@@ -301,11 +651,23 @@ const Agenda = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Pendiente</span>
+                <span className="text-xs text-gray-600">Pendiente de confirmación</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-xs text-gray-600">Confirmada</span>
               </div>
               <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Confirmada</span>
+                <span className="text-xs text-gray-600">En ejecución</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                <span className="text-xs text-gray-600">En edición</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                <span className="text-xs text-gray-600">Entregado</span>
               </div>
               <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
@@ -596,7 +958,7 @@ const Agenda = () => {
           setShowEventForm(false);
           setEditingEvent(null);
           setEventFormData({
-            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: ''
+            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente_confirmacion', participants: 0, notes: '', isContractEvent: false, isOrderEvent: false, contractId: '', orderId: ''
           });
         }}
         title={editingEvent ? 'Editar Evento' : 'Nueva Sesión'}
@@ -665,7 +1027,9 @@ const Agenda = () => {
                 onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               >
-                <option value="sesion">Sesión</option>
+                <option value="sesion_escolar">Sesión escolar</option>
+                <option value="sesion_familiar">Sesión familiar</option>
+                <option value="promocion">Promoción</option>
                 <option value="entrega">Entrega</option>
                 <option value="reunion">Reunión</option>
               </select>
@@ -678,10 +1042,110 @@ const Agenda = () => {
                 onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               >
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmado">Confirmada</option>
-                <option value="completado">Completada</option>
+                <option value="pendiente_confirmacion">Pendiente de confirmación</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="en_ejecucion">En ejecución</option>
+                <option value="en_edicion">En edición/retoque</option>
+                <option value="entregado">Entregado</option>
+                <option value="cancelada">Cancelada</option>
               </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de sesión</label>
+              <select
+                name="sessionType"
+                value={eventFormData.sessionType}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                {sessionTypes.map(type => (
+                  <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vincular a contrato</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isContractEvent"
+                  checked={eventFormData.isContractEvent}
+                  onChange={(e) => setEventFormData(prev => ({ 
+                    ...prev, 
+                    isContractEvent: e.target.checked,
+                    isOrderEvent: e.target.checked ? false : prev.isOrderEvent,
+                    contractId: e.target.checked ? prev.contractId : '',
+                    orderId: e.target.checked ? '' : prev.orderId
+                  }))}
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+                <label htmlFor="isContractEvent" className="text-sm text-gray-700">Evento de contrato</label>
+              </div>
+              {eventFormData.isContractEvent && (
+                <select
+                  name="contractId"
+                  value={eventFormData.contractId}
+                  onChange={(e) => {
+                    const selectedContract = contracts.find(c => c.id === e.target.value);
+                    setEventFormData(prev => ({ 
+                      ...prev, 
+                      contractId: e.target.value,
+                      client: selectedContract?.cliente || prev.client,
+                      title: selectedContract ? `Sesión - ${selectedContract.servicio}` : prev.title
+                    }))
+                  }}
+                  className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="">Seleccionar contrato</option>
+                  {contracts.map(contract => (
+                    <option key={contract.id} value={contract.id}>
+                      {contract.cliente} - {contract.servicio}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Vincular a pedido</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="isOrderEvent"
+                  checked={eventFormData.isOrderEvent}
+                  onChange={(e) => setEventFormData(prev => ({ 
+                    ...prev, 
+                    isOrderEvent: e.target.checked,
+                    isContractEvent: e.target.checked ? false : prev.isContractEvent,
+                    orderId: e.target.checked ? prev.orderId : '',
+                    contractId: e.target.checked ? '' : prev.contractId
+                  }))}
+                  className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded"
+                />
+                <label htmlFor="isOrderEvent" className="text-sm text-gray-700">Evento de pedido</label>
+              </div>
+              {eventFormData.isOrderEvent && (
+                <select
+                  name="orderId"
+                  value={eventFormData.orderId}
+                  onChange={(e) => {
+                    const selectedOrder = orders.find(o => o.id === e.target.value);
+                    setEventFormData(prev => ({ 
+                      ...prev, 
+                      orderId: e.target.value,
+                      client: selectedOrder?.cliente || prev.client,
+                      title: selectedOrder ? `Sesión - ${selectedOrder.servicio}` : prev.title
+                    }))
+                  }}
+                  className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                >
+                  <option value="">Seleccionar pedido</option>
+                  {orders.map(order => (
+                    <option key={order.id} value={order.id}>
+                      {order.cliente} - {order.servicio}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Participantes</label>
@@ -804,26 +1268,59 @@ const Agenda = () => {
                 alert('Título y Cliente son requeridos');
                 return;
               }
-              if (editingEvent) {
-                // Actualizar
-                setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { 
-                  ...editingEvent, 
-                  ...eventFormData
-                } : ev));
-              } else {
-                // Crear simulado
-                const nextId = (events.reduce((max, ev) => Math.max(max, Number(ev.id) || 0), 0) + 1) || 1;
-                const newEvent = { 
-                  id: nextId, 
-                  ...eventFormData
-                };
-                setEvents(prev => [newEvent, ...prev]);
+              
+              try {
+                if (editingEvent) {
+                  // Actualizar
+                  const updatedEvents = events.map(ev => ev.id === editingEvent.id ? { 
+                    ...editingEvent, 
+                    ...eventFormData
+                  } : ev);
+                  
+                  // Guardar en localStorage primero para asegurar persistencia
+                  localStorage.setItem('agenda_events', JSON.stringify(updatedEvents));
+                  // Luego actualizar el estado
+                  setEvents(updatedEvents);
+                  console.log('Evento actualizado y guardado en localStorage:', updatedEvents);
+                } else {
+                  // Crear nuevo
+                  const nextId = (events.reduce((max, ev) => Math.max(max, Number(ev.id) || 0), 0) + 1) || 1;
+                  const newEvent = { 
+                    id: nextId, 
+                    ...eventFormData,
+                    // Asegurar que todos los campos necesarios estén presentes
+                    date: eventFormData.date || new Date().toISOString().split('T')[0],
+                    time: eventFormData.time || '12:00',
+                    duration: eventFormData.duration || '1 hora',
+                    type: eventFormData.type || 'sesion',
+                    status: eventFormData.status || 'pendiente',
+                    tasks: eventFormData.tasks || []
+                  };
+                  
+                  // Crear una nueva copia del array para asegurar que React detecte el cambio
+                  const updatedEvents = [newEvent, ...events];
+                  
+                  // Guardar en localStorage primero para asegurar persistencia
+                  localStorage.setItem('agenda_events', JSON.stringify(updatedEvents));
+                  
+                  // Luego actualizar el estado con la nueva copia
+                  setEvents([...updatedEvents]);
+                  console.log('Nuevo evento creado y guardado en localStorage:', newEvent);
+                }
+                
+                // Forzar sincronización con localStorage y verificar
+                const storedEvents = JSON.parse(localStorage.getItem('agenda_events') || '[]');
+                console.log('Eventos en localStorage después de guardar:', storedEvents);
+                
+                setShowEventForm(false);
+                setEditingEvent(null);
+                setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: [] });
+                setTaskInput('');
+                setCurrentPage(1);
+              } catch (error) {
+                console.error('Error al guardar el evento:', error);
+                alert('Hubo un error al guardar el evento. Por favor intente nuevamente.');
               }
-              setShowEventForm(false);
-              setEditingEvent(null);
-              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: [] });
-              setTaskInput('');
-              setCurrentPage(1);
             }}>
               {editingEvent ? 'Actualizar' : 'Guardar Evento'}
             </Button>
