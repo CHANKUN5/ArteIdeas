@@ -79,7 +79,7 @@ function AppContent() {
 
           <main className="flex-1 p-6 overflow-y-auto bg-gray-50">
             <div className="w-full">
-              {activeSection === "dashboard" && <Dashboard />}
+              {activeSection === "dashboard" && <Dashboard onSectionChange={handleSectionChange} />}
               {activeSection === "agenda" && <Agenda />}
               {activeSection === "pedidos" && <Pedidos />}
               {activeSection === "clientes" && <Clientes />}
