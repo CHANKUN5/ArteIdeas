@@ -3,6 +3,7 @@ import { Navigate, Route, BrowserRouter as Router, Routes } from "react-router-d
 import Header from "./components/common/Header";
 import LoadingSpinner from "./components/common/LoadingSpinner";
 import Sidebar from "./components/common/Sidebar";
+import NotificationContainer from "./components/common/NotificationContainer";
 import { AppProvider } from "./context/AppContext";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Login from "./pages/auth/Login";
@@ -91,6 +92,9 @@ function AppContent() {
               {activeSection === "configuracion" && user?.role === 'admin' && <Configuracion />}
             </div>
           </main>
+          
+          {/* Notification Container */}
+          <NotificationContainer />
         </div>
       </div>
   );

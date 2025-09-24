@@ -3,6 +3,7 @@ import { DollarSign, Users, Camera, ShoppingBag, TrendingUp, Calendar } from 'lu
 import StatsCard from '../../components/dashboard/StatsCard';
 import Chart from '../../components/dashboard/Chart';
 import MetricsPanel from '../../components/dashboard/MetricsPanel';
+import QuickAlertsPanel from '../../components/common/QuickAlertsPanel';
 
 const Dashboard = () => {
   const statsData = [
@@ -121,6 +122,9 @@ const Dashboard = () => {
         </div>
         <p className="text-gray-600">Vista general de tu negocio fotográfico</p>
       </div>
+
+      {/* Quick Alerts Panel */}
+      <QuickAlertsPanel />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
