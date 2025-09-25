@@ -521,6 +521,127 @@ export const miscUtils = {
   },
 };
 
+// Utilidades específicas para el dashboard
+export const dashboardUtils = {
+  // Formatear moneda en soles peruanos
+  formatSoles: (amount) => {
+    if (amount === null || amount === undefined) return 'S/ 0.00';
+    return `S/ ${amount.toLocaleString('es-PE', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  },
+  
+  // Calcular porcentaje de cambio
+  calculatePercentageChange: (current, previous) => {
+    if (!previous || previous === 0) return 0;
+    return ((current - previous) / previous) * 100;
+  },
+  
+  // Determinar el tipo de cambio (positivo/negativo)
+  getChangeType: (change, isInverse = false) => {
+    if (isInverse) {
+      return change <= 0 ? 'positive' : 'negative';
+    }
+    return change >= 0 ? 'positive' : 'negative';
+  },
+  
+  // Clasificar clientes por tipo
+  classifyClients: (clients) => {
+    const currentDate = new Date();
+    const thirtyDaysAgo = new Date(currentDate.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    const newClients = clients.filter(client => {
+      const clientDate = new Date(client.createdAt || client.fechaRegistro);
+      return clientDate >= thirtyDaysAgo;
+    });
+    
+    const recurringClients = clients.filter(client => {
+      const clientDate = new Date(client.createdAt || client.fechaRegistro);
+      const totalOrders = client.totalOrders || client.totalPedidos || 0;
+      return clientDate < thirtyDaysAgo && totalOrders > 1;
+    });
+    
+    return {
+      newClients: newClients.length,
+      recurringClients: recurringClients.length,
+      totalClients: clients.length
+    };
+  },
+  
+  // Clasificar pedidos por estado
+  classifyOrders: (orders) => {
+    const currentDate = new Date();
+    
+    const activeOrders = orders.filter(order => {
+      const status = order.status || order.estado;
+      return status === 'en_progreso' || status === 'pendiente' || status === 'En Proceso' || status === 'Pendiente';
+    });
+    
+    const delayedOrders = orders.filter(order => {
+      const deliveryDate = new Date(order.deliveryDate || order.fechaEntrega);
+      const status = order.status || order.estado;
+      return deliveryDate < currentDate && status !== 'completado' && status !== 'Entregado';
+    });
+    
+    const completedOrders = orders.filter(order => {
+      const status = order.status || order.estado;
+      return status === 'completado' || status === 'Entregado';
+    });
+    
+    return {
+      activeOrders: activeOrders.length,
+      delayedOrders: delayedOrders.length,
+      completedOrders: completedOrders.length,
+      totalOrders: orders.length
+    };
+  },
+  
+  // Calcular valor neto del inventario
+  calculateInventoryNetValue: (inventory) => {
+    return inventory.reduce((total, item) => {
+      const quantity = item.quantity || item.cantidad || 0;
+      const unitPrice = item.unitPrice || item.precio || item.precioUnitario || 0;
+      return total + (quantity * unitPrice);
+    }, 0);
+  },
+  
+  // Generar datos mock para desarrollo
+  generateMockMetrics: () => {
+    return {
+      financial: {
+        totalIncome: 15231.89,
+        totalCosts: 8450.32,
+        netProfit: 6781.57,
+        incomeChange: 12.5,
+        costsChange: 8.3
+      },
+      clients: {
+        newClients: 24,
+        recurringClients: 156,
+        newClientsChange: 15.2,
+        recurringClientsChange: 5.8
+      },
+      orders: {
+        activeOrders: 18,
+        delayedOrders: 5,
+        activeOrdersChange: -2.1,
+        delayedOrdersChange: -15.3
+      },
+      inventory: {
+        netUnit: 45230.75,
+        change: 8.2
+      }
+    };
+  },
+  
+  // Validar datos de métricas
+  validateMetrics: (metrics) => {
+    const requiredFields = ['financial', 'clients', 'orders', 'inventory'];
+    return requiredFields.every(field => metrics && metrics[field]);
+  }
+};
+
 export default {
   formatters,
   validators,
@@ -530,4 +651,5 @@ export default {
   objectUtils,
   fileUtils,
   miscUtils,
+  dashboardUtils,
 };
