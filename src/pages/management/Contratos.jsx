@@ -178,15 +178,9 @@ const Contratos = () => {
   const [currentPage, setCurrentPage] = useState(1); // <-- estado para la página actual
 
   const statusConfig = {
-    'Borrador': { color: 'bg-gray-100 text-gray-800', textColor: 'text-gray-600' },
     'Activo': { color: 'bg-green-100 text-green-800', textColor: 'text-green-600' },
-    'Firmado': { color: 'bg-emerald-100 text-emerald-800', textColor: 'text-emerald-600' },
-    'En ejecución': { color: 'bg-indigo-100 text-indigo-800', textColor: 'text-indigo-600' },
-    'Finalizado': { color: 'bg-slate-100 text-slate-800', textColor: 'text-slate-600' },
-    'Entregado': { color: 'bg-slate-100 text-slate-800', textColor: 'text-slate-600' },
-    'Pagado': { color: 'bg-blue-100 text-blue-800', textColor: 'text-blue-600' },
-    'Cerrado': { color: 'bg-blue-100 text-blue-800', textColor: 'text-blue-600' },
     'Pendiente': { color: 'bg-yellow-100 text-yellow-800', textColor: 'text-yellow-600' },
+    'Pagado': { color: 'bg-blue-100 text-blue-800', textColor: 'text-blue-600' },
     'Vencido': { color: 'bg-red-100 text-red-800', textColor: 'text-red-600' },
     'Completado': { color: 'bg-gray-100 text-gray-800', textColor: 'text-gray-600' }
   };
@@ -198,144 +192,6 @@ const Contratos = () => {
     const matchesType = typeFilter === 'todos' || contract.tipo === typeFilter;
     return matchesSearch && matchesStatus && matchesType;
   });
-
-  const ContractDetail = ({ selectedContract, onClose, onEdit }) => {
-    const [activeTab, setActiveTab] = useState('Resumen');
-
-    const tabs = ['Resumen', 'Pagos', 'Agenda', 'Pedidos', 'Producción', 'Documentos'];
-
-    const saldoPendiente = (selectedContract.valor || 0) - (selectedContract.pagado || 0);
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center space-x-4">
-          <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
-            <FileText className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h3 className="text-xl font-semibold">{selectedContract.cliente}</h3>
-            <p className="text-gray-500">{selectedContract.servicio}</p>
-            {selectedContract.estado && statusConfig[selectedContract.estado] && (
-              <span className={`mt-1 inline-block px-3 py-1 rounded-full text-sm font-medium ${statusConfig[selectedContract.estado].color}`}>
-                {selectedContract.estado}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="flex space-x-2 overflow-x-auto border-b border-gray-200 pb-2">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              onClick={() => setActiveTab(t)}
-              className={`px-3 py-2 text-sm font-medium rounded-md ${activeTab === t ? 'bg-primary/10 text-primary' : 'text-gray-600 hover:text-gray-900'}`}
-            >
-              {t}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === 'Resumen' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
-                <p className="text-gray-900">{selectedContract.tipo}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
-                <p className="text-gray-900">{selectedContract.responsable}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
-                <p className="text-gray-900">{selectedContract.fechaInicio}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
-                <p className="text-gray-900">{selectedContract.fechaFin}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
-                <p className="text-gray-900 font-semibold">S/ {Number(selectedContract.valor || 0).toLocaleString()}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Pagado</label>
-                <p className="text-green-600 font-semibold">S/ {Number(selectedContract.pagado || 0).toLocaleString()}</p>
-              </div>
-            </div>
-
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-              <h4 className="font-medium text-gray-900 mb-2">Resumen Financiero</h4>
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-2xl font-bold text-primary">S/ {Number(selectedContract.valor || 0).toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">Valor Total</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-green-600">S/ {Number(selectedContract.pagado || 0).toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">Pagado ({selectedContract.porcentajePagado || 0}%)</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">S/ {Number(saldoPendiente).toLocaleString()}</p>
-                  <p className="text-sm text-gray-500">Saldo Pendiente</p>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cláusulas del Contrato</label>
-              <div className="space-y-2">
-                {(selectedContract.clausulas || []).map((clausula, index) => (
-                  <div key={index} className="flex items-start space-x-2">
-                    <div className="text-sm font-semibold text-gray-500 w-6">{index + 1}.</div>
-                    <p className="text-gray-700 text-sm flex-1">{clausula}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {selectedContract.observaciones && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
-                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-                  <p className="text-gray-700">{selectedContract.observaciones}</p>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {activeTab !== 'Resumen' && (
-          <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-600">
-            Sin datos en "{activeTab}" por ahora.
-          </div>
-        )}
-
-        <Modal.Footer>
-          <Button 
-            variant="outline" 
-            onClick={onClose}
-          >
-            Cerrar
-          </Button>
-          <Button 
-            variant="ghost"
-            icon={<Download className="w-4 h-4" />}
-            onClick={() => generatePDF(selectedContract)}
-          >
-            Descargar PDF
-          </Button>
-          <Button 
-            variant="secondary"
-            icon={<Edit className="w-4 h-4" />}
-            onClick={onEdit}
-          >
-            Editar
-          </Button>
-        </Modal.Footer>
-      </div>
-    );
-  };
 
   // Función para generar ID único
   const generateContractId = () => {
@@ -856,8 +712,6 @@ const Contratos = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Contract Detail Component (inline) */}
-      {false && <ContractDetail />}
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
         <div className="flex items-center space-x-3 mb-4 md:mb-0">
@@ -940,15 +794,9 @@ const Contratos = () => {
               className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
             >
               <option value="todos">Todos los estados</option>
-              <option value="Borrador">Borrador</option>
-              <option value="Firmado">Firmado</option>
               <option value="Activo">Activo</option>
-              <option value="En ejecución">En ejecución</option>
-              <option value="Finalizado">Finalizado</option>
-              <option value="Entregado">Entregado</option>
-              <option value="Pagado">Pagado</option>
-              <option value="Cerrado">Cerrado</option>
               <option value="Pendiente">Pendiente</option>
+              <option value="Pagado">Pagado</option>
               <option value="Completado">Completado</option>
               <option value="Vencido">Vencido</option>
             </select>
@@ -1014,7 +862,7 @@ const Contratos = () => {
         </div>
       )}
 
-      {/* Contract Detail Modal (Tabbed) */}
+      {/* Contract Detail Modal */}
       <Modal
         isOpen={showContractModal}
         onClose={() => {
@@ -1025,7 +873,118 @@ const Contratos = () => {
         size="xl"
       >
         {selectedContract && (
-          <ContractDetail selectedContract={selectedContract} onClose={() => setShowContractModal(false)} onEdit={() => { setShowContractModal(false); openEditModal(selectedContract); }} />
+          <div className="space-y-6">
+            <div className="flex items-center space-x-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
+                <FileText className="w-8 h-8 text-primary" />
+              </div>
+              <div>
+                <h3 className="text-xl font-semibold">{selectedContract.cliente}</h3>
+                <p className="text-gray-500">{selectedContract.servicio}</p>
+                <span className={`mt-1 inline-block px-3 py-1 rounded-full text-sm font-medium ${statusConfig[selectedContract.estado].color}`}>
+                  {selectedContract.estado}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de Contrato</label>
+                <p className="text-gray-900">{selectedContract.tipo}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Responsable</label>
+                <p className="text-gray-900">{selectedContract.responsable}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
+                <p className="text-gray-900">{selectedContract.fechaInicio}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+                <p className="text-gray-900">{selectedContract.fechaFin}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Valor Total</label>
+                <p className="text-gray-900 font-semibold">S/ {selectedContract.valor.toLocaleString()}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Total Pagado</label>
+                <p className="text-green-600 font-semibold">S/ {selectedContract.pagado.toLocaleString()}</p>
+              </div>
+              {selectedContract.estudiantes > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Número de Estudiantes</label>
+                  <p className="text-gray-900">{selectedContract.estudiantes}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h4 className="font-medium text-gray-900 mb-2">Resumen Financiero</h4>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-primary">S/ {selectedContract.valor.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">Valor Total</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-green-600">S/ {selectedContract.pagado.toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">Pagado ({selectedContract.porcentajePagado}%)</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-600">S/ {(selectedContract.valor - selectedContract.pagado).toLocaleString()}</p>
+                  <p className="text-sm text-gray-500">Saldo Pendiente</p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cláusulas del Contrato</label>
+              <div className="space-y-2">
+                {selectedContract.clausulas.map((clausula, index) => (
+                  <div key={index} className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                    <p className="text-gray-700 text-sm">{clausula}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {selectedContract.observaciones && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+                <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
+                  <p className="text-gray-700">{selectedContract.observaciones}</p>
+                </div>
+              </div>
+            )}
+
+            <Modal.Footer>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowContractModal(false)}
+              >
+                Cerrar
+              </Button>
+              <Button 
+                variant="ghost"
+                icon={<Download className="w-4 h-4" />}
+                onClick={() => generatePDF(selectedContract)}
+              >
+                Descargar PDF
+              </Button>
+              <Button 
+                variant="secondary"
+                icon={<Edit className="w-4 h-4" />}
+                onClick={() => {
+                  setShowContractModal(false);
+                  openEditModal(selectedContract);
+                }}
+              >
+                Editar
+              </Button>
+            </Modal.Footer>
+          </div>
         )}
       </Modal>
 
