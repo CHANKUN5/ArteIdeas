@@ -234,6 +234,39 @@ export const AppProvider = ({ children }) => {
         // Cargar notificaciones persistentes
         loadPersistentNotifications();
 
+        // Agregar algunas notificaciones de ejemplo para demostración
+        setTimeout(() => {
+          notificationService.addNotification({
+            title: '⚠️ Stock Crítico',
+            message: 'Papel A4 80gr tiene stock bajo (2 unidades)',
+            description: 'El producto Papel A4 80gr tiene solo 2 unidades disponibles. El stock mínimo recomendado es 10 unidades.',
+            type: 'warning',
+            category: 'inventory',
+            action: 'stock_alert',
+            metadata: { productName: 'Papel A4 80gr', currentStock: 2, minStock: 10 }
+          });
+
+          notificationService.addNotification({
+            title: '🔧 Mantenimiento Próximo',
+            message: 'Impresora HP LaserJet requiere mantenimiento',
+            description: 'La impresora HP LaserJet tiene programado un mantenimiento preventivo para mañana.',
+            type: 'info',
+            category: 'maintenance',
+            action: 'maintenance_alert',
+            metadata: { equipmentName: 'Impresora HP LaserJet', maintenanceDate: new Date(Date.now() + 24 * 60 * 60 * 1000) }
+          });
+
+          notificationService.addNotification({
+            title: '🚚 Entrega Urgente',
+            message: 'Pedido PED-2024-001 debe entregarse mañana',
+            description: 'El pedido PED-2024-001 de Empresa ABC S.A.C. debe entregarse mañana. Está en estado "En producción".',
+            type: 'warning',
+            category: 'order',
+            action: 'delivery_alert',
+            metadata: { orderNumber: 'PED-2024-001', clientName: 'Empresa ABC S.A.C.', deliveryDate: new Date(Date.now() + 24 * 60 * 60 * 1000) }
+          });
+        }, 2000);
+
       } catch (error) {
         dispatch({ type: APP_ACTIONS.SET_ERROR, payload: error.message });
       } finally {

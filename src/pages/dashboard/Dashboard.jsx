@@ -3,7 +3,9 @@ import { TrendingUp, TrendingDown, Users, Clock, AlertTriangle, Banknote } from 
 import StatsCard from '../../components/dashboard/StatsCard';
 import Chart from '../../components/dashboard/Chart';
 import MetricsPanel from '../../components/dashboard/MetricsPanel';
+import QuickAlertsPanel from '../../components/common/QuickAlertsPanel';
 import { dashboardService } from '../../services/dataService';
+
 
 const Dashboard = ({ onSectionChange }) => {
   const [statsData, setStatsData] = useState([]);
@@ -238,6 +240,9 @@ const Dashboard = ({ onSectionChange }) => {
         </div>
         <p className="text-gray-600">Vista general de tu negocio fotográfico</p>
       </div>
+
+      {/* Quick Alerts Panel */}
+      <QuickAlertsPanel />
 
       {/* Stats Cards */}
       {loading ? (
