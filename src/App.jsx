@@ -11,6 +11,7 @@ import Dashboard from "./pages/dashboard/Dashboard";
 // Importar componentes de páginas
 import Reportes from "./pages/analytics/Reportes";
 import Agenda from "./pages/management/Agenda";
+import Activos from "./pages/management/Activos";
 import Clientes from "./pages/management/Clientes";
 import Contratos from "./pages/management/Contratos";
 import Inventario from "./pages/management/Inventario";
@@ -84,6 +85,7 @@ function AppContent() {
               {activeSection === "pedidos" && <Pedidos />}
               {activeSection === "clientes" && <Clientes />}
               {activeSection === "inventario" && <Inventario />}
+              {activeSection === "activos" && <Activos />}
               {activeSection === "produccion" && <Produccion />}
               {activeSection === "contratos" && <Contratos />}
               {activeSection === "reportes" && <Reportes />}
