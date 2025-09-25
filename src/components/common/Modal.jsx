@@ -16,7 +16,8 @@ const Modal = ({
     md: 'max-w-lg',
     lg: 'max-w-2xl',
     xl: 'max-w-4xl',
-    full: 'max-w-7xl'
+    full: 'max-w-7xl',
+    fullscreen: 'max-w-none w-screen h-full'
   };
 
   useEffect(() => {
@@ -47,8 +48,8 @@ const Modal = ({
           onClick={closeOnOverlay ? onClose : undefined}
         />
 
-        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:w-full sm:max-w-lg">
-          <div className={`bg-white ${sizes[size]} w-full`}>
+        <div className={`inline-block align-bottom bg-white text-left overflow-hidden shadow-xl transform transition-all sm:align-middle w-full ${size === 'fullscreen' ? 'rounded-none w-screen h-screen sm:my-0' : 'rounded-lg sm:my-8'}`}>
+          <div className={`bg-white ${sizes[size]} w-full ${size === 'fullscreen' ? 'h-full flex flex-col' : ''}`}>
             {(title || showCloseButton) && (
               <div className="flex items-center justify-between p-6 border-b border-gray-200">
                 {title && (
@@ -67,7 +68,7 @@ const Modal = ({
               </div>
             )}
             
-            <div className="p-6">
+            <div className={`p-6 ${size === 'fullscreen' ? 'flex-1 overflow-auto' : ''}`}>
               {children}
             </div>
           </div>
