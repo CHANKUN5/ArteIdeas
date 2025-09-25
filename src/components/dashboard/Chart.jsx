@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const Chart = ({ 
   type = 'line', 
@@ -8,7 +8,9 @@ const Chart = ({
   color = '#1DD1E3',
   title,
   dataKey = 'value',
-  nameKey = 'name'
+  nameKey = 'name',
+  lines = [], // Para gráficos multiLine
+  bars = []   // Para gráficos multiBar
 }) => {
   const colors = ['#1DD1E3', '#FF9912', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
@@ -17,7 +19,10 @@ const Chart = ({
       case 'line':
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <LineChart data={data}>
+            <LineChart 
+              data={data}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 
                 dataKey={nameKey} 
@@ -31,7 +36,7 @@ const Chart = ({
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value}`}
+                tickFormatter={(value) => `S/ ${value}`}
               />
               <Tooltip 
                 contentStyle={{
@@ -40,7 +45,7 @@ const Chart = ({
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
-                formatter={(value) => [`$${value}`, 'Ingresos']}
+                formatter={(value) => [`S/ ${value}`, 'Ingresos']}
               />
               <Line 
                 type="monotone" 
@@ -54,10 +59,13 @@ const Chart = ({
           </ResponsiveContainer>
         );
 
-      case 'bar':
+      case 'multiLine':
         return (
           <ResponsiveContainer width="100%" height={height}>
-            <BarChart data={data}>
+            <LineChart 
+              data={data}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis 
                 dataKey={nameKey} 
@@ -71,6 +79,7 @@ const Chart = ({
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
+                tickFormatter={(value) => `S/ ${value}`}
               />
               <Tooltip 
                 contentStyle={{
@@ -79,12 +88,85 @@ const Chart = ({
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
+                formatter={(value, name) => [`S/ ${value.toLocaleString()}`, name]}
               />
-              <Bar 
-                dataKey={dataKey} 
-                fill={color}
-                radius={[4, 4, 0, 0]}
+              <Legend />
+              {lines.map((line, index) => (
+                <Line 
+                  key={line.key}
+                  type="monotone" 
+                  dataKey={line.key} 
+                  stroke={line.color} 
+                  strokeWidth={3}
+                  dot={{ fill: line.color, strokeWidth: 2, r: 4 }}
+                  activeDot={{ r: 6, fill: line.color }}
+                  name={line.name}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart 
+              data={data}
+              margin={{ top: 30, right: 40, left: 40, bottom: 70 }}
+              barCategoryGap="15%"
+              barGap={6}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis 
+                dataKey={nameKey} 
+                stroke="#6b7280" 
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                interval={0}
+                angle={-25}
+                textAnchor="end"
+                height={50}
               />
+              <YAxis 
+                stroke="#6b7280" 
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(value) => {
+                  if (value >= 1000) {
+                    return `S/ ${(value/1000).toFixed(0)}k`;
+                  }
+                  return `S/ ${value}`;
+                }}
+              />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'white',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                }}
+                formatter={(value, name) => [`S/ ${value.toLocaleString()}`, name]}
+              />
+              <Legend />
+              {bars.length > 0 ? (
+                bars.map((bar, index) => (
+                  <Bar 
+                    key={bar.key}
+                    dataKey={bar.key} 
+                    fill={bar.color}
+                    radius={[4, 4, 0, 0]}
+                    name={bar.name}
+                  />
+                ))
+              ) : (
+                <Bar 
+                  dataKey={dataKey} 
+                  fill={color}
+                  radius={[2, 2, 0, 0]}
+                />
+              )}
             </BarChart>
           </ResponsiveContainer>
         );
@@ -126,9 +208,11 @@ const Chart = ({
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
       {title && (
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-6">{title}</h3>
       )}
-      {renderChart()}
+      <div className="w-full">
+        {renderChart()}
+      </div>
     </div>
   );
 };
