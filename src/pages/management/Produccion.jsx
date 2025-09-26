@@ -1,4 +1,5 @@
 import {
+  Check,
   Clock,
   Edit,
   Eye,
@@ -14,6 +15,8 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import ReclassificationModal from '../../components/ReclassificationModal';
 
 const Produccion = () => {
   const [activeMainTab, setActiveMainTab] = useState('Enmarcados');
@@ -34,6 +37,25 @@ const Produccion = () => {
   const [showSaveChangesDialog, setShowSaveChangesDialog] = useState(false);
   const [itemToSaveChanges, setItemToSaveChanges] = useState(null);
   const [isSavingChanges, setIsSavingChanges] = useState(false);
+  
+  // Estados para el modal personalizado de cambio de estado
+  const [showStateChangeModal, setShowStateChangeModal] = useState(false);
+  const [isChangingState, setIsChangingState] = useState(false);
+  const [stateChangeInfo, setStateChangeInfo] = useState({
+    currentState: '',
+    nextState: '',
+    itemCount: 0,
+    type: 'success'
+  });
+
+  // Estados para el modal de reclasificación
+  const [showReclassificationModal, setShowReclassificationModal] = useState(false);
+  const [reclassificationInfo, setReclassificationInfo] = useState({
+    itemName: '',
+    fromTab: '',
+    toTab: '',
+    newId: null
+  });
 
   // Configuración de pestañas principales
   const mainTabs = [
@@ -779,20 +801,101 @@ const Produccion = () => {
   };
 
   const handleSaveChangesConfirm = async () => {
-    if (!itemToSaveChanges) return;
+    if (!itemToSaveChanges || isSavingChanges) return;
     
     setIsSavingChanges(true);
     try {
       setData(prevData => {
         const newData = { ...prevData };
         if (!newData[activeMainTab]) newData[activeMainTab] = {};
-        if (!newData[activeMainTab][activeSubTab]) {
-          newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
-        }
         
-        const index = newData[activeMainTab][activeSubTab].findIndex(item => item.id === itemToSaveChanges.id);
-        if (index !== -1) {
-          newData[activeMainTab][activeSubTab][index] = itemToSaveChanges;
+        // Determinar la tabla correcta según el nuevo estado
+        const correctTab = getCorrectTabForState(itemToSaveChanges.estadoEnvio);
+        const currentTab = activeSubTab;
+        
+        // Si el estado cambió y requiere mover a otra tabla
+        if (correctTab !== currentTab) {
+          // Asegurar que existen las estructuras de datos
+          if (!newData[activeMainTab][currentTab]) {
+            newData[activeMainTab][currentTab] = [...(initialData[activeMainTab]?.[currentTab] || [])];
+          }
+          if (!newData[activeMainTab][correctTab]) {
+            newData[activeMainTab][correctTab] = [...(initialData[activeMainTab]?.[correctTab] || [])];
+          }
+          
+          // Remover el elemento de la tabla actual
+          newData[activeMainTab][currentTab] = newData[activeMainTab][currentTab].filter(
+            item => item.id !== itemToSaveChanges.id
+          );
+          
+          // Generar nuevo ID secuencial de forma segura
+          let currentMaxId = 0;
+          
+          // Encontrar el ID más alto en todos los datos
+          Object.keys(newData).forEach(mainTab => {
+            if (newData[mainTab]) {
+              Object.keys(newData[mainTab]).forEach(subTab => {
+                if (newData[mainTab][subTab]) {
+                  newData[mainTab][subTab].forEach(item => {
+                    if (typeof item.id === 'number' && item.id > currentMaxId) {
+                      currentMaxId = item.id;
+                    }
+                  });
+                }
+              });
+            }
+          });
+          
+          // También revisar los datos iniciales
+          Object.keys(initialData).forEach(mainTab => {
+            if (initialData[mainTab]) {
+              Object.keys(initialData[mainTab]).forEach(subTab => {
+                if (initialData[mainTab][subTab]) {
+                  initialData[mainTab][subTab].forEach(item => {
+                    if (typeof item.id === 'number' && item.id > currentMaxId) {
+                      currentMaxId = item.id;
+                    }
+                  });
+                }
+              });
+            }
+          });
+          
+          const newId = currentMaxId + 1;
+          const updatedItem = {
+            ...itemToSaveChanges,
+            id: newId,
+            fechaActualizacion: new Date().toISOString().split('T')[0]
+          };
+          
+          // Agregar el elemento a la tabla correcta
+          newData[activeMainTab][correctTab].push(updatedItem);
+          
+          // Configurar información para el modal de reclasificación
+          setReclassificationInfo({
+            itemName: itemToSaveChanges.cliente || itemToSaveChanges.descripcion || 'Elemento',
+            fromTab: currentTab,
+            toTab: correctTab,
+            newId: newId
+          });
+          
+          // Mostrar modal de reclasificación después de un breve delay
+          setTimeout(() => {
+            setShowReclassificationModal(true);
+          }, 500);
+        } else {
+          // Si no cambió de tabla, solo actualizar en la tabla actual
+          if (!newData[activeMainTab][activeSubTab]) {
+            newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
+          }
+          
+          const index = newData[activeMainTab][activeSubTab].findIndex(item => item.id === itemToSaveChanges.id);
+          if (index !== -1) {
+            newData[activeMainTab][activeSubTab][index] = {
+              ...itemToSaveChanges,
+              fechaActualizacion: new Date().toISOString().split('T')[0]
+            };
+          }
         }
         
         return newData;
@@ -815,7 +918,7 @@ const Produccion = () => {
   };
 
   const handleAddNew = () => {
-    const newId = Math.max(...getCurrentData().map(item => item.id), 0) + 1;
+    const newId = generateSequentialId();
     const columns = getTableColumns();
     
     // Crear un nuevo elemento con campos básicos según las columnas
@@ -955,6 +1058,268 @@ const Produccion = () => {
     }
     
     return materials;
+  };
+
+  // Función para generar ID único basado en categoría y tabla
+  // Función para generar IDs secuenciales
+  const generateSequentialId = () => {
+    // Obtener todos los IDs existentes en todas las tablas
+    const allIds = [];
+    
+    // Revisar datos actuales
+    Object.keys(data).forEach(mainTab => {
+      if (data[mainTab]) {
+        Object.keys(data[mainTab]).forEach(subTab => {
+          if (data[mainTab][subTab]) {
+            data[mainTab][subTab].forEach(item => {
+              if (typeof item.id === 'number') {
+                allIds.push(item.id);
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    // También revisar los datos iniciales
+    Object.keys(initialData).forEach(mainTab => {
+      if (initialData[mainTab]) {
+        Object.keys(initialData[mainTab]).forEach(subTab => {
+          if (initialData[mainTab][subTab]) {
+            initialData[mainTab][subTab].forEach(item => {
+              if (typeof item.id === 'number') {
+                allIds.push(item.id);
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    // Encontrar el ID más alto y sumar 1
+    const maxId = allIds.length > 0 ? Math.max(...allIds) : 0;
+    return maxId + 1;
+  };
+
+  // Función para determinar la tabla correcta según el estado
+  const getCorrectTabForState = (estadoEnvio) => {
+    const stateToTabMapping = {
+      'Enmarcados': {
+        'Pendiente': 'Orden de Enmarcado',
+        'En proceso': 'En Proceso',
+        'Listo para entrega': 'Terminados',
+        'Entregado': 'Entregados'
+      },
+      'Minilab': {
+        'En cola': 'Orden de Impresión',
+        'Imprimiendo': 'En Proceso',
+        'Listo para entrega': 'Completados',
+        'Completado': 'Completados'
+      },
+      'Recordatorios': {
+        'Pendiente': 'Orden de Producción',
+        'En proceso': 'En Proceso',
+        'Completado': 'Completados'
+      },
+      'Corte Láser': {
+        'Pendiente': 'Orden de Corte',
+        'En proceso': 'En Proceso',
+        'Completado': 'En Proceso'
+      },
+      'Edición Digital': {
+        'En espera': 'Órdenes de Edición',
+        'Recibido': 'Archivo Original',
+        'Listo': 'Archivo Editado',
+        'Entregado': 'Entrega'
+      }
+    };
+
+    return stateToTabMapping[activeMainTab]?.[estadoEnvio] || activeSubTab;
+  };
+
+  // Función para determinar el siguiente estado según la categoría y estado actual
+  const getNextState = (currentSubTab, currentEstadoEnvio) => {
+    const stateTransitions = {
+      'Enmarcados': {
+        'Orden de Enmarcado': { nextState: 'En proceso', nextTab: 'En Proceso' },
+        'En Proceso': { nextState: 'Listo para entrega', nextTab: 'Terminados' },
+        'Terminados': { nextState: 'Entregado', nextTab: 'Entregados' }
+      },
+      'Minilab': {
+        'Orden de Impresión': { nextState: 'Imprimiendo', nextTab: 'En Proceso' },
+        'En Proceso': { nextState: 'Listo para entrega', nextTab: 'Completados' }
+      },
+      'Recordatorios': {
+        'Orden de Producción': { nextState: 'En proceso', nextTab: 'En Proceso' },
+        'En Proceso': { nextState: 'Completado', nextTab: 'Completados' }
+      },
+      'Corte Láser': {
+        'Orden de Corte': { nextState: 'En proceso', nextTab: 'En Proceso' }
+      },
+      'Edición Digital': {
+        'Órdenes de Edición': { nextState: 'Recibido', nextTab: 'Archivo Original' },
+        'Archivo Original': { nextState: 'Listo', nextTab: 'Archivo Editado' },
+        'Archivo Editado': { nextState: 'Entregado', nextTab: 'Entrega' }
+      }
+    };
+
+    return stateTransitions[activeMainTab]?.[currentSubTab] || null;
+  };
+
+  // Función para auto-completar campos según el estado de destino
+  const getAutoCompletedFields = (element, nextTab, nextState) => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const autoCompletedFields = { ...element };
+
+    // Auto-completar campos según el estado de destino
+    switch (nextTab) {
+      case 'En Proceso':
+        autoCompletedFields.fechaInicio = autoCompletedFields.fechaInicio || currentDate;
+        autoCompletedFields.progreso = autoCompletedFields.progreso || '0%';
+        if (activeMainTab === 'Enmarcados') {
+          autoCompletedFields.estadoEnvio = 'En proceso';
+        } else if (activeMainTab === 'Minilab') {
+          autoCompletedFields.estadoEnvio = 'Imprimiendo';
+        }
+        break;
+
+      case 'Terminados':
+      case 'Completados':
+        autoCompletedFields.fechaTerminacion = autoCompletedFields.fechaTerminacion || currentDate;
+        autoCompletedFields.progreso = '100%';
+        autoCompletedFields.estadoEnvio = 'Listo para entrega';
+        break;
+
+      case 'Entregados':
+      case 'Entrega':
+        autoCompletedFields.fechaEntrega = autoCompletedFields.fechaEntrega || currentDate;
+        autoCompletedFields.progreso = '100%';
+        autoCompletedFields.estadoEnvio = 'Entregado';
+        break;
+
+      case 'Archivo Original':
+        autoCompletedFields.fechaRecepcion = autoCompletedFields.fechaRecepcion || currentDate;
+        autoCompletedFields.estadoEnvio = 'Recibido';
+        break;
+
+      case 'Archivo Editado':
+        autoCompletedFields.fechaEdicion = autoCompletedFields.fechaEdicion || currentDate;
+        autoCompletedFields.estadoEnvio = 'Listo';
+        break;
+
+      default:
+        // Para otros estados, solo actualizar el estado de envío
+        autoCompletedFields.estadoEnvio = nextState;
+        break;
+    }
+
+    // Siempre actualizar la fecha de actualización
+    autoCompletedFields.fechaActualizacion = currentDate;
+
+    return autoCompletedFields;
+  };
+
+  // Función para cambiar estado de elementos seleccionados
+  const handleChangeStateSelected = () => {
+    if (selectedItems.length === 0) {
+      alert('Por favor selecciona al menos un elemento para cambiar su estado');
+      return;
+    }
+
+    const nextStateInfo = getNextState(activeSubTab);
+    if (!nextStateInfo) {
+      alert('No se puede avanzar el estado desde esta pestaña');
+      return;
+    }
+
+    // Configurar información del modal
+    setStateChangeInfo({
+      currentState: activeSubTab,
+      nextState: nextStateInfo.nextState,
+      itemCount: selectedItems.length,
+      type: 'success'
+    });
+    
+    // Mostrar modal de confirmación
+    setShowStateChangeModal(true);
+  };
+
+  // Función para confirmar el cambio de estado
+  const confirmStateChange = () => {
+    // Prevenir ejecuciones múltiples
+    if (isChangingState) return;
+    
+    setIsChangingState(true);
+    const nextStateInfo = getNextState(activeSubTab);
+    const selectedElements = getCurrentData().filter(item => selectedItems.includes(item.id));
+    
+    setData(prevData => {
+      const newData = { ...prevData };
+      
+      // Asegurar que existe la estructura de datos
+      if (!newData[activeMainTab]) newData[activeMainTab] = {};
+      
+      // Obtener datos actuales de la pestaña actual
+      const currentTabData = newData[activeMainTab][activeSubTab] || [...initialData[activeMainTab][activeSubTab]];
+      
+      // Obtener datos de la pestaña destino
+      const targetTabData = newData[activeMainTab][nextStateInfo.nextTab] || [...(initialData[activeMainTab][nextStateInfo.nextTab] || [])];
+      
+      // Generar IDs secuenciales únicos para cada elemento
+      let currentMaxId = 0;
+      
+      // Encontrar el ID más alto en todos los datos
+      Object.keys(newData).forEach(mainTab => {
+        if (newData[mainTab]) {
+          Object.keys(newData[mainTab]).forEach(subTab => {
+            if (newData[mainTab][subTab]) {
+              newData[mainTab][subTab].forEach(item => {
+                if (typeof item.id === 'number' && item.id > currentMaxId) {
+                  currentMaxId = item.id;
+                }
+              });
+            }
+          });
+        }
+      });
+      
+      // También revisar los datos iniciales
+      Object.keys(initialData).forEach(mainTab => {
+        if (initialData[mainTab]) {
+          Object.keys(initialData[mainTab]).forEach(subTab => {
+            if (initialData[mainTab][subTab]) {
+              initialData[mainTab][subTab].forEach(item => {
+                if (typeof item.id === 'number' && item.id > currentMaxId) {
+                  currentMaxId = item.id;
+                }
+              });
+            }
+          });
+        }
+      });
+      
+      // Actualizar elementos seleccionados con nuevo estado, nuevos IDs secuenciales únicos y campos auto-completados
+      const updatedElements = selectedElements.map((element, index) => {
+        const elementWithNewId = {
+          ...element,
+          id: currentMaxId + index + 1
+        };
+        
+        // Aplicar auto-completado de campos según el estado de destino
+        return getAutoCompletedFields(elementWithNewId, nextStateInfo.nextTab, nextStateInfo.nextState);
+      });
+      
+      // Remover elementos de la pestaña actual
+      newData[activeMainTab][activeSubTab] = currentTabData.filter(item => !selectedItems.includes(item.id));
+      
+      // Agregar elementos a la pestaña destino
+      newData[activeMainTab][nextStateInfo.nextTab] = [...targetTabData, ...updatedElements];
+      
+      return newData;
+    });
+
+    setSelectedItems([]);
+    setShowStateChangeModal(false);
   };
 
   const getEstadoEnvioColor = (estado) => {
@@ -1241,6 +1606,21 @@ const Produccion = () => {
             </div>
           </div>
         )}
+
+        {/* Botón para cambiar estado de elementos seleccionados */}
+        {selectedItems.length > 0 && getNextState(activeSubTab) && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex justify-center">
+              <button 
+                onClick={handleChangeStateSelected}
+                className="flex items-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm text-sm"
+              >
+                <Check className="w-4 h-4" />
+                <span>Marcar como {getNextState(activeSubTab)?.nextState || 'Completado'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal para ver/editar/agregar */}
@@ -1295,6 +1675,32 @@ const Produccion = () => {
         cancelText="Cancelar"
         type="warning"
         isLoading={isSavingChanges}
+      />
+
+      {/* Modal personalizado para cambio de estado */}
+      <ConfirmationModal
+        isOpen={showStateChangeModal}
+        onClose={() => setShowStateChangeModal(false)}
+        onConfirm={confirmStateChange}
+        title="Cambiar Estado"
+        message="¿Estás seguro de que quieres cambiar el estado de los elementos seleccionados?"
+        confirmText="Sí, cambiar estado"
+        cancelText="Cancelar"
+        type={stateChangeInfo.type}
+        itemCount={stateChangeInfo.itemCount}
+        currentState={stateChangeInfo.currentState}
+        nextState={stateChangeInfo.nextState}
+        showStateTransition={true}
+      />
+
+      {/* Modal personalizado para reclasificación */}
+      <ReclassificationModal
+        isOpen={showReclassificationModal}
+        onClose={() => setShowReclassificationModal(false)}
+        itemName={reclassificationInfo.itemName}
+        fromTab={reclassificationInfo.fromTab}
+        toTab={reclassificationInfo.toTab}
+        newId={reclassificationInfo.newId}
       />
     </div>
   );
