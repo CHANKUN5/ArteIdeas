@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { TrendingUp, TrendingDown, Users, Clock, AlertTriangle, Banknote } from 'lucide-react';
-import StatsCard from '../../components/dashboard/StatsCard';
+import { Banknote, Clock, TrendingDown, TrendingUp, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import QuickAlertsPanel from '../../components/common/QuickAlertsPanel';
 import Chart from '../../components/dashboard/Chart';
 import MetricsPanel from '../../components/dashboard/MetricsPanel';
-import QuickAlertsPanel from '../../components/common/QuickAlertsPanel';
+import StatsCard from '../../components/dashboard/StatsCard';
 import { dashboardService } from '../../services/dataService';
 
 
@@ -272,7 +272,7 @@ const Dashboard = ({ onSectionChange }) => {
       )}
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 h-260px">
         <Chart
           type="multiLine"
           data={financialData}

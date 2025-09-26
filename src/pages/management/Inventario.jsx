@@ -1,5 +1,7 @@
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Edit,
   FileText,
   Frame,
@@ -157,6 +159,7 @@ const Inventario = () => {
   const [stockOperation, setStockOperation] = useState('increase');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isAlertsExpanded, setIsAlertsExpanded] = useState(true);
 
   // Cargar inventario desde localStorage (si existe)
   useEffect(() => {
@@ -471,57 +474,82 @@ const Inventario = () => {
       </div>
 
       {/* Sección de Alertas de Stock */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Alertas de Stock</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddItem(true)}
-            className="text-blue-600 border-blue-600 hover:bg-blue-50"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Añadir Alerta
-          </Button>
+      <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
+        <div 
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => setIsAlertsExpanded(!isAlertsExpanded)}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Alertas de Stock</h2>
+            </div>
+            {totalAlertas > 0 && (
+              <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
+                {totalAlertas} alerta{totalAlertas !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddItem(true);
+              }}
+              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Añadir Alerta
+            </Button>
+            <button className="p-1 hover:bg-gray-200 rounded-md transition-colors">
+              {isAlertsExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
         
-        {lowStockItems.length > 0 ? (
-          <div className="space-y-2">
-            {lowStockItems.map((item, index) => (
-              <div 
-                key={item.id} 
-                className={`p-3 rounded-lg ${
-                  item.stock <= item.stockMinimo * 0.5 
-                    ? 'bg-red-50 border border-red-200' 
-                    : 'bg-yellow-50 border border-yellow-200'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className={`w-5 h-5 ${
-                      item.stock <= item.stockMinimo * 0.5 ? 'text-red-600' : 'text-yellow-600'
-                    }`} />
-                    <span className="font-medium text-gray-900">
-                      Stock Bajo: {item.nombre} ({item.stock} {item.unidad})
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditItem(item)}
-                    className="text-blue-600 hover:bg-blue-50"
+        {isAlertsExpanded && (
+          <div className="border-t border-gray-200 p-4">
+            {lowStockItems.length > 0 ? (
+              <div className="space-y-2">
+                {lowStockItems.map((item, index) => (
+                  <div 
+                    key={item.id} 
+                    className={`p-3 rounded-lg ${
+                      item.stock <= item.stockMinimo * 0.5 
+                        ? 'bg-red-50 border border-red-200' 
+                        : 'bg-yellow-50 border border-yellow-200'
+                    }`}
                   >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <AlertTriangle className={`w-5 h-5 ${
+                          item.stock <= item.stockMinimo * 0.5 ? 'text-red-600' : 'text-yellow-600'
+                        }`} />
+                        <span className="font-medium text-gray-900">
+                          Stock Bajo: {item.nombre} ({item.stock} {item.unidad})
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditItem(item)}
+                        className="text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-            <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">No hay alertas de stock actualmente</p>
-            <p className="text-sm text-gray-500 mt-1">Añade una alerta para monitorear productos con stock bajo</p>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600">No hay alertas de stock actualmente</p>
+                <p className="text-sm text-gray-500 mt-1">Añade una alerta para monitorear productos con stock bajo</p>
+              </div>
+            )}
           </div>
         )}
       </div>

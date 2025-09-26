@@ -1,6 +1,18 @@
 import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Legend } from 'recharts';
 
+// Función para formatear números en formato abreviado (k, M, B)
+const formatNumber = (value) => {
+  if (value >= 1000000000) {
+    return (value / 1000000000).toFixed(1) + 'B';
+  } else if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + 'M';
+  } else if (value >= 1000) {
+    return (value / 1000).toFixed(1) + 'k';
+  }
+  return value.toString();
+};
+
 const Chart = ({ 
   type = 'line', 
   data, 
@@ -36,7 +48,7 @@ const Chart = ({
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `S/ ${value}`}
+                tickFormatter={(value) => `S/ ${formatNumber(value)}`}
               />
               <Tooltip 
                 contentStyle={{
@@ -45,7 +57,7 @@ const Chart = ({
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
-                formatter={(value) => [`S/ ${value}`, 'Ingresos']}
+                formatter={(value) => [`S/ ${value.toLocaleString('es-ES')}`, 'Ingresos']}
               />
               <Line 
                 type="monotone" 
@@ -88,7 +100,7 @@ const Chart = ({
                   borderRadius: '8px',
                   boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
-                formatter={(value, name) => [`S/ ${value.toLocaleString()}`, name]}
+                formatter={(value, name) => [`S/ ${value.toLocaleString('es-ES')}`, name]}
               />
               <Legend />
               {lines.map((line, index) => (

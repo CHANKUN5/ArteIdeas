@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import Button from '../../components/common/Button';
 import Card from '../../components/common/Card';
 import Chart from '../../components/dashboard/Chart';
+import ReportExportModal from '../../components/common/ReportExportModal';
 
 const Reportes = () => {
   const [dateRange, setDateRange] = useState({
@@ -10,6 +11,7 @@ const Reportes = () => {
     fin: '2025-06-30'
   });
   const [reportType, setReportType] = useState('ventas');
+  const [showExportModal, setShowExportModal] = useState(false);
 
   // Datos de ventas mensuales
   const salesData = [
@@ -155,42 +157,387 @@ const Reportes = () => {
     setTimeout(() => URL.revokeObjectURL(link.href), 0);
   };
 
-  const toCSV = (rows, headers) => {
-    if (!rows || rows.length === 0) return '';
-    const keys = headers && headers.length ? headers : Array.from(
-      rows.reduce((set, obj) => {
-        Object.keys(obj).forEach(k => set.add(k));
-        return set;
-      }, new Set())
-    );
-    const escapeCell = (val) => {
-      const s = (val ?? '').toString();
-      const needsQuotes = s.includes(',') || s.includes('"') || s.includes('\n');
-      const escaped = s.replace(/"/g, '""');
-      return needsQuotes ? `"${escaped}"` : escaped;
-    };
-    const headerLine = keys.map(escapeCell).join(',');
-    const lines = rows.map(r => keys.map(k => escapeCell(r[k])).join(','));
+  // Función mejorada para crear CSV con plantillas organizadas
+  const createOrganizedCSV = (reportData) => {
+    const { title, metadata, kpis, tableData, chartData, includeCharts } = reportData;
+    let csvContent = '';
+    
     // BOM para mejor compatibilidad con Excel
-    return '\ufeff' + [headerLine, ...lines].join('\n');
+    csvContent += '\ufeff';
+    
+    // === HEADER DEL REPORTE ===
+    csvContent += `${title}\n`;
+    csvContent += `Fecha de generación: ${new Date().toLocaleDateString('es-ES')}\n`;
+    csvContent += `Hora de generación: ${new Date().toLocaleTimeString('es-ES')}\n`;
+    
+    if (metadata) {
+      csvContent += `Período: ${metadata.periodo || 'N/A'}\n`;
+      csvContent += `Tipo de reporte: ${metadata.tipo || 'N/A'}\n`;
+    }
+    
+    csvContent += '\n';
+    
+    // === INDICADORES CLAVE (KPIs) ===
+    if (kpis && kpis.length > 0) {
+      csvContent += '=== INDICADORES CLAVE ===\n';
+      csvContent += 'Indicador,Valor,Unidad\n';
+      kpis.forEach(kpi => {
+        csvContent += `"${kpi.nombre}","${kpi.valor}","${kpi.unidad || ''}"\n`;
+      });
+      csvContent += '\n';
+    }
+    
+    // === DATOS DE TABLA PRINCIPAL ===
+    if (tableData && tableData.length > 0) {
+      csvContent += '=== DATOS PRINCIPALES ===\n';
+      const headers = Object.keys(tableData[0]);
+      csvContent += headers.map(h => `"${h}"`).join(',') + '\n';
+      
+      tableData.forEach(row => {
+        const values = headers.map(header => {
+          let value = row[header];
+          if (typeof value === 'number') {
+            value = value.toLocaleString('es-ES');
+          }
+          return `"${String(value).replace(/"/g, '""')}"`;
+        });
+        csvContent += values.join(',') + '\n';
+      });
+      csvContent += '\n';
+    }
+    
+    // === DATOS DE GRÁFICOS ===
+    if (includeCharts && chartData && chartData.length > 0) {
+      csvContent += '=== DATOS DE GRÁFICOS ===\n';
+      chartData.forEach(chart => {
+        csvContent += `--- ${chart.title} ---\n`;
+        if (chart.data && chart.data.length > 0) {
+          const chartHeaders = Object.keys(chart.data[0]);
+          csvContent += chartHeaders.map(h => `"${h}"`).join(',') + '\n';
+          
+          chart.data.forEach(item => {
+            const values = chartHeaders.map(header => {
+              let value = item[header];
+              if (typeof value === 'number') {
+                value = value.toLocaleString('es-ES');
+              }
+              return `"${String(value).replace(/"/g, '""')}"`;
+            });
+            csvContent += values.join(',') + '\n';
+          });
+        }
+        csvContent += '\n';
+      });
+    }
+    
+    // === PIE DE PÁGINA ===
+    csvContent += '=== INFORMACIÓN ADICIONAL ===\n';
+    csvContent += 'Sistema: Arte Ideas - Sistema de Gestión\n';
+    csvContent += `Total de registros: ${tableData ? tableData.length : 0}\n`;
+    
+    return csvContent;
   };
 
-  const exportCSV = (filename, rows, headers) => {
-    const csv = toCSV(rows, headers);
+  const exportCSV = (filename, reportData) => {
+    const csv = createOrganizedCSV(reportData);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     downloadBlob(blob, filename.endsWith('.csv') ? filename : `${filename}.csv`);
   };
 
   const exportCurrentReportCSV = () => {
+    let reportData = {};
+    
     if (reportType === 'ventas') {
-      exportCSV('reporte_ventas', filteredSalesData);
+      reportData = {
+        title: 'REPORTE DE VENTAS - ARTE IDEAS',
+        metadata: {
+          periodo: `${dateRange.inicio || 'Enero 2025'} - ${dateRange.fin || 'Diciembre 2025'}`,
+          tipo: 'Análisis de Ventas'
+        },
+        kpis: [
+          { nombre: 'Ingresos Totales', valor: `S/ ${ventasKPIs.totalIngresos.toLocaleString()}`, unidad: 'Soles' },
+          { nombre: 'Total de Órdenes', valor: ventasKPIs.ordenes, unidad: 'Unidades' },
+          { nombre: 'Nuevos Clientes', valor: ventasKPIs.nuevosClientes, unidad: 'Personas' },
+          { nombre: 'Productos Críticos', valor: ventasKPIs.criticos, unidad: 'Items' }
+        ],
+        tableData: filteredSalesData.map(item => ({
+          'Mes': item.name,
+          'Ingresos (S/)': item.value,
+          'Porcentaje del Total': `${((item.value / filteredSalesData.reduce((sum, d) => sum + d.value, 0)) * 100).toFixed(1)}%`
+        })),
+        chartData: [
+          {
+            title: 'Evolución Mensual de Ventas',
+            data: filteredSalesData.map(item => ({
+              'Período': item.name,
+              'Valor': item.value,
+              'Tendencia': item.value > 15000 ? 'Alta' : item.value > 10000 ? 'Media' : 'Baja'
+            }))
+          }
+        ]
+      };
+      exportCSV('reporte_ventas', reportData);
+      
     } else if (reportType === 'clientes') {
-      exportCSV('reporte_clientes', clientData);
+      reportData = {
+        title: 'REPORTE DE CLIENTES - ARTE IDEAS',
+        metadata: {
+          periodo: 'Datos Actuales',
+          tipo: 'Análisis de Clientes'
+        },
+        kpis: [
+          { nombre: 'Total de Clientes', valor: clientData.length, unidad: 'Clientes' },
+          { nombre: 'Ingresos Promedio', valor: `S/ ${(clientData.reduce((sum, c) => sum + c.amount, 0) / clientData.length).toFixed(0)}`, unidad: 'Soles' },
+          { nombre: 'Cliente Top', valor: clientData.reduce((max, c) => c.amount > max.amount ? c : max, clientData[0])?.name || 'N/A', unidad: '' }
+        ],
+        tableData: clientData.map(client => ({
+          'Cliente': client.name,
+          'Monto Generado (S/)': client.amount,
+          'Tipo': client.type || 'Regular',
+          'Estado': client.amount > 5000 ? 'VIP' : 'Regular'
+        })),
+        chartData: [
+          {
+            title: 'Distribución de Clientes por Monto',
+            data: clientAmountBarData.map(item => ({
+              'Cliente': item.name,
+              'Monto': item.value,
+              'Categoría': item.value > 5000 ? 'Alto Valor' : item.value > 2000 ? 'Medio Valor' : 'Bajo Valor'
+            }))
+          }
+        ]
+      };
+      exportCSV('reporte_clientes', reportData);
+      
     } else if (reportType === 'productos') {
-      exportCSV('reporte_productos', topProducts);
+      reportData = {
+        title: 'REPORTE DE PRODUCTOS - ARTE IDEAS',
+        metadata: {
+          periodo: 'Datos Actuales',
+          tipo: 'Análisis de Productos'
+        },
+        kpis: [
+          { nombre: 'Total de Productos', valor: topProducts.length, unidad: 'Productos' },
+          { nombre: 'Ingresos Totales', valor: `S/ ${topProducts.reduce((sum, p) => sum + p.ingresos, 0).toLocaleString()}`, unidad: 'Soles' },
+          { nombre: 'Producto Top', valor: topProducts[0]?.producto || 'N/A', unidad: '' }
+        ],
+        tableData: topProducts.map(product => ({
+          'Producto': product.producto,
+          'Ingresos (S/)': product.ingresos,
+          'Unidades Vendidas': product.unidades,
+          'Precio Promedio (S/)': (product.ingresos / product.unidades).toFixed(2)
+        })),
+        chartData: [
+          {
+            title: 'Rendimiento de Productos por Ingresos',
+            data: productBarData.map(item => ({
+              'Producto': item.name,
+              'Ingresos': item.value,
+              'Rendimiento': item.value > 3000 ? 'Excelente' : item.value > 2000 ? 'Bueno' : 'Regular'
+            }))
+          }
+        ]
+      };
+      exportCSV('reporte_productos', reportData);
+      
     } else if (reportType === 'inventario') {
-      exportCSV('reporte_inventario', criticalInventory);
+      reportData = {
+        title: 'REPORTE DE INVENTARIO CRÍTICO - ARTE IDEAS',
+        metadata: {
+          periodo: 'Estado Actual',
+          tipo: 'Análisis de Inventario'
+        },
+        kpis: [
+          { nombre: 'Items Críticos', valor: criticalInventory.length, unidad: 'Productos' },
+          { nombre: 'Valor Total en Riesgo', valor: `S/ ${criticalInventory.reduce((sum, i) => sum + i.valor, 0)}`, unidad: 'Soles' },
+          { nombre: 'Item Más Crítico', valor: criticalInventory.reduce((min, i) => (i.stock - i.minimo) < (min.stock - min.minimo) ? i : min, criticalInventory[0])?.item || 'N/A', unidad: '' }
+        ],
+        tableData: criticalInventory.map(item => ({
+          'Producto': item.item,
+          'Stock Actual': item.stock,
+          'Stock Mínimo': item.minimo,
+          'Diferencia': item.stock - item.minimo,
+          'Valor (S/)': item.valor,
+          'Estado': item.stock < item.minimo ? 'CRÍTICO' : 'BAJO'
+        })),
+        chartData: [
+          {
+            title: 'Análisis de Stock vs Mínimo Requerido',
+            data: criticalInventory.map(item => ({
+              'Producto': item.item,
+              'Stock_Actual': item.stock,
+              'Stock_Minimo': item.minimo,
+              'Deficit': Math.max(0, item.minimo - item.stock),
+              'Valor_en_Riesgo': item.valor
+            }))
+          }
+        ]
+      };
+      exportCSV('reporte_inventario', reportData);
     }
+  };
+
+  // Función para manejar la exportación personalizada desde el modal
+  const handleCustomExport = (exportConfig) => {
+    const { format, includeCharts, dateRange: exportDateRange, reportType: exportReportType } = exportConfig;
+    
+    // Determinar qué datos exportar con plantilla organizada
+    let reportData = {};
+    let filename = '';
+    
+    if (exportReportType === 'ventas') {
+      const dataToUse = exportDateRange === 'all' ? salesData : filteredSalesData;
+      filename = 'reporte_ventas_personalizado';
+      
+      reportData = {
+        title: 'REPORTE PERSONALIZADO DE VENTAS - ARTE IDEAS',
+        metadata: {
+          periodo: exportDateRange === 'all' ? 'Todos los períodos' : `${dateRange.inicio || 'Enero 2025'} - ${dateRange.fin || 'Diciembre 2025'}`,
+          tipo: 'Análisis Personalizado de Ventas',
+          incluye_graficos: includeCharts ? 'Sí' : 'No'
+        },
+        kpis: [
+          { nombre: 'Ingresos Totales', valor: `S/ ${ventasKPIs.totalIngresos.toLocaleString()}`, unidad: 'Soles' },
+          { nombre: 'Total de Órdenes', valor: ventasKPIs.ordenes, unidad: 'Unidades' },
+          { nombre: 'Nuevos Clientes', valor: ventasKPIs.nuevosClientes, unidad: 'Personas' },
+          { nombre: 'Productos Críticos', valor: ventasKPIs.criticos, unidad: 'Items' }
+        ],
+        tableData: dataToUse.map(item => ({
+          'Mes': item.name,
+          'Ingresos (S/)': item.value,
+          'Porcentaje del Total': `${((item.value / dataToUse.reduce((sum, d) => sum + d.value, 0)) * 100).toFixed(1)}%`
+        })),
+        chartData: includeCharts ? [
+          {
+            title: 'Evolución Mensual de Ventas',
+            data: dataToUse.map(item => ({
+              'Período': item.name,
+              'Valor': item.value,
+              'Tendencia': item.value > 15000 ? 'Alta' : item.value > 10000 ? 'Media' : 'Baja'
+            }))
+          }
+        ] : [],
+        includeCharts
+      };
+      
+    } else if (exportReportType === 'clientes') {
+      filename = 'reporte_clientes_personalizado';
+      
+      reportData = {
+        title: 'REPORTE PERSONALIZADO DE CLIENTES - ARTE IDEAS',
+        metadata: {
+          periodo: 'Datos Actuales',
+          tipo: 'Análisis Personalizado de Clientes',
+          incluye_graficos: includeCharts ? 'Sí' : 'No'
+        },
+        kpis: [
+          { nombre: 'Total de Clientes', valor: clientData.length, unidad: 'Clientes' },
+          { nombre: 'Ingresos Promedio', valor: `S/ ${(clientData.reduce((sum, c) => sum + c.amount, 0) / clientData.length).toFixed(0)}`, unidad: 'Soles' },
+          { nombre: 'Cliente Top', valor: clientData.reduce((max, c) => c.amount > max.amount ? c : max, clientData[0])?.name || 'N/A', unidad: '' }
+        ],
+        tableData: clientData.map(client => ({
+          'Cliente': client.name,
+          'Monto Generado (S/)': client.amount,
+          'Tipo': client.type || 'Regular',
+          'Estado': client.amount > 5000 ? 'VIP' : 'Regular'
+        })),
+        chartData: includeCharts ? [
+          {
+            title: 'Distribución de Clientes por Monto',
+            data: clientAmountBarData.map(item => ({
+              'Cliente': item.name,
+              'Monto': item.value,
+              'Categoría': item.value > 5000 ? 'Alto Valor' : item.value > 2000 ? 'Medio Valor' : 'Bajo Valor'
+            }))
+          }
+        ] : [],
+        includeCharts
+      };
+      
+    } else if (exportReportType === 'productos') {
+      filename = 'reporte_productos_personalizado';
+      
+      reportData = {
+        title: 'REPORTE PERSONALIZADO DE PRODUCTOS - ARTE IDEAS',
+        metadata: {
+          periodo: 'Datos Actuales',
+          tipo: 'Análisis Personalizado de Productos',
+          incluye_graficos: includeCharts ? 'Sí' : 'No'
+        },
+        kpis: [
+          { nombre: 'Total de Productos', valor: topProducts.length, unidad: 'Productos' },
+          { nombre: 'Ingresos Totales', valor: `S/ ${topProducts.reduce((sum, p) => sum + p.ingresos, 0).toLocaleString()}`, unidad: 'Soles' },
+          { nombre: 'Producto Top', valor: topProducts[0]?.producto || 'N/A', unidad: '' }
+        ],
+        tableData: topProducts.map(product => ({
+          'Producto': product.producto,
+          'Ingresos (S/)': product.ingresos,
+          'Unidades Vendidas': product.unidades,
+          'Precio Promedio (S/)': (product.ingresos / product.unidades).toFixed(2)
+        })),
+        chartData: includeCharts ? [
+          {
+            title: 'Rendimiento de Productos por Ingresos',
+            data: productBarData.map(item => ({
+              'Producto': item.name,
+              'Ingresos': item.value,
+              'Rendimiento': item.value > 3000 ? 'Excelente' : item.value > 2000 ? 'Bueno' : 'Regular'
+            }))
+          }
+        ] : [],
+        includeCharts
+      };
+      
+    } else if (exportReportType === 'inventario') {
+      filename = 'reporte_inventario_personalizado';
+      
+      reportData = {
+        title: 'REPORTE PERSONALIZADO DE INVENTARIO CRÍTICO - ARTE IDEAS',
+        metadata: {
+          periodo: 'Estado Actual',
+          tipo: 'Análisis Personalizado de Inventario',
+          incluye_graficos: includeCharts ? 'Sí' : 'No'
+        },
+        kpis: [
+          { nombre: 'Items Críticos', valor: criticalInventory.length, unidad: 'Productos' },
+          { nombre: 'Valor Total en Riesgo', valor: `S/ ${criticalInventory.reduce((sum, i) => sum + i.valor, 0)}`, unidad: 'Soles' },
+          { nombre: 'Item Más Crítico', valor: criticalInventory.reduce((min, i) => (i.stock - i.minimo) < (min.stock - min.minimo) ? i : min, criticalInventory[0])?.item || 'N/A', unidad: '' }
+        ],
+        tableData: criticalInventory.map(item => ({
+          'Producto': item.item,
+          'Stock Actual': item.stock,
+          'Stock Mínimo': item.minimo,
+          'Diferencia': item.stock - item.minimo,
+          'Valor (S/)': item.valor,
+          'Estado': item.stock < item.minimo ? 'CRÍTICO' : 'BAJO'
+        })),
+        chartData: includeCharts ? [
+          {
+            title: 'Análisis de Stock vs Mínimo Requerido',
+            data: criticalInventory.map(item => ({
+              'Producto': item.item,
+              'Stock_Actual': item.stock,
+              'Stock_Minimo': item.minimo,
+              'Deficit': Math.max(0, item.minimo - item.stock),
+              'Valor_en_Riesgo': item.valor
+            }))
+          }
+        ] : [],
+        includeCharts
+      };
+    }
+
+    // Exportar según el formato seleccionado
+    if (format === 'csv') {
+      exportCSV(filename, reportData);
+    } else if (format === 'txt') {
+      // Exportar como texto plano organizado
+      const txtContent = createOrganizedCSV(reportData).replace(/,/g, ' | ');
+      const blob = new Blob([txtContent], { type: 'text/plain;charset=utf-8;' });
+      downloadBlob(blob, `${filename}.txt`);
+    }
+    
+    console.log('Exportación personalizada completada:', exportConfig);
   };
 
   const exportPDF = (filename = 'reporte.pdf') => {
@@ -558,16 +905,20 @@ const Reportes = () => {
             <Button variant="outline" onClick={exportCurrentReportCSV}>
               Exportar Excel
             </Button>
-            <Button onClick={() => {
-              const opt = window.prompt('Tipo de exportación personalizada (csv/pdf):', 'csv');
-              if (!opt) return;
-              if (opt.toLowerCase() === 'pdf') exportPDF(); else exportCurrentReportCSV();
-            }}>
+            <Button onClick={() => setShowExportModal(true)}>
               Reporte Personalizado
             </Button>
           </div>
         </div>
       </Card>
+
+      {/* Modal de exportación personalizada */}
+      <ReportExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleCustomExport}
+        reportType={reportType}
+      />
     </div>
   );
 };
