@@ -4,8 +4,10 @@ import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import ClientForm from '../../components/forms/ClientForm';
+import { useApp } from '../../context/AppContext';
 
 const Clientes = () => {
+  const { notifyNewClient, notifyClientAction } = useApp();
   const [clients, setClients] = useState([
     {
       id: 'C001',
@@ -105,6 +107,10 @@ const Clientes = () => {
       montoTotal: 0
     };
     setClients([...clients, newClient]);
+    
+    // Notificación persistente para nuevo cliente
+    notifyNewClient(newClient);
+    
     setShowClientForm(false);
   };
 
@@ -112,6 +118,10 @@ const Clientes = () => {
     setClients(clients.map(client => 
       client.id === selectedClient.id ? { ...client, ...clientData } : client
     ));
+    
+    // Notificación persistente
+    notifyClientAction('edit', { ...selectedClient, ...clientData });
+    
     setSelectedClient(null);
     setShowClientForm(false);
   };
@@ -124,6 +134,10 @@ const Clientes = () => {
   const confirmDeleteClient = () => {
     if (clientToDelete) {
       setClients(clients.filter(client => client.id !== clientToDelete.id));
+      
+      // Notificación persistente
+      notifyClientAction('delete', clientToDelete);
+      
       setShowDeleteModal(false);
       setClientToDelete(null);
     }

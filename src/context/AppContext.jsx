@@ -1,5 +1,18 @@
-import React, { createContext, useContext, useReducer, useEffect } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useState } from 'react';
 import { mockDataService } from '../services/dataService';
+import { 
+  notificationService,
+  notifyNewClient,
+  notifyClientAction,
+  notifyNewOrder,
+  notifyOrderAction,
+  notifyNewProduct,
+  notifyProductAction,
+  notifyLowStock,
+  notifyAgendaAction,
+  notifyProductionAction,
+  notifyContractAction
+} from '../services/notificationService';
 
 const AppContext = createContext();
 
@@ -11,6 +24,8 @@ const APP_ACTIONS = {
   SET_NOTIFICATIONS: 'SET_NOTIFICATIONS',
   ADD_NOTIFICATION: 'ADD_NOTIFICATION',
   REMOVE_NOTIFICATION: 'REMOVE_NOTIFICATION',
+  SET_PERSISTENT_NOTIFICATIONS: 'SET_PERSISTENT_NOTIFICATIONS',
+  UPDATE_UNREAD_COUNT: 'UPDATE_UNREAD_COUNT',
   SET_DATA: 'SET_DATA',
   UPDATE_DATA: 'UPDATE_DATA',
   SET_SETTINGS: 'SET_SETTINGS',
@@ -26,8 +41,12 @@ const initialState = {
   loading: false,
   error: null,
   
-  // Notifications
+  // Notifications (temporales - toasts)
   notifications: [],
+  
+  // Persistent Notifications
+  persistentNotifications: [],
+  unreadCount: 0,
   
   // App Data
   data: {
@@ -109,6 +128,18 @@ const appReducer = (state, action) => {
         ),
       };
 
+    case APP_ACTIONS.SET_PERSISTENT_NOTIFICATIONS:
+      return {
+        ...state,
+        persistentNotifications: action.payload,
+      };
+
+    case APP_ACTIONS.UPDATE_UNREAD_COUNT:
+      return {
+        ...state,
+        unreadCount: action.payload,
+      };
+
     case APP_ACTIONS.SET_DATA:
       return {
         ...state,
@@ -167,6 +198,15 @@ export const useApp = () => {
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
 
+  // Cargar notificaciones persistentes
+  const loadPersistentNotifications = () => {
+    const notifications = notificationService.getNotifications();
+    const unreadCount = notificationService.getUnreadCount();
+    
+    dispatch({ type: APP_ACTIONS.SET_PERSISTENT_NOTIFICATIONS, payload: notifications });
+    dispatch({ type: APP_ACTIONS.UPDATE_UNREAD_COUNT, payload: unreadCount });
+  };
+
   // Cargar datos iniciales
   useEffect(() => {
     const loadInitialData = async () => {
@@ -191,6 +231,42 @@ export const AppProvider = ({ children }) => {
         dispatch({ type: APP_ACTIONS.SET_DATA, payload: { type: 'clients', data: mockClients } });
         dispatch({ type: APP_ACTIONS.SET_DATA, payload: { type: 'orders', data: mockOrders } });
 
+        // Cargar notificaciones persistentes
+        loadPersistentNotifications();
+
+        // Agregar algunas notificaciones de ejemplo para demostración
+        setTimeout(() => {
+          notificationService.addNotification({
+            title: '⚠️ Stock Crítico',
+            message: 'Papel A4 80gr tiene stock bajo (2 unidades)',
+            description: 'El producto Papel A4 80gr tiene solo 2 unidades disponibles. El stock mínimo recomendado es 10 unidades.',
+            type: 'warning',
+            category: 'inventory',
+            action: 'stock_alert',
+            metadata: { productName: 'Papel A4 80gr', currentStock: 2, minStock: 10 }
+          });
+
+          notificationService.addNotification({
+            title: '🔧 Mantenimiento Próximo',
+            message: 'Impresora HP LaserJet requiere mantenimiento',
+            description: 'La impresora HP LaserJet tiene programado un mantenimiento preventivo para mañana.',
+            type: 'info',
+            category: 'maintenance',
+            action: 'maintenance_alert',
+            metadata: { equipmentName: 'Impresora HP LaserJet', maintenanceDate: new Date(Date.now() + 24 * 60 * 60 * 1000) }
+          });
+
+          notificationService.addNotification({
+            title: '🚚 Entrega Urgente',
+            message: 'Pedido PED-2024-001 debe entregarse mañana',
+            description: 'El pedido PED-2024-001 de Empresa ABC S.A.C. debe entregarse mañana. Está en estado "En producción".',
+            type: 'warning',
+            category: 'order',
+            action: 'delivery_alert',
+            metadata: { orderNumber: 'PED-2024-001', clientName: 'Empresa ABC S.A.C.', deliveryDate: new Date(Date.now() + 24 * 60 * 60 * 1000) }
+          });
+        }, 2000);
+
       } catch (error) {
         dispatch({ type: APP_ACTIONS.SET_ERROR, payload: error.message });
       } finally {
@@ -199,6 +275,15 @@ export const AppProvider = ({ children }) => {
     };
 
     loadInitialData();
+
+    // Suscribirse a cambios en notificaciones persistentes
+    const unsubscribe = notificationService.subscribe(() => {
+      loadPersistentNotifications();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Funciones para manejar la sidebar
@@ -309,6 +394,49 @@ export const AppProvider = ({ children }) => {
     return showNotification(message, 'warning', options);
   };
 
+  // Funciones para notificaciones persistentes
+  const addPersistentNotification = (notification) => {
+    const newNotification = notificationService.addNotification(notification);
+    return newNotification;
+  };
+
+  const markNotificationAsRead = (notificationId) => {
+    notificationService.markAsRead(notificationId);
+  };
+
+  const markAllNotificationsAsRead = () => {
+    notificationService.markAllAsRead();
+  };
+
+  const removePersistentNotification = (notificationId) => {
+    notificationService.removeNotification(notificationId);
+  };
+
+  const clearAllNotifications = () => {
+    notificationService.clearAll();
+  };
+
+  // Funciones de conveniencia para crear notificaciones específicas
+  const notifyAction = (action, entity, entityName, details = {}) => {
+    return notificationService.createCRUDNotification(action, entity, entityName, details);
+  };
+
+  const notifyNewClient = (clientName, clientType = 'cliente') => {
+    return notificationService.createClientNotification(clientName, clientType);
+  };
+
+  const notifyOrder = (action, orderNumber, clientName, details = {}) => {
+    return notificationService.createOrderNotification(action, orderNumber, clientName, details);
+  };
+
+  const notifyStockAlert = (productName, currentStock, minStock) => {
+    return notificationService.createStockNotification(productName, currentStock, minStock);
+  };
+
+  const notifyReminder = (type, title, message, dueDate, details = {}) => {
+    return notificationService.createReminderNotification(type, title, message, dueDate, details);
+  };
+
   const value = {
     // Estado
     ...state,
@@ -322,7 +450,7 @@ export const AppProvider = ({ children }) => {
     setTheme,
     toggleTheme,
 
-    // Notificaciones
+    // Notificaciones temporales (toasts)
     addNotification,
     removeNotification,
     clearNotifications,
@@ -330,6 +458,25 @@ export const AppProvider = ({ children }) => {
     showSuccess,
     showError,
     showWarning,
+
+    // Notificaciones persistentes
+    addPersistentNotification,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    removePersistentNotification,
+    clearAllNotifications,
+    
+    // Funciones específicas de notificación
+      notifyNewClient,
+      notifyClientAction,
+      notifyNewOrder,
+      notifyOrderAction,
+      notifyNewProduct,
+      notifyProductAction,
+      notifyLowStock,
+      notifyAgendaAction,
+      notifyProductionAction,
+      notifyContractAction,
 
     // Datos
     setData,

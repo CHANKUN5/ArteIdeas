@@ -1,22 +1,26 @@
 import {
+  Check,
   Clock,
   Edit,
   Eye,
   FileText,
   Frame,
-  Palette,
+  Package,
   Search,
   Send,
   Settings,
   Trash2,
-  Truck
+  Truck,
+  Wrench
 } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import ReclassificationModal from '../../components/ReclassificationModal';
 
 const Produccion = () => {
-  const [activeMainTab, setActiveMainTab] = useState('Producción Interna');
-  const [activeSubTab, setActiveSubTab] = useState('Objetos');
+  const [activeMainTab, setActiveMainTab] = useState('Enmarcados');
+  const [activeSubTab, setActiveSubTab] = useState('Orden de Enmarcado');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedItems, setSelectedItems] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -33,169 +37,147 @@ const Produccion = () => {
   const [showSaveChangesDialog, setShowSaveChangesDialog] = useState(false);
   const [itemToSaveChanges, setItemToSaveChanges] = useState(null);
   const [isSavingChanges, setIsSavingChanges] = useState(false);
+  
+  // Estados para el modal personalizado de cambio de estado
+  const [showStateChangeModal, setShowStateChangeModal] = useState(false);
+  const [isChangingState, setIsChangingState] = useState(false);
+  const [stateChangeInfo, setStateChangeInfo] = useState({
+    currentState: '',
+    nextState: '',
+    itemCount: 0,
+    type: 'success'
+  });
+
+  // Estados para el modal de reclasificación
+  const [showReclassificationModal, setShowReclassificationModal] = useState(false);
+  const [reclassificationInfo, setReclassificationInfo] = useState({
+    itemName: '',
+    fromTab: '',
+    toTab: '',
+    newId: null
+  });
 
   // Configuración de pestañas principales
   const mainTabs = [
-    { id: 'Producción Interna', label: 'Producción Interna', icon: Settings },
-    { id: 'Enmarcado', label: 'Enmarcado', icon: Frame },
+    { id: 'Enmarcados', label: 'Enmarcados', icon: Frame },
     { id: 'Minilab', label: 'Minilab', icon: Truck },
     { id: 'Recordatorios', label: 'Recordatorios', icon: Clock },
-    { id: 'Retoque Digital', label: 'Retoque Digital', icon: Edit },
-    { id: 'Pintura al Óleo', label: 'Pintura al Óleo', icon: Palette },
-    { id: 'Edición Gráfica', label: 'Edición Gráfica', icon: FileText }
+    { id: 'Corte Láser', label: 'Corte Láser', icon: Wrench },
+    { id: 'Accesorios', label: 'Accesorios', icon: Package },
+    { id: 'Edición Digital', label: 'Edición Digital', icon: Edit }
   ];
 
   // Configuración de sub-pestañas
   const subTabs = {
-    'Producción Interna': [
-      { id: 'Objetos', label: 'Objetos' },
-      { id: 'Productos Terminados', label: 'Productos Terminados' },
-      { id: 'Control de Calidad', label: 'Control de Calidad' }
-    ],
-    'Enmarcado': [
+    'Enmarcados': [
+      { id: 'Orden de Enmarcado', label: 'Orden de Enmarcado' },
       { id: 'En Proceso', label: 'En Proceso' },
       { id: 'Terminados', label: 'Terminados' },
       { id: 'Entregados', label: 'Entregados' }
     ],
     'Minilab': [
-      { id: 'Cola de Impresión', label: 'Cola de Impresión' },
+      { id: 'Orden de Impresión', label: 'Orden de Impresión' },
+      { id: 'Mantenimiento', label: 'Mantenimiento' },
       { id: 'En Proceso', label: 'En Proceso' },
       { id: 'Completados', label: 'Completados' }
     ],
     'Recordatorios': [
-      { id: 'Pendientes', label: 'Pendientes' },
+      { id: 'Orden de Producción', label: 'Orden de Producción' },
+      { id: 'Control de Avance', label: 'Control de Avance' },
       { id: 'En Proceso', label: 'En Proceso' },
       { id: 'Completados', label: 'Completados' }
     ],
-    'Retoque Digital': [
-      { id: 'Por Iniciar', label: 'Por Iniciar' },
-      { id: 'En Retoque', label: 'En Retoque' },
-      { id: 'Finalizados', label: 'Finalizados' }
+    'Corte Láser': [
+      { id: 'Orden de Corte', label: 'Orden de Corte' },
+      { id: 'Registro de Productos', label: 'Registro de Productos' },
+      { id: 'Mermas', label: 'Mermas' },
+      { id: 'En Proceso', label: 'En Proceso' }
     ],
-    'Pintura al Óleo': [
-      { id: 'Bocetos', label: 'Bocetos' },
-      { id: 'En Proceso', label: 'En Proceso' },
-      { id: 'Terminados', label: 'Terminados' }
+    'Accesorios': [
+      { id: 'Consumo Automático', label: 'Consumo Automático' },
+      { id: 'Registro Manual', label: 'Registro Manual' },
+      { id: 'Stock', label: 'Stock' }
     ],
-    'Edición Gráfica': [
-      { id: 'Diseños', label: 'Diseños' },
-      { id: 'En Edición', label: 'En Edición' },
-      { id: 'Aprobados', label: 'Aprobados' }
+    'Edición Digital': [
+      { id: 'Órdenes de Edición', label: 'Órdenes de Edición' },
+      { id: 'Archivo Original', label: 'Archivo Original' },
+      { id: 'Archivo Editado', label: 'Archivo Editado' },
+      { id: 'Entrega', label: 'Entrega' }
     ]
   };
 
   // Datos de muestra iniciales
   const initialData = {
-    'Producción Interna': {
-      'Objetos': [
-        {
-          id: 1,
-          productoTerminado: 'Marco 30x40',
-          materialesUsados: 'Madera, Vidrio',
-          mermas: '0.5 cm',
-          estadoEnvio: 'No enviado'
-        },
-        {
-          id: 2,
-          productoTerminado: 'Marco 20x30',
-          materialesUsados: 'Madera, Vidrio',
-          mermas: '0.3 cm',
-          estadoEnvio: 'No enviado'
-        },
-        {
-          id: 3,
-          productoTerminado: 'Marco 40x50',
-          materialesUsados: 'Madera, Vidrio',
-          mermas: '0.7 cm',
-          estadoEnvio: 'No enviado'
-        },
-        {
-          id: 4,
-          productoTerminado: 'Marco 15x20',
-          materialesUsados: 'Madera, Vidrio',
-          mermas: '0.2 cm',
-          estadoEnvio: 'No enviado'
-        }
-      ],
-      'Productos Terminados': [
-        {
-          id: 1,
-          producto: 'Marco Clásico 30x40',
-          cantidad: 5,
-          fechaTerminado: '2024-09-10',
-          calidad: 'Excelente',
-          estadoEnvio: 'Enviado'
-        },
-        {
-          id: 2,
-          producto: 'Marco Moderno 20x30',
-          cantidad: 8,
-          fechaTerminado: '2024-09-11',
-          calidad: 'Buena',
-          estadoEnvio: 'Pendiente'
-        }
-      ],
-      'Control de Calidad': [
-        {
-          id: 1,
-          producto: 'Marco 30x40',
-          inspector: 'Juan Pérez',
-          fechaInspeccion: '2024-09-11',
-          resultado: 'Aprobado',
-          observaciones: 'Sin defectos',
-          estadoEnvio: 'Aprobado para envío'
-        }
-      ]
-    },
-    'Enmarcado': {
-      'En Proceso': [
+    'Enmarcados': {
+      'Orden de Enmarcado': [
         {
           id: 1,
           cliente: 'María García',
-          descripcion: 'Foto familiar 20x30',
           moldura: 'Clásica Negra',
+          vidrio: 'Cristal 30x40',
+          mdf: 'MDF Blanco',
+          paspartu: 'Beige',
+          accesorios: '4 colgadores',
+          mermas: 0.5,
           fechaInicio: '2024-09-10',
-          progreso: '60%',
           estadoEnvio: 'En proceso'
         },
         {
           id: 2,
           cliente: 'José Martínez',
-          descripcion: 'Cuadro abstracto 40x60',
           moldura: 'Moderna Blanca',
+          vidrio: 'Cristal 20x30',
+          mdf: 'MDF Negro',
+          paspartu: 'Blanco',
+          accesorios: '4 colgadores',
+          mermas: 0.3,
           fechaInicio: '2024-09-11',
-          progreso: '25%',
+          estadoEnvio: 'Pendiente'
+        }
+      ],
+      'En Proceso': [
+        {
+          id: 1,
+          cliente: 'Carlos López',
+          descripcion: 'Cuadro óleo 40x50',
+          moldura: 'Dorada Antigua',
+          mermas: 0.2,
+          progreso: '60%',
+          fechaInicio: '2024-09-11',
           estadoEnvio: 'En proceso'
         }
       ],
       'Terminados': [
         {
           id: 1,
-          cliente: 'Carlos López',
-          descripcion: 'Cuadro óleo 40x50',
-          moldura: 'Dorada Antigua',
-          fechaTerminado: '2024-09-11',
+          cliente: 'Ana Rodríguez',
+          descripcion: 'Certificado 30x40',
+          moldura: 'Clásica Negra',
+          fechaTerminado: '2024-09-09',
           estadoEnvio: 'Listo para entrega'
         }
       ],
       'Entregados': [
         {
           id: 1,
-          cliente: 'Ana Rodríguez',
-          descripcion: 'Certificado 30x40',
-          fechaEntrega: '2024-09-09',
+          cliente: 'Pedro Sánchez',
+          descripcion: 'Foto familiar 15x20',
+          fechaEntrega: '2024-09-08',
           recibidoPor: 'Cliente',
           estadoEnvio: 'Entregado'
         }
       ]
     },
     'Minilab': {
-      'Cola de Impresión': [
+      'Orden de Impresión': [
         {
           id: 1,
           cliente: 'Pedro Sánchez',
           tipoImpresion: 'Fotos 10x15',
           cantidad: 20,
+          papel: 'Papel Brillante',
+          quimicos: 'Revelador C-41',
+          mermas: 0.1,
           prioridad: 'Normal',
           fechaSolicitud: '2024-09-11',
           estadoEnvio: 'En cola'
@@ -205,9 +187,23 @@ const Produccion = () => {
           cliente: 'Carmen Vega',
           tipoImpresion: 'Poster A2',
           cantidad: 1,
+          papel: 'Papel Mate',
+          quimicos: 'Fijador Universal',
+          mermas: 0.05,
           prioridad: 'Alta',
           fechaSolicitud: '2024-09-11',
           estadoEnvio: 'En cola'
+        }
+      ],
+      'Mantenimiento': [
+        {
+          id: 1,
+          equipo: 'Reveladora Kodak',
+          repuesto: 'Engranaje principal',
+          costo: 150.00,
+          fecha: '2024-09-10',
+          tecnico: 'Miguel Torres',
+          estadoEnvio: 'Completado'
         }
       ],
       'En Proceso': [
@@ -233,186 +229,197 @@ const Produccion = () => {
       ]
     },
     'Recordatorios': {
-      'Pendientes': [
+      'Orden de Producción': [
         {
           id: 1,
-          titulo: 'Llamar a proveedor de madera',
-          descripcion: 'Revisar disponibilidad de molduras clásicas',
-          fechaVencimiento: '2024-09-12',
-          prioridad: 'Alta',
-          asignado: 'Juan Pérez',
-          estadoEnvio: 'Pendiente'
+          colegio: 'Colegio San José',
+          promocion: '2024',
+          plantillas: 'Plantilla estándar',
+          mdf: 'MDF Blanco 20x30',
+          fotosImpresas: 50,
+          mermas: 0.8,
+          fechaInicio: '2024-09-10',
+          estadoEnvio: 'En proceso'
         },
         {
           id: 2,
-          titulo: 'Revisión de inventario',
-          descripcion: 'Contar stock de vidrios de diferentes tamaños',
-          fechaVencimiento: '2024-09-13',
-          prioridad: 'Media',
-          asignado: 'María López',
+          colegio: 'Colegio María Auxiliadora',
+          promocion: '2024',
+          plantillas: 'Plantilla personalizada',
+          mdf: 'MDF Negro 15x20',
+          fotosImpresas: 30,
+          mermas: 1.2,
+          fechaInicio: '2024-09-11',
           estadoEnvio: 'Pendiente'
+        }
+      ],
+      'Control de Avance': [
+        {
+          id: 1,
+          orden: 'ORD-001',
+          sesion: 'Completada',
+          edicion: 'En proceso',
+          impresion: 'Pendiente',
+          entrega: 'Pendiente',
+          progreso: '40%',
+          estadoEnvio: 'En proceso'
         }
       ],
       'En Proceso': [
         {
           id: 1,
-          titulo: 'Mantenimiento de máquina de corte',
-          descripcion: 'Calibración y limpieza mensual',
-          fechaInicio: '2024-09-11',
-          responsable: 'Carlos Ruiz',
-          progreso: '50%',
+          colegio: 'Colegio San Martín',
+          promocion: '2024',
+          progreso: '60%',
+          responsable: 'Ana García',
+          fechaInicio: '2024-09-09',
           estadoEnvio: 'En proceso'
         }
       ],
       'Completados': [
         {
           id: 1,
-          titulo: 'Pedido de materiales',
-          descripcion: 'Compra de adhesivos y herrajes',
-          fechaCompletado: '2024-09-10',
-          completadoPor: 'Ana García',
+          colegio: 'Colegio San Pedro',
+          promocion: '2024',
+          fechaCompletado: '2024-09-08',
+          completadoPor: 'Carlos Ruiz',
           estadoEnvio: 'Completado'
         }
       ]
     },
-    'Retoque Digital': {
-      'Por Iniciar': [
+    'Corte Láser': {
+      'Orden de Corte': [
         {
           id: 1,
-          cliente: 'Studio Fotográfico ABC',
-          tipoTrabajo: 'Retrato profesional',
-          cantidadFotos: 15,
+          cliente: 'Empresa XYZ',
+          material: 'MDF Blanco',
+          diseño: 'Letras corporativas',
+          cantidad: 50,
+          mermas: 0.5,
           fechaSolicitud: '2024-09-11',
-          deadline: '2024-09-15',
-          especialista: 'Sin asignar',
-          estadoEnvio: 'En espera'
+          estadoEnvio: 'Pendiente'
         },
         {
           id: 2,
-          cliente: 'Boda González-Martín',
-          tipoTrabajo: 'Álbum de boda',
-          cantidadFotos: 120,
+          cliente: 'Tienda ABC',
+          material: 'Acrílico transparente',
+          diseño: 'Señalización',
+          cantidad: 20,
+          mermas: 0.2,
           fechaSolicitud: '2024-09-10',
-          deadline: '2024-09-20',
-          especialista: 'Sin asignar',
-          estadoEnvio: 'En espera'
-        }
-      ],
-      'En Retoque': [
-        {
-          id: 1,
-          cliente: 'Evento Corporativo XYZ',
-          tipoTrabajo: 'Fotos de evento',
-          cantidadFotos: 80,
-          especialista: 'Diego Morales',
-          fechaInicio: '2024-09-11',
-          progreso: '30%',
           estadoEnvio: 'En proceso'
         }
       ],
-      'Finalizados': [
+      'Registro de Productos': [
         {
           id: 1,
-          cliente: 'Familia Rodríguez',
-          tipoTrabajo: 'Sesión familiar',
-          cantidadFotos: 25,
-          especialista: 'Laura Vega',
-          fechaFinalizacion: '2024-09-10',
-          estadoEnvio: 'Listo para entrega'
+          producto: 'Letras MDF "BIENVENIDOS"',
+          material: 'MDF Blanco',
+          cantidad: 1,
+          fechaCorte: '2024-09-10',
+          estadoEnvio: 'Completado'
         }
-      ]
-    },
-    'Pintura al Óleo': {
-      'Bocetos': [
+      ],
+      'Mermas': [
         {
           id: 1,
-          cliente: 'María Fernández',
-          tipoObra: 'Retrato',
-          dimensiones: '40x60 cm',
-          artista: 'Elena Castro',
-          fechaInicio: '2024-09-11',
-          referencia: 'Fotografía familiar',
-          estadoEnvio: 'Boceto en proceso'
-        },
-        {
-          id: 2,
-          cliente: 'Galería Arte Moderno',
-          tipoObra: 'Paisaje',
-          dimensiones: '80x120 cm',
-          artista: 'Roberto Silva',
-          fechaInicio: '2024-09-10',
-          referencia: 'Paisaje montañoso',
-          estadoEnvio: 'Boceto en proceso'
+          material: 'MDF Blanco',
+          desperdicio: '0.5 m²',
+          costo: 25.00,
+          fecha: '2024-09-10',
+          estadoEnvio: 'Registrado'
         }
       ],
       'En Proceso': [
         {
           id: 1,
-          cliente: 'Hotel Boutique',
-          tipoObra: 'Abstracto',
-          dimensiones: '60x80 cm',
-          artista: 'Carmen López',
-          fechaInicio: '2024-09-08',
-          progreso: '60%',
-          estadoEnvio: 'Pintura en proceso'
-        }
-      ],
-      'Terminados': [
-        {
-          id: 1,
-          cliente: 'Colección Privada',
-          tipoObra: 'Naturaleza muerta',
-          dimensiones: '50x70 cm',
-          artista: 'Miguel Torres',
-          fechaTerminado: '2024-09-09',
-          estadoEnvio: 'Listo para entrega'
+          cliente: 'Oficina Central',
+          material: 'Cartón corrugado',
+          diseño: 'Prototipo',
+          progreso: '40%',
+          fechaInicio: '2024-09-11',
+          estadoEnvio: 'En proceso'
         }
       ]
     },
-    'Edición Gráfica': {
-      'Diseños': [
+    'Accesorios': {
+      'Consumo Automático': [
         {
           id: 1,
-          cliente: 'Empresa ABC',
-          tipoProyecto: 'Logo corporativo',
-          diseñador: 'Ana Martínez',
+          orden: 'ORD-001',
+          accesorio: 'Colgadores',
+          cantidad: 4,
+          mermas: 0,
+          descuento: 'Automático',
+          fecha: '2024-09-10',
+          estadoEnvio: 'Descontado'
+        }
+      ],
+      'Registro Manual': [
+        {
+          id: 1,
+          accesorio: 'Tornillos',
+          cantidad: 20,
+          mermas: 0,
+          motivo: 'Mantenimiento',
+          responsable: 'Juan Pérez',
+          fecha: '2024-09-11',
+          estadoEnvio: 'Registrado'
+        }
+      ],
+      'Stock': [
+        {
+          id: 1,
+          accesorio: 'Grapas',
+          stock: 500,
+          stockMinimo: 100,
+          proveedor: 'Ferretería Central',
+          estadoEnvio: 'Disponible'
+        }
+      ]
+    },
+    'Edición Digital': {
+      'Órdenes de Edición': [
+        {
+          id: 1,
+          cliente: 'Studio Fotográfico ABC',
+          tipoTrabajo: 'Retoque de retrato',
+          cantidadFotos: 15,
+          mermas: 0,
           fechaSolicitud: '2024-09-11',
-          deadline: '2024-09-18',
-          revision: 'Primera versión',
-          estadoEnvio: 'En diseño'
-        },
-        {
-          id: 2,
-          cliente: 'Restaurante El Buen Sabor',
-          tipoProyecto: 'Menú digital',
-          diseñador: 'Carlos Vega',
-          fechaSolicitud: '2024-09-10',
-          deadline: '2024-09-17',
-          revision: 'Esperando feedback',
-          estadoEnvio: 'En diseño'
+          deadline: '2024-09-15',
+          especialista: 'Diego Morales',
+          estadoEnvio: 'En espera'
         }
       ],
-      'En Edición': [
+      'Archivo Original': [
         {
           id: 1,
-          cliente: 'Editorial Conocimiento',
-          tipoProyecto: 'Portada de libro',
-          diseñador: 'Laura Ruiz',
-          fechaInicio: '2024-09-09',
-          progreso: '75%',
-          revision: 'Segunda revisión',
-          estadoEnvio: 'En edición'
+          cliente: 'Boda González-Martín',
+          archivo: 'IMG_001.jpg',
+          tamaño: '15.2 MB',
+          fechaSubida: '2024-09-10',
+          estadoEnvio: 'Recibido'
         }
       ],
-      'Aprobados': [
+      'Archivo Editado': [
         {
           id: 1,
-          cliente: 'Tienda de Moda StylePlus',
-          tipoProyecto: 'Catálogo de productos',
-          diseñador: 'Diego Moreno',
-          fechaAprobacion: '2024-09-10',
-          revision: 'Versión final',
-          estadoEnvio: 'Aprobado'
+          cliente: 'Evento Corporativo XYZ',
+          archivo: 'IMG_001_editado.jpg',
+          tamaño: '18.5 MB',
+          fechaEdicion: '2024-09-11',
+          estadoEnvio: 'Listo'
+        }
+      ],
+      'Entrega': [
+        {
+          id: 1,
+          cliente: 'Familia Rodríguez',
+          archivos: 25,
+          fechaEntrega: '2024-09-10',
+          metodo: 'Descarga digital',
+          estadoEnvio: 'Entregado'
         }
       ]
     }
@@ -428,44 +435,28 @@ const Produccion = () => {
 
   // Obtener configuración de columnas según la sección
   const getTableColumns = () => {
-    if (activeMainTab === 'Producción Interna') {
-      if (activeSubTab === 'Objetos') {
+    if (activeMainTab === 'Enmarcados') {
+      if (activeSubTab === 'Orden de Enmarcado') {
         return [
-          { key: 'productoTerminado', label: 'PRODUCTO TERMINADO' },
-          { key: 'materialesUsados', label: 'MATERIALES USADOS' },
+          { key: 'cliente', label: 'CLIENTE' },
+          { key: 'moldura', label: 'MOLDURA' },
+          { key: 'vidrio', label: 'VIDRIO' },
+          { key: 'mdf', label: 'MDF' },
+          { key: 'paspartu', label: 'PASPARTÚ' },
+          { key: 'accesorios', label: 'ACCESORIOS' },
           { key: 'mermas', label: 'MERMAS' },
-          { key: 'acciones', label: 'ACCIONES' },
-          { key: 'inventario', label: 'INVENTARIO' },
-          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
-        ];
-      } else if (activeSubTab === 'Productos Terminados') {
-        return [
-          { key: 'producto', label: 'PRODUCTO' },
-          { key: 'cantidad', label: 'CANTIDAD' },
-          { key: 'fechaTerminado', label: 'FECHA TERMINADO' },
-          { key: 'calidad', label: 'CALIDAD' },
+          { key: 'fechaInicio', label: 'FECHA INICIO' },
           { key: 'acciones', label: 'ACCIONES' },
           { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
-      } else if (activeSubTab === 'Control de Calidad') {
-        return [
-          { key: 'producto', label: 'PRODUCTO' },
-          { key: 'inspector', label: 'INSPECTOR' },
-          { key: 'fechaInspeccion', label: 'FECHA INSPECCIÓN' },
-          { key: 'resultado', label: 'RESULTADO' },
-          { key: 'observaciones', label: 'OBSERVACIONES' },
-          { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
-        ];
-      }
-    } else if (activeMainTab === 'Enmarcado') {
-      if (activeSubTab === 'En Proceso') {
+      } else if (activeSubTab === 'En Proceso') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
           { key: 'descripcion', label: 'DESCRIPCIÓN' },
           { key: 'moldura', label: 'MOLDURA' },
-          { key: 'fechaInicio', label: 'FECHA INICIO' },
+          { key: 'mermas', label: 'MERMAS' },
           { key: 'progreso', label: 'PROGRESO' },
+          { key: 'fechaInicio', label: 'FECHA INICIO' },
           { key: 'acciones', label: 'ACCIONES' },
           { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
@@ -489,13 +480,26 @@ const Produccion = () => {
         ];
       }
     } else if (activeMainTab === 'Minilab') {
-      if (activeSubTab === 'Cola de Impresión') {
+      if (activeSubTab === 'Orden de Impresión') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
           { key: 'tipoImpresion', label: 'TIPO IMPRESIÓN' },
           { key: 'cantidad', label: 'CANTIDAD' },
+          { key: 'papel', label: 'PAPEL' },
+          { key: 'quimicos', label: 'QUÍMICOS' },
+          { key: 'mermas', label: 'MERMAS' },
           { key: 'prioridad', label: 'PRIORIDAD' },
           { key: 'fechaSolicitud', label: 'FECHA SOLICITUD' },
+          { key: 'acciones', label: 'ACCIONES' },
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
+        ];
+      } else if (activeSubTab === 'Mantenimiento') {
+        return [
+          { key: 'equipo', label: 'EQUIPO' },
+          { key: 'repuesto', label: 'REPUESTO' },
+          { key: 'costo', label: 'COSTO' },
+          { key: 'fecha', label: 'FECHA' },
+          { key: 'tecnico', label: 'TÉCNICO' },
           { key: 'acciones', label: 'ACCIONES' },
           { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
@@ -520,136 +524,162 @@ const Produccion = () => {
         ];
       }
     } else if (activeMainTab === 'Recordatorios') {
-      if (activeSubTab === 'Pendientes') {
+      if (activeSubTab === 'Orden de Producción') {
         return [
-          { key: 'titulo', label: 'TÍTULO' },
-          { key: 'descripcion', label: 'DESCRIPCIÓN' },
-          { key: 'fechaVencimiento', label: 'FECHA VENCIMIENTO' },
-          { key: 'prioridad', label: 'PRIORIDAD' },
-          { key: 'asignado', label: 'ASIGNADO' },
+          { key: 'colegio', label: 'COLEGIO' },
+          { key: 'promocion', label: 'PROMOCIÓN' },
+          { key: 'plantillas', label: 'PLANTILLAS' },
+          { key: 'mdf', label: 'MDF' },
+          { key: 'fotosImpresas', label: 'FOTOS IMPRESAS' },
+          { key: 'mermas', label: 'MERMAS' },
+          { key: 'fechaInicio', label: 'FECHA INICIO' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
+        ];
+      } else if (activeSubTab === 'Control de Avance') {
+        return [
+          { key: 'orden', label: 'ORDEN' },
+          { key: 'sesion', label: 'SESIÓN' },
+          { key: 'edicion', label: 'EDICIÓN' },
+          { key: 'impresion', label: 'IMPRESIÓN' },
+          { key: 'entrega', label: 'ENTREGA' },
+          { key: 'progreso', label: 'PROGRESO' },
+          { key: 'acciones', label: 'ACCIONES' },
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
       } else if (activeSubTab === 'En Proceso') {
         return [
-          { key: 'titulo', label: 'TÍTULO' },
-          { key: 'descripcion', label: 'DESCRIPCIÓN' },
-          { key: 'fechaInicio', label: 'FECHA INICIO' },
-          { key: 'responsable', label: 'RESPONSABLE' },
+          { key: 'colegio', label: 'COLEGIO' },
+          { key: 'promocion', label: 'PROMOCIÓN' },
           { key: 'progreso', label: 'PROGRESO' },
+          { key: 'responsable', label: 'RESPONSABLE' },
+          { key: 'fechaInicio', label: 'FECHA INICIO' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
       } else if (activeSubTab === 'Completados') {
         return [
-          { key: 'titulo', label: 'TÍTULO' },
-          { key: 'descripcion', label: 'DESCRIPCIÓN' },
+          { key: 'colegio', label: 'COLEGIO' },
+          { key: 'promocion', label: 'PROMOCIÓN' },
           { key: 'fechaCompletado', label: 'FECHA COMPLETADO' },
           { key: 'completadoPor', label: 'COMPLETADO POR' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
       }
-    } else if (activeMainTab === 'Retoque Digital') {
-      if (activeSubTab === 'Por Iniciar') {
+    } else if (activeMainTab === 'Corte Láser') {
+      if (activeSubTab === 'Orden de Corte') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoTrabajo', label: 'TIPO TRABAJO' },
-          { key: 'cantidadFotos', label: 'CANTIDAD FOTOS' },
+          { key: 'material', label: 'MATERIAL' },
+          { key: 'diseño', label: 'DISEÑO' },
+          { key: 'cantidad', label: 'CANTIDAD' },
+          { key: 'mermas', label: 'MERMAS' },
           { key: 'fechaSolicitud', label: 'FECHA SOLICITUD' },
-          { key: 'deadline', label: 'DEADLINE' },
-          { key: 'especialista', label: 'ESPECIALISTA' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
-      } else if (activeSubTab === 'En Retoque') {
+      } else if (activeSubTab === 'Registro de Productos') {
         return [
-          { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoTrabajo', label: 'TIPO TRABAJO' },
-          { key: 'cantidadFotos', label: 'CANTIDAD FOTOS' },
-          { key: 'especialista', label: 'ESPECIALISTA' },
-          { key: 'fechaInicio', label: 'FECHA INICIO' },
-          { key: 'progreso', label: 'PROGRESO' },
+          { key: 'producto', label: 'PRODUCTO' },
+          { key: 'material', label: 'MATERIAL' },
+          { key: 'cantidad', label: 'CANTIDAD' },
+          { key: 'fechaCorte', label: 'FECHA CORTE' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
-      } else if (activeSubTab === 'Finalizados') {
+      } else if (activeSubTab === 'Mermas') {
         return [
-          { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoTrabajo', label: 'TIPO TRABAJO' },
-          { key: 'cantidadFotos', label: 'CANTIDAD FOTOS' },
-          { key: 'especialista', label: 'ESPECIALISTA' },
-          { key: 'fechaFinalizacion', label: 'FECHA FINALIZACIÓN' },
+          { key: 'material', label: 'MATERIAL' },
+          { key: 'desperdicio', label: 'DESPERDICIO' },
+          { key: 'costo', label: 'COSTO' },
+          { key: 'fecha', label: 'FECHA' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
-        ];
-      }
-    } else if (activeMainTab === 'Pintura al Óleo') {
-      if (activeSubTab === 'Bocetos') {
-        return [
-          { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoObra', label: 'TIPO OBRA' },
-          { key: 'dimensiones', label: 'DIMENSIONES' },
-          { key: 'artista', label: 'ARTISTA' },
-          { key: 'fechaInicio', label: 'FECHA INICIO' },
-          { key: 'referencia', label: 'REFERENCIA' },
-          { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
       } else if (activeSubTab === 'En Proceso') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoObra', label: 'TIPO OBRA' },
-          { key: 'dimensiones', label: 'DIMENSIONES' },
-          { key: 'artista', label: 'ARTISTA' },
-          { key: 'fechaInicio', label: 'FECHA INICIO' },
+          { key: 'material', label: 'MATERIAL' },
+          { key: 'diseño', label: 'DISEÑO' },
           { key: 'progreso', label: 'PROGRESO' },
+          { key: 'fechaInicio', label: 'FECHA INICIO' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
-        ];
-      } else if (activeSubTab === 'Terminados') {
-        return [
-          { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoObra', label: 'TIPO OBRA' },
-          { key: 'dimensiones', label: 'DIMENSIONES' },
-          { key: 'artista', label: 'ARTISTA' },
-          { key: 'fechaTerminado', label: 'FECHA TERMINADO' },
-          { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
       }
-    } else if (activeMainTab === 'Edición Gráfica') {
-      if (activeSubTab === 'Diseños') {
+    } else if (activeMainTab === 'Accesorios') {
+      if (activeSubTab === 'Consumo Automático') {
+        return [
+          { key: 'orden', label: 'ORDEN' },
+          { key: 'accesorio', label: 'ACCESORIO' },
+          { key: 'cantidad', label: 'CANTIDAD' },
+          { key: 'mermas', label: 'MERMAS' },
+          { key: 'descuento', label: 'DESCUENTO' },
+          { key: 'fecha', label: 'FECHA' },
+          { key: 'acciones', label: 'ACCIONES' },
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
+        ];
+      } else if (activeSubTab === 'Registro Manual') {
+        return [
+          { key: 'accesorio', label: 'ACCESORIO' },
+          { key: 'cantidad', label: 'CANTIDAD' },
+          { key: 'mermas', label: 'MERMAS' },
+          { key: 'motivo', label: 'MOTIVO' },
+          { key: 'responsable', label: 'RESPONSABLE' },
+          { key: 'fecha', label: 'FECHA' },
+          { key: 'acciones', label: 'ACCIONES' },
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
+        ];
+      } else if (activeSubTab === 'Stock') {
+        return [
+          { key: 'accesorio', label: 'ACCESORIO' },
+          { key: 'stock', label: 'STOCK' },
+          { key: 'stockMinimo', label: 'STOCK MÍNIMO' },
+          { key: 'proveedor', label: 'PROVEEDOR' },
+          { key: 'acciones', label: 'ACCIONES' },
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
+        ];
+      }
+    } else if (activeMainTab === 'Edición Digital') {
+      if (activeSubTab === 'Órdenes de Edición') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoProyecto', label: 'TIPO PROYECTO' },
-          { key: 'diseñador', label: 'DISEÑADOR' },
+          { key: 'tipoTrabajo', label: 'TIPO TRABAJO' },
+          { key: 'cantidadFotos', label: 'CANTIDAD FOTOS' },
+          { key: 'mermas', label: 'MERMAS' },
           { key: 'fechaSolicitud', label: 'FECHA SOLICITUD' },
           { key: 'deadline', label: 'DEADLINE' },
-          { key: 'revision', label: 'REVISIÓN' },
+          { key: 'especialista', label: 'ESPECIALISTA' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
-      } else if (activeSubTab === 'En Edición') {
+      } else if (activeSubTab === 'Archivo Original') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoProyecto', label: 'TIPO PROYECTO' },
-          { key: 'diseñador', label: 'DISEÑADOR' },
-          { key: 'fechaInicio', label: 'FECHA INICIO' },
-          { key: 'progreso', label: 'PROGRESO' },
-          { key: 'revision', label: 'REVISIÓN' },
+          { key: 'archivo', label: 'ARCHIVO' },
+          { key: 'tamaño', label: 'TAMAÑO' },
+          { key: 'fechaSubida', label: 'FECHA SUBIDA' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
-      } else if (activeSubTab === 'Aprobados') {
+      } else if (activeSubTab === 'Archivo Editado') {
         return [
           { key: 'cliente', label: 'CLIENTE' },
-          { key: 'tipoProyecto', label: 'TIPO PROYECTO' },
-          { key: 'diseñador', label: 'DISEÑADOR' },
-          { key: 'fechaAprobacion', label: 'FECHA APROBACIÓN' },
-          { key: 'revision', label: 'REVISIÓN' },
+          { key: 'archivo', label: 'ARCHIVO' },
+          { key: 'tamaño', label: 'TAMAÑO' },
+          { key: 'fechaEdicion', label: 'FECHA EDICIÓN' },
           { key: 'acciones', label: 'ACCIONES' },
-          { key: 'estadoEnvio', label: 'ESTADO' }
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
+        ];
+      } else if (activeSubTab === 'Entrega') {
+        return [
+          { key: 'cliente', label: 'CLIENTE' },
+          { key: 'archivos', label: 'ARCHIVOS' },
+          { key: 'fechaEntrega', label: 'FECHA ENTREGA' },
+          { key: 'metodo', label: 'MÉTODO' },
+          { key: 'acciones', label: 'ACCIONES' },
+          { key: 'estadoEnvio', label: 'ESTADO ENVÍO' }
         ];
       }
     }
@@ -771,20 +801,101 @@ const Produccion = () => {
   };
 
   const handleSaveChangesConfirm = async () => {
-    if (!itemToSaveChanges) return;
+    if (!itemToSaveChanges || isSavingChanges) return;
     
     setIsSavingChanges(true);
     try {
       setData(prevData => {
         const newData = { ...prevData };
         if (!newData[activeMainTab]) newData[activeMainTab] = {};
-        if (!newData[activeMainTab][activeSubTab]) {
-          newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
-        }
         
-        const index = newData[activeMainTab][activeSubTab].findIndex(item => item.id === itemToSaveChanges.id);
-        if (index !== -1) {
-          newData[activeMainTab][activeSubTab][index] = itemToSaveChanges;
+        // Determinar la tabla correcta según el nuevo estado
+        const correctTab = getCorrectTabForState(itemToSaveChanges.estadoEnvio);
+        const currentTab = activeSubTab;
+        
+        // Si el estado cambió y requiere mover a otra tabla
+        if (correctTab !== currentTab) {
+          // Asegurar que existen las estructuras de datos
+          if (!newData[activeMainTab][currentTab]) {
+            newData[activeMainTab][currentTab] = [...(initialData[activeMainTab]?.[currentTab] || [])];
+          }
+          if (!newData[activeMainTab][correctTab]) {
+            newData[activeMainTab][correctTab] = [...(initialData[activeMainTab]?.[correctTab] || [])];
+          }
+          
+          // Remover el elemento de la tabla actual
+          newData[activeMainTab][currentTab] = newData[activeMainTab][currentTab].filter(
+            item => item.id !== itemToSaveChanges.id
+          );
+          
+          // Generar nuevo ID secuencial de forma segura
+          let currentMaxId = 0;
+          
+          // Encontrar el ID más alto en todos los datos
+          Object.keys(newData).forEach(mainTab => {
+            if (newData[mainTab]) {
+              Object.keys(newData[mainTab]).forEach(subTab => {
+                if (newData[mainTab][subTab]) {
+                  newData[mainTab][subTab].forEach(item => {
+                    if (typeof item.id === 'number' && item.id > currentMaxId) {
+                      currentMaxId = item.id;
+                    }
+                  });
+                }
+              });
+            }
+          });
+          
+          // También revisar los datos iniciales
+          Object.keys(initialData).forEach(mainTab => {
+            if (initialData[mainTab]) {
+              Object.keys(initialData[mainTab]).forEach(subTab => {
+                if (initialData[mainTab][subTab]) {
+                  initialData[mainTab][subTab].forEach(item => {
+                    if (typeof item.id === 'number' && item.id > currentMaxId) {
+                      currentMaxId = item.id;
+                    }
+                  });
+                }
+              });
+            }
+          });
+          
+          const newId = currentMaxId + 1;
+          const updatedItem = {
+            ...itemToSaveChanges,
+            id: newId,
+            fechaActualizacion: new Date().toISOString().split('T')[0]
+          };
+          
+          // Agregar el elemento a la tabla correcta
+          newData[activeMainTab][correctTab].push(updatedItem);
+          
+          // Configurar información para el modal de reclasificación
+          setReclassificationInfo({
+            itemName: itemToSaveChanges.cliente || itemToSaveChanges.descripcion || 'Elemento',
+            fromTab: currentTab,
+            toTab: correctTab,
+            newId: newId
+          });
+          
+          // Mostrar modal de reclasificación después de un breve delay
+          setTimeout(() => {
+            setShowReclassificationModal(true);
+          }, 500);
+        } else {
+          // Si no cambió de tabla, solo actualizar en la tabla actual
+          if (!newData[activeMainTab][activeSubTab]) {
+            newData[activeMainTab][activeSubTab] = [...initialData[activeMainTab][activeSubTab]];
+          }
+          
+          const index = newData[activeMainTab][activeSubTab].findIndex(item => item.id === itemToSaveChanges.id);
+          if (index !== -1) {
+            newData[activeMainTab][activeSubTab][index] = {
+              ...itemToSaveChanges,
+              fechaActualizacion: new Date().toISOString().split('T')[0]
+            };
+          }
         }
         
         return newData;
@@ -807,7 +918,7 @@ const Produccion = () => {
   };
 
   const handleAddNew = () => {
-    const newId = Math.max(...getCurrentData().map(item => item.id), 0) + 1;
+    const newId = generateSequentialId();
     const columns = getTableColumns();
     
     // Crear un nuevo elemento con campos básicos según las columnas
@@ -827,6 +938,10 @@ const Produccion = () => {
             break;
           case 'prioridad':
             newItem[col.key] = 'Normal';
+            break;
+          case 'mermas':
+          case 'desperdicio':
+            newItem[col.key] = 0;
             break;
           default:
             newItem[col.key] = '';
@@ -892,8 +1007,319 @@ const Produccion = () => {
   };
 
   const handleInventoryDiscount = (item) => {
-    alert(`Descontando materiales del inventario para: ${item.productoTerminado || item.producto || 'producto'}`);
-    // Aquí iría la lógica para descontar del inventario
+    // Obtener inventario desde localStorage
+    const inventoryData = JSON.parse(localStorage.getItem('inventoryData') || '[]');
+    
+    // Simular consumo de materiales según el tipo de orden
+    const materialsToConsume = getMaterialsForOrder(item);
+    
+    // Descontar materiales del inventario
+    const updatedInventory = inventoryData.map(invItem => {
+      const consumed = materialsToConsume.find(m => m.nombre === invItem.nombre);
+      if (consumed) {
+        const newStock = Math.max(0, invItem.stock - consumed.cantidad);
+        return {
+          ...invItem,
+          stock: newStock,
+          ultimaVenta: new Date().toISOString().split('T')[0]
+        };
+      }
+      return invItem;
+    });
+    
+    // Guardar inventario actualizado
+    localStorage.setItem('inventoryData', JSON.stringify(updatedInventory));
+    
+    alert(`Materiales descontados del inventario para: ${item.productoTerminado || item.producto || 'producto'}`);
+  };
+
+  // Función para obtener materiales necesarios según el tipo de orden
+  const getMaterialsForOrder = (item) => {
+    const materials = [];
+    
+    // Simular consumo de materiales según categoría
+    if (activeMainTab === 'Enmarcados') {
+      materials.push(
+        { nombre: 'Moldura Clásica', cantidad: 1 },
+        { nombre: 'Vidrio Cristal', cantidad: 1 },
+        { nombre: 'MDF Blanco', cantidad: 1 },
+        { nombre: 'Colgadores', cantidad: 4 }
+      );
+    } else if (activeMainTab === 'Minilab') {
+      materials.push(
+        { nombre: 'Papel Fotográfico', cantidad: item.cantidad || 1 },
+        { nombre: 'Revelador C-41', cantidad: 0.1 }
+      );
+    } else if (activeMainTab === 'Corte Láser') {
+      materials.push(
+        { nombre: 'MDF Blanco', cantidad: 0.5 },
+        { nombre: 'Acrílico', cantidad: 0.3 }
+      );
+    }
+    
+    return materials;
+  };
+
+  // Función para generar ID único basado en categoría y tabla
+  // Función para generar IDs secuenciales
+  const generateSequentialId = () => {
+    // Obtener todos los IDs existentes en todas las tablas
+    const allIds = [];
+    
+    // Revisar datos actuales
+    Object.keys(data).forEach(mainTab => {
+      if (data[mainTab]) {
+        Object.keys(data[mainTab]).forEach(subTab => {
+          if (data[mainTab][subTab]) {
+            data[mainTab][subTab].forEach(item => {
+              if (typeof item.id === 'number') {
+                allIds.push(item.id);
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    // También revisar los datos iniciales
+    Object.keys(initialData).forEach(mainTab => {
+      if (initialData[mainTab]) {
+        Object.keys(initialData[mainTab]).forEach(subTab => {
+          if (initialData[mainTab][subTab]) {
+            initialData[mainTab][subTab].forEach(item => {
+              if (typeof item.id === 'number') {
+                allIds.push(item.id);
+              }
+            });
+          }
+        });
+      }
+    });
+    
+    // Encontrar el ID más alto y sumar 1
+    const maxId = allIds.length > 0 ? Math.max(...allIds) : 0;
+    return maxId + 1;
+  };
+
+  // Función para determinar la tabla correcta según el estado
+  const getCorrectTabForState = (estadoEnvio) => {
+    const stateToTabMapping = {
+      'Enmarcados': {
+        'Pendiente': 'Orden de Enmarcado',
+        'En proceso': 'En Proceso',
+        'Listo para entrega': 'Terminados',
+        'Entregado': 'Entregados'
+      },
+      'Minilab': {
+        'En cola': 'Orden de Impresión',
+        'Imprimiendo': 'En Proceso',
+        'Listo para entrega': 'Completados',
+        'Completado': 'Completados'
+      },
+      'Recordatorios': {
+        'Pendiente': 'Orden de Producción',
+        'En proceso': 'En Proceso',
+        'Completado': 'Completados'
+      },
+      'Corte Láser': {
+        'Pendiente': 'Orden de Corte',
+        'En proceso': 'En Proceso',
+        'Completado': 'En Proceso'
+      },
+      'Edición Digital': {
+        'En espera': 'Órdenes de Edición',
+        'Recibido': 'Archivo Original',
+        'Listo': 'Archivo Editado',
+        'Entregado': 'Entrega'
+      }
+    };
+
+    return stateToTabMapping[activeMainTab]?.[estadoEnvio] || activeSubTab;
+  };
+
+  // Función para determinar el siguiente estado según la categoría y estado actual
+  const getNextState = (currentSubTab, currentEstadoEnvio) => {
+    const stateTransitions = {
+      'Enmarcados': {
+        'Orden de Enmarcado': { nextState: 'En proceso', nextTab: 'En Proceso' },
+        'En Proceso': { nextState: 'Listo para entrega', nextTab: 'Terminados' },
+        'Terminados': { nextState: 'Entregado', nextTab: 'Entregados' }
+      },
+      'Minilab': {
+        'Orden de Impresión': { nextState: 'Imprimiendo', nextTab: 'En Proceso' },
+        'En Proceso': { nextState: 'Listo para entrega', nextTab: 'Completados' }
+      },
+      'Recordatorios': {
+        'Orden de Producción': { nextState: 'En proceso', nextTab: 'En Proceso' },
+        'En Proceso': { nextState: 'Completado', nextTab: 'Completados' }
+      },
+      'Corte Láser': {
+        'Orden de Corte': { nextState: 'En proceso', nextTab: 'En Proceso' }
+      },
+      'Edición Digital': {
+        'Órdenes de Edición': { nextState: 'Recibido', nextTab: 'Archivo Original' },
+        'Archivo Original': { nextState: 'Listo', nextTab: 'Archivo Editado' },
+        'Archivo Editado': { nextState: 'Entregado', nextTab: 'Entrega' }
+      }
+    };
+
+    return stateTransitions[activeMainTab]?.[currentSubTab] || null;
+  };
+
+  // Función para auto-completar campos según el estado de destino
+  const getAutoCompletedFields = (element, nextTab, nextState) => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    const autoCompletedFields = { ...element };
+
+    // Auto-completar campos según el estado de destino
+    switch (nextTab) {
+      case 'En Proceso':
+        autoCompletedFields.fechaInicio = autoCompletedFields.fechaInicio || currentDate;
+        autoCompletedFields.progreso = autoCompletedFields.progreso || '0%';
+        if (activeMainTab === 'Enmarcados') {
+          autoCompletedFields.estadoEnvio = 'En proceso';
+        } else if (activeMainTab === 'Minilab') {
+          autoCompletedFields.estadoEnvio = 'Imprimiendo';
+        }
+        break;
+
+      case 'Terminados':
+      case 'Completados':
+        autoCompletedFields.fechaTerminacion = autoCompletedFields.fechaTerminacion || currentDate;
+        autoCompletedFields.progreso = '100%';
+        autoCompletedFields.estadoEnvio = 'Listo para entrega';
+        break;
+
+      case 'Entregados':
+      case 'Entrega':
+        autoCompletedFields.fechaEntrega = autoCompletedFields.fechaEntrega || currentDate;
+        autoCompletedFields.progreso = '100%';
+        autoCompletedFields.estadoEnvio = 'Entregado';
+        break;
+
+      case 'Archivo Original':
+        autoCompletedFields.fechaRecepcion = autoCompletedFields.fechaRecepcion || currentDate;
+        autoCompletedFields.estadoEnvio = 'Recibido';
+        break;
+
+      case 'Archivo Editado':
+        autoCompletedFields.fechaEdicion = autoCompletedFields.fechaEdicion || currentDate;
+        autoCompletedFields.estadoEnvio = 'Listo';
+        break;
+
+      default:
+        // Para otros estados, solo actualizar el estado de envío
+        autoCompletedFields.estadoEnvio = nextState;
+        break;
+    }
+
+    // Siempre actualizar la fecha de actualización
+    autoCompletedFields.fechaActualizacion = currentDate;
+
+    return autoCompletedFields;
+  };
+
+  // Función para cambiar estado de elementos seleccionados
+  const handleChangeStateSelected = () => {
+    if (selectedItems.length === 0) {
+      alert('Por favor selecciona al menos un elemento para cambiar su estado');
+      return;
+    }
+
+    const nextStateInfo = getNextState(activeSubTab);
+    if (!nextStateInfo) {
+      alert('No se puede avanzar el estado desde esta pestaña');
+      return;
+    }
+
+    // Configurar información del modal
+    setStateChangeInfo({
+      currentState: activeSubTab,
+      nextState: nextStateInfo.nextState,
+      itemCount: selectedItems.length,
+      type: 'success'
+    });
+    
+    // Mostrar modal de confirmación
+    setShowStateChangeModal(true);
+  };
+
+  // Función para confirmar el cambio de estado
+  const confirmStateChange = () => {
+    // Prevenir ejecuciones múltiples
+    if (isChangingState) return;
+    
+    setIsChangingState(true);
+    const nextStateInfo = getNextState(activeSubTab);
+    const selectedElements = getCurrentData().filter(item => selectedItems.includes(item.id));
+    
+    setData(prevData => {
+      const newData = { ...prevData };
+      
+      // Asegurar que existe la estructura de datos
+      if (!newData[activeMainTab]) newData[activeMainTab] = {};
+      
+      // Obtener datos actuales de la pestaña actual
+      const currentTabData = newData[activeMainTab][activeSubTab] || [...initialData[activeMainTab][activeSubTab]];
+      
+      // Obtener datos de la pestaña destino
+      const targetTabData = newData[activeMainTab][nextStateInfo.nextTab] || [...(initialData[activeMainTab][nextStateInfo.nextTab] || [])];
+      
+      // Generar IDs secuenciales únicos para cada elemento
+      let currentMaxId = 0;
+      
+      // Encontrar el ID más alto en todos los datos
+      Object.keys(newData).forEach(mainTab => {
+        if (newData[mainTab]) {
+          Object.keys(newData[mainTab]).forEach(subTab => {
+            if (newData[mainTab][subTab]) {
+              newData[mainTab][subTab].forEach(item => {
+                if (typeof item.id === 'number' && item.id > currentMaxId) {
+                  currentMaxId = item.id;
+                }
+              });
+            }
+          });
+        }
+      });
+      
+      // También revisar los datos iniciales
+      Object.keys(initialData).forEach(mainTab => {
+        if (initialData[mainTab]) {
+          Object.keys(initialData[mainTab]).forEach(subTab => {
+            if (initialData[mainTab][subTab]) {
+              initialData[mainTab][subTab].forEach(item => {
+                if (typeof item.id === 'number' && item.id > currentMaxId) {
+                  currentMaxId = item.id;
+                }
+              });
+            }
+          });
+        }
+      });
+      
+      // Actualizar elementos seleccionados con nuevo estado, nuevos IDs secuenciales únicos y campos auto-completados
+      const updatedElements = selectedElements.map((element, index) => {
+        const elementWithNewId = {
+          ...element,
+          id: currentMaxId + index + 1
+        };
+        
+        // Aplicar auto-completado de campos según el estado de destino
+        return getAutoCompletedFields(elementWithNewId, nextStateInfo.nextTab, nextStateInfo.nextState);
+      });
+      
+      // Remover elementos de la pestaña actual
+      newData[activeMainTab][activeSubTab] = currentTabData.filter(item => !selectedItems.includes(item.id));
+      
+      // Agregar elementos a la pestaña destino
+      newData[activeMainTab][nextStateInfo.nextTab] = [...targetTabData, ...updatedElements];
+      
+      return newData;
+    });
+
+    setSelectedItems([]);
+    setShowStateChangeModal(false);
   };
 
   const getEstadoEnvioColor = (estado) => {
@@ -1180,6 +1606,21 @@ const Produccion = () => {
             </div>
           </div>
         )}
+
+        {/* Botón para cambiar estado de elementos seleccionados */}
+        {selectedItems.length > 0 && getNextState(activeSubTab) && (
+          <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
+            <div className="flex justify-center">
+              <button 
+                onClick={handleChangeStateSelected}
+                className="flex items-center space-x-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm text-sm"
+              >
+                <Check className="w-4 h-4" />
+                <span>Marcar como {getNextState(activeSubTab)?.nextState || 'Completado'}</span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal para ver/editar/agregar */}
@@ -1235,6 +1676,32 @@ const Produccion = () => {
         type="warning"
         isLoading={isSavingChanges}
       />
+
+      {/* Modal personalizado para cambio de estado */}
+      <ConfirmationModal
+        isOpen={showStateChangeModal}
+        onClose={() => setShowStateChangeModal(false)}
+        onConfirm={confirmStateChange}
+        title="Cambiar Estado"
+        message="¿Estás seguro de que quieres cambiar el estado de los elementos seleccionados?"
+        confirmText="Sí, cambiar estado"
+        cancelText="Cancelar"
+        type={stateChangeInfo.type}
+        itemCount={stateChangeInfo.itemCount}
+        currentState={stateChangeInfo.currentState}
+        nextState={stateChangeInfo.nextState}
+        showStateTransition={true}
+      />
+
+      {/* Modal personalizado para reclasificación */}
+      <ReclassificationModal
+        isOpen={showReclassificationModal}
+        onClose={() => setShowReclassificationModal(false)}
+        itemName={reclassificationInfo.itemName}
+        fromTab={reclassificationInfo.fromTab}
+        toTab={reclassificationInfo.toTab}
+        newId={reclassificationInfo.newId}
+      />
     </div>
   );
 };
@@ -1248,6 +1715,19 @@ const ModalForm = ({ item, modalType, activeSubTab, onClose, onSave, onSwitchToE
   };
 
   const handleSave = () => {
+    // Validación obligatoria de mermas
+    if (formData.mermas === undefined || formData.mermas === '' || formData.mermas === null) {
+      alert('Las mermas son obligatorias. Debe registrar el desperdicio (mínimo 0)');
+      return;
+    }
+    
+    // Validar que las mermas sean un número válido
+    const mermasValue = parseFloat(formData.mermas);
+    if (isNaN(mermasValue) || mermasValue < 0) {
+      alert('Las mermas deben ser un número válido mayor o igual a 0');
+      return;
+    }
+    
     onSave(formData);
   };
 
@@ -1255,7 +1735,8 @@ const ModalForm = ({ item, modalType, activeSubTab, onClose, onSave, onSwitchToE
     const labels = {
       'productoTerminado': 'Producto Terminado',
       'materialesUsados': 'Materiales Usados',
-      'mermas': 'Mermas',
+      'mermas': 'Mermas (Obligatorio)',
+      'desperdicio': 'Desperdicio (Obligatorio)',
       'estadoEnvio': 'Estado Envío',
       'producto': 'Producto',
       'cantidad': 'Cantidad',
@@ -1377,6 +1858,17 @@ const ModalForm = ({ item, modalType, activeSubTab, onClose, onSave, onSwitchToE
                       onChange={(e) => handleInputChange(key, e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1DD1E3] focus:border-transparent"
                       rows="3"
+                    />
+                  ) : key === 'mermas' || key === 'desperdicio' ? (
+                    <input
+                      type="number"
+                      value={value}
+                      onChange={(e) => handleInputChange(key, e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#1DD1E3] focus:border-transparent"
+                      min="0"
+                      step="0.01"
+                      placeholder="Ej: 0.5"
+                      required
                     />
                   ) : (
                     <input

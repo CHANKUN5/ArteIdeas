@@ -1,4 +1,4 @@
-import { AlertCircle, Calendar, CheckCircle, ChevronLeft, ChevronRight, Circle, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
@@ -39,7 +39,7 @@ const Agenda = () => {
     time: '',
     duration: '',
     location: '',
-    type: 'sesion',
+    type: 'escolar',
     status: 'pendiente',
     participants: 0,
     notes: '',
@@ -64,26 +64,83 @@ const Agenda = () => {
   }, [events]);
 
 
-  const eventTypes = {
-    reunion: { color: 'bg-orange-500', label: 'Reunión' },
-    sesion: { color: 'bg-blue-500', label: 'Sesión' },
-    entrega: { color: 'bg-green-500', label: 'Entrega' }
+  // Tipos de sesión y visuales (colores para chips/ítems, y emojis)
+  const sessionTypes = {
+    escolar: { color: 'bg-yellow-500', label: 'Escolar', emoji: '🎒' },
+    familiar: { color: 'bg-pink-500', label: 'Familiar', emoji: '👨‍👩‍👧‍👦' },
+    retrato: { color: 'bg-blue-500', label: 'Retrato individual', emoji: '🧑' },
+    grupal: { color: 'bg-purple-500', label: 'Grupal', emoji: '👥' },
+    corporativa: { color: 'bg-indigo-500', label: 'Corporativa', emoji: '🏢' },
+    oleo: { color: 'bg-orange-500', label: 'Óleo', emoji: '🖼️' },
+    recordatorio: { color: 'bg-teal-500', label: 'Recordatorio escolar', emoji: '🎓' },
+    otros: { color: 'bg-gray-500', label: 'Otros', emoji: '📸' }
   };
 
-  const statusColors = {
-    confirmado: 'bg-green-100 text-green-800',
-    pendiente: 'bg-yellow-100 text-yellow-800',
-    cancelado: 'bg-red-100 text-red-800',
-    completado: 'bg-green-100 text-green-800'
-  };
-
-  const deriveStatusFromType = (type) => {
-    // Mantener la lógica según lo que ya hay en el código (pendiente, confirmado, completado)
-    if (type === 'sesion') return 'confirmado';
-    if (type === 'entrega') return 'completado';
-    if (type === 'reunion') return 'pendiente';
+  // Normalización de eventos antiguos (estados y tipos heredados)
+  const normalizeStatus = (st) => {
+    if (!st) return 'pendiente';
+    if (st === 'confirmado') return 'confirmada';
+    if (st === 'completado') return 'entregado';
+    if (['pendiente','confirmada','en_ejecucion','en_edicion','entregado'].includes(st)) return st;
     return 'pendiente';
   };
+  const normalizeType = (tp) => {
+    if (!tp) return 'otros';
+    if (['escolar','familiar','retrato','grupal','corporativa','oleo','recordatorio','otros'].includes(tp)) return tp;
+    // tipos antiguos
+    if (tp === 'sesion') return 'otros';
+    if (tp === 'entrega') return 'otros';
+    if (tp === 'reunion') return 'corporativa';
+    return 'otros';
+  };
+
+  useEffect(() => {
+    // Una sola normalización al montar
+    setEvents(prev => prev.map(ev => ({
+      ...ev,
+      status: normalizeStatus(ev.status),
+      type: normalizeType(ev.type)
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Asegurar cliente por defecto según tipo cuando se abre el formulario o cambia el tipo
+  useEffect(() => {
+    if (showEventForm && !editingEvent) {
+      if (!eventFormData.client) {
+        const list = clientOptionsByType[eventFormData.type] || [];
+        if (list.length) setEventFormData(prev => ({ ...prev, client: list[0] }));
+      }
+    }
+  }, [showEventForm, eventFormData.type]);
+
+  // Estados normalizados (keys) con etiquetas y clases de color
+  const STATUS = {
+    pendiente: { key: 'pendiente', label: 'Pendiente de confirmación del cliente', badge: 'bg-yellow-100 text-yellow-800', dayBg: 'bg-yellow-100' },
+    confirmada: { key: 'confirmada', label: 'Confirmada', badge: 'bg-blue-100 text-blue-800', dayBg: 'bg-blue-100' },
+    en_ejecucion: { key: 'en_ejecucion', label: 'En ejecución', badge: 'bg-orange-100 text-orange-800', dayBg: 'bg-orange-100' },
+    en_edicion: { key: 'en_edicion', label: 'En edición/retoque', badge: 'bg-gray-200 text-gray-800', dayBg: 'bg-gray-100' },
+    entregado: { key: 'entregado', label: 'Entregado', badge: 'bg-green-100 text-green-800', dayBg: 'bg-green-100' }
+  };
+
+  const statusColors = Object.fromEntries(Object.entries(STATUS).map(([k, v]) => [k, v.badge]));
+
+  // Prioridad para colorear días con múltiples sesiones
+  const statusPriority = { pendiente: 1, confirmada: 2, en_ejecucion: 3, en_edicion: 4, entregado: 5 };
+
+  // Clientes simulados por tipo de sesión
+  const clientOptionsByType = {
+    escolar: ['Colegio San Marcos', 'Colegio Santa María', 'Instituto Los Álamos'],
+    familiar: ['Familia Pérez', 'Familia Rodríguez', 'Familia Gómez'],
+    retrato: ['Ana López', 'Carlos Ruiz', 'María Fernández'],
+    grupal: ['Equipo Juvenil', 'Grupo Danza Nova', 'Banda Escolar'],
+    corporativa: ['TechCorp', 'Innova SA', 'BlueOcean Ltd.'],
+    oleo: ['Encargo de Galería', 'Retrato al óleo', 'Paisaje personalizado'],
+    recordatorio: ['3°A Primaria', '5°B Secundaria', '6°A Primaria'],
+    otros: ['Cliente especial', 'Evento particular', 'Sin clasificar']
+  };
+
+  const deriveStatusFromType = () => 'pendiente';
 
   // Sincronizar el calendario con el filtro de fecha
   useEffect(() => {
@@ -129,7 +186,7 @@ const Agenda = () => {
   // Utilidades de calendario
   const monthLabel = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(currentMonthDate);
   const pad2 = (n) => (n < 10 ? `0${n}` : `${n}`);
-  const statusPriority = { pendiente: 1, confirmado: 2, completado: 3 };
+  // statusPriority redefinido arriba según nuevos estados
 
   // Generar calendario para el mes en currentMonthDate
   const generateCalendar = () => {
@@ -159,16 +216,8 @@ const Agenda = () => {
       }
 
       let bgClass = '';
-      let statusIcon = null;
-      if (dominantStatus === 'pendiente') {
-        bgClass = 'bg-yellow-100';
-        statusIcon = <Circle className="w-4 h-4 text-yellow-500" />;
-      } else if (dominantStatus === 'confirmado') {
-        bgClass = 'bg-blue-100';
-        statusIcon = <AlertCircle className="w-4 h-4 text-blue-500" />;
-      } else if (dominantStatus === 'completado') {
-        bgClass = 'bg-green-100';
-        statusIcon = <CheckCircle className="w-4 h-4 text-green-500" />;
+      if (dominantStatus && STATUS[dominantStatus]) {
+        bgClass = STATUS[dominantStatus].dayBg;
       }
 
       days.push(
@@ -179,12 +228,45 @@ const Agenda = () => {
         >
           <div className="relative">
             <div className="text-sm font-medium">{d}</div>
-            {statusIcon && (
-              <div className="absolute -top-1 -right-1">{statusIcon}</div>
+      
+            {/* Si hay eventos, mostramos solo el acumulador */}
+            {eventsInDay.length > 0 && (
+              <div className="absolute bottom-1 right-1 flex flex-col items-end">
+                <div className="relative group">
+                  <button
+                    className="text-[11px] text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-full px-2 py-0.5"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    +{eventsInDay.length}
+                  </button>
+      
+                  {/* Tooltip con todos los emojis */}
+                  <div className="absolute bottom-6 right-0 hidden group-hover:flex flex-col bg-white text-black text-xs rounded-lg shadow-lg px-2 py-2 z-10 min-w-[160px] max-w-[240px] whitespace-normal break-words">
+                    {eventsInDay.map((ev) => (
+                      <button
+                        key={`all-${ev.id}`}
+                        className="flex items-center gap-2 text-left hover:bg-gray-100 px-1 py-0.5 rounded"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedEvent(ev);
+                          setShowEventModal(true);
+                        }}
+                      >
+                        <span className="text-sm">
+                          {sessionTypes[ev.type]?.emoji || "📸"}
+                        </span>
+                        <span className="truncate">
+                          {sessionTypes[ev.type]?.label || ev.type} • {ev.title || ""}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
-      );
+      );         
     }
 
     return days;
@@ -259,9 +341,24 @@ const Agenda = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               >
                 <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmado">Confirmada</option>
-                <option value="completado">Completada</option>
+                <option value="pendiente">Pendiente de confirmación del cliente</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="en_ejecucion">En ejecución</option>
+                <option value="en_edicion">En edición/retoque</option>
+                <option value="entregado">Entregado</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de sesión</label>
+              <select
+                value={filter}
+                onChange={(e) => setFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                <option value="todos">Todos los tipos</option>
+                {Object.entries(sessionTypes).map(([key, info]) => (
+                  <option key={key} value={key}>{info.label}</option>
+                ))}
               </select>
             </div>
             <div className="flex items-end">
@@ -281,7 +378,6 @@ const Agenda = () => {
         </div>
       </div>
 
-      {/* Resto del código permanece igual */}
       {/* Calendario */}
       <div className="mb-6">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -301,15 +397,23 @@ const Agenda = () => {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Pendiente</span>
+                <span className="text-xs text-gray-600">Pendiente de confirmación</span>
               </div>
               <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
                 <span className="text-xs text-gray-600">Confirmada</span>
               </div>
               <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="text-xs text-gray-600">En ejecución</span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                <span className="text-xs text-gray-600">En edición/retoque</span>
+              </div>
+              <div className="flex items-center space-x-1">
                 <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Completada</span>
+                <span className="text-xs text-gray-600">Entregado</span>
               </div>
             </div>
           </div>
@@ -329,7 +433,6 @@ const Agenda = () => {
         </div>
       </div>
       
-      {/* Resto del código permanece igual */}
       {/* Tabla de Sesiones Programadas */}
       <div className="mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Sesiones Programadas</h2>
@@ -383,14 +486,8 @@ const Agenda = () => {
                       {event.time} hrs
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        event.status === 'confirmado' ? 'bg-blue-100 text-blue-800' :
-                        event.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-green-100 text-green-800'
-                      }`}>
-                        {event.status === 'confirmado' ? 'Confirmada' : 
-                         event.status === 'pendiente' ? 'Pendiente' :
-                         event.status === 'completado' ? 'Completada' : event.status}
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[event.status] || 'bg-gray-100 text-gray-800'}`}>
+                        {(STATUS[event.status]?.label) || event.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -486,14 +583,18 @@ const Agenda = () => {
         {selectedEvent ? (
           <div className="space-y-4">
             <div className="flex items-center space-x-3">
-              <div className={`w-4 h-4 rounded-full ${eventTypes[selectedEvent.type]?.color}`} />
-              <h3 className="text-xl font-semibold">{selectedEvent.title}</h3>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[selectedEvent.status]}`}>
-                {selectedEvent.status}
+            <span className="text-xl">{sessionTypes[selectedEvent.type]?.emoji || '📸'}</span>
+            <h3 className="text-xl font-semibold">{selectedEvent.title}</h3>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[selectedEvent.status] || 'bg-gray-100 text-gray-800'}`}>
+                {(STATUS[selectedEvent.status]?.label) || selectedEvent.status}
               </span>
             </div>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <label className="font-medium text-gray-700">Tipo de sesión:</label>
+                <p className="text-gray-600">{sessionTypes[selectedEvent.type]?.label || selectedEvent.type}</p>
+              </div>
               <div>
                 <label className="font-medium text-gray-700">Cliente:</label>
                 <p className="text-gray-600">{selectedEvent.client}</p>
@@ -596,7 +697,7 @@ const Agenda = () => {
           setShowEventForm(false);
           setEditingEvent(null);
           setEventFormData({
-            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: ''
+            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'escolar', status: 'pendiente', participants: 0, notes: ''
           });
         }}
         title={editingEvent ? 'Editar Evento' : 'Nueva Sesión'}
@@ -604,6 +705,23 @@ const Agenda = () => {
       >
         <div className="space-y-4 py-2">
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de sesión</label>
+              <select
+                name="type"
+                value={eventFormData.type}
+                onChange={(e) => {
+                  const newType = e.target.value;
+                  const list = clientOptionsByType[newType] || [];
+                  setEventFormData(prev => ({ ...prev, type: newType, client: list[0] || '' }));
+                }}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                {Object.entries(sessionTypes).map(([key, info]) => (
+                  <option key={key} value={key}>{info.label}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
               <input
@@ -617,14 +735,19 @@ const Agenda = () => {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-              <input
-                type="text"
+              <select
                 name="client"
                 value={eventFormData.client}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
+                onChange={(e) => setEventFormData(prev => ({ ...prev, client: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="Nombre del cliente"
-              />
+              >
+                {(clientOptionsByType[eventFormData.type] || []).map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+                {!(clientOptionsByType[eventFormData.type] || []).length && (
+                  <option value="">Selecciona tipo primero</option>
+                )}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
@@ -658,19 +781,6 @@ const Agenda = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
-              <select
-                name="type"
-                value={eventFormData.type}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="sesion">Sesión</option>
-                <option value="entrega">Entrega</option>
-                <option value="reunion">Reunión</option>
-              </select>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
               <select
                 name="status"
@@ -678,9 +788,11 @@ const Agenda = () => {
                 onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               >
-                <option value="pendiente">Pendiente</option>
-                <option value="confirmado">Confirmada</option>
-                <option value="completado">Completada</option>
+                <option value="pendiente">Pendiente de confirmación del cliente</option>
+                <option value="confirmada">Confirmada</option>
+                <option value="en_ejecucion">En ejecución</option>
+                <option value="en_edicion">En edición/retoque</option>
+                <option value="entregado">Entregado</option>
               </select>
             </div>
             <div>
@@ -793,7 +905,7 @@ const Agenda = () => {
               setShowEventForm(false);
               setEditingEvent(null);
               setEventFormData({
-                title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: []
+                title: '', client: '', date: '', time: '', duration: '', location: '', type: 'escolar', status: 'pendiente', participants: 0, notes: '', tasks: []
               });
               setTaskInput('');
             }}>
@@ -821,7 +933,7 @@ const Agenda = () => {
               }
               setShowEventForm(false);
               setEditingEvent(null);
-              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'sesion', status: 'pendiente', participants: 0, notes: '', tasks: [] });
+              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'escolar', status: 'pendiente', participants: 0, notes: '', tasks: [] });
               setTaskInput('');
               setCurrentPage(1);
             }}>
@@ -886,7 +998,7 @@ const Agenda = () => {
                   time: eventToEdit.time || '',
                   duration: eventToEdit.duration || '',
                   location: eventToEdit.location || '',
-                  type: eventToEdit.type || 'sesion',
+                  type: eventToEdit.type || 'escolar',
                   status: eventToEdit.status || 'pendiente',
                   participants: eventToEdit.participants || 0,
                   notes: eventToEdit.notes || '',

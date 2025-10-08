@@ -1,5 +1,7 @@
 import {
   AlertTriangle,
+  ChevronDown,
+  ChevronUp,
   Edit,
   FileText,
   Frame,
@@ -20,7 +22,13 @@ import Modal from '../../components/common/Modal';
 import { useApp } from '../../context/AppContext';
 
 const Inventario = () => {
-  const { showSuccess, showError } = useApp();
+  const { 
+    showSuccess, 
+    showError, 
+    notifyNewProduct, 
+    notifyProductAction, 
+    notifyLowStock 
+  } = useApp();
   const [inventory, setInventory] = useState([
     {
       id: 'INV001',
@@ -73,6 +81,71 @@ const Inventario = () => {
       proveedor: 'Acabados Pro',
       fechaIngreso: '2025-05-25',
       ultimaVenta: '2025-06-06'
+    },
+    {
+      id: 'INV005',
+      nombre: 'Papel Fotográfico 15x20',
+      categoria: 'Papel',
+      tipo: 'Papel',
+      stock: 25,
+      stockMinimo: 10,
+      unidad: 'rollos',
+      precio: 0.65,
+      proveedor: 'Kodak Perú',
+      fechaIngreso: '2025-06-10',
+      ultimaVenta: '2025-06-12'
+    },
+    {
+      id: 'INV006',
+      nombre: 'Revelador C-41',
+      categoria: 'Químicos',
+      tipo: 'Químico',
+      stock: 8,
+      stockMinimo: 5,
+      unidad: 'L',
+      precio: 45.00,
+      proveedor: 'Químicos Fotográficos SAC',
+      fechaIngreso: '2025-06-08',
+      ultimaVenta: '2025-06-15'
+    },
+    {
+      id: 'INV007',
+      nombre: 'Fijador Universal',
+      categoria: 'Químicos',
+      tipo: 'Químico',
+      stock: 6,
+      stockMinimo: 3,
+      unidad: 'L',
+      precio: 32.50,
+      proveedor: 'Químicos Fotográficos SAC',
+      fechaIngreso: '2025-06-08',
+      ultimaVenta: '2025-06-15'
+    },
+    {
+      id: 'INV008',
+      nombre: 'Papel Fotográfico Blanco/Negro',
+      categoria: 'Papel',
+      tipo: 'Papel',
+      stock: 15,
+      stockMinimo: 8,
+      unidad: 'rollos',
+      precio: 0.55,
+      proveedor: 'Ilford Perú',
+      fechaIngreso: '2025-06-12',
+      ultimaVenta: '2025-06-16'
+    },
+    {
+      id: 'INV009',
+      nombre: 'Revelador D-76',
+      categoria: 'Químicos',
+      tipo: 'Químico',
+      stock: 4,
+      stockMinimo: 2,
+      unidad: 'L',
+      precio: 28.00,
+      proveedor: 'Químicos Fotográficos SAC',
+      fechaIngreso: '2025-06-12',
+      ultimaVenta: '2025-06-16'
     }
   ]);
 
@@ -86,6 +159,7 @@ const Inventario = () => {
   const [stockOperation, setStockOperation] = useState('increase');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [isAlertsExpanded, setIsAlertsExpanded] = useState(true);
 
   // Cargar inventario desde localStorage (si existe)
   useEffect(() => {
@@ -107,40 +181,45 @@ const Inventario = () => {
 
   // Configuración de pestañas principales
   const mainTabs = [
-    { id: 'Enmarcado', label: 'Enmarcado', icon: Frame },
+    { id: 'Enmarcados', label: 'Enmarcados', icon: Frame },
     { id: 'Minilab', label: 'Minilab', icon: Truck },
     { id: 'Recordatorios', label: 'Recordatorios', icon: GraduationCap },
-    { id: 'Restauración', label: 'Restauración', icon: Wrench },
-    { id: 'Óleo', label: 'Óleo', icon: Palette },
-    { id: 'Edición', label: 'Edición', icon: FileText }
+    { id: 'Corte Láser', label: 'Corte Láser', icon: Wrench },
+    { id: 'Accesorios', label: 'Accesorios', icon: Package }
   ];
 
   // Configuración de sub-pestañas
   const subTabs = {
-    'Enmarcado': [
-      { id: 'Molduras', label: 'Molduras' },
-      { id: 'Impresión Fotográfica', label: 'Impresión Fotográfica' },
-      { id: 'Pinturas y Acabados', label: 'Pinturas y Acabados' }
+    'Enmarcados': [
+      { id: 'Molduras', label: 'Molduras (listones)' },
+      { id: 'Molduras Prearmadas', label: 'Molduras Prearmadas' },
+      { id: 'Vidrios', label: 'Vidrios' },
+      { id: 'Tapas MDF', label: 'Tapas MDF' },
+      { id: 'Paspartú', label: 'Paspartú' }
     ],
     'Minilab': [
-      { id: 'Papel', label: 'Papel' },
-      { id: 'Químicos', label: 'Químicos' }
+      { id: 'Papel Fotográfico', label: 'Papel Fotográfico' },
+      { id: 'Químicos', label: 'Químicos' },
+      { id: 'Repuestos', label: 'Repuestos' }
     ],
     'Recordatorios': [
-      { id: 'Papel', label: 'Papel' },
-      { id: 'Insumos', label: 'Insumos' }
+      { id: 'Cuadros Stock', label: 'Cuadros (stock comprado)' },
+      { id: 'Anuarios', label: 'Anuarios' }
     ],
-    'Restauración': [
-      { id: 'Herramientas', label: 'Herramientas' },
-      { id: 'Materiales', label: 'Materiales' }
+    'Corte Láser': [
+      { id: 'Stock MDF', label: 'Stock de MDF' },
+      { id: 'Acrílico', label: 'Acrílico' },
+      { id: 'Cartón', label: 'Cartón' },
+      { id: 'Tela', label: 'Tela' },
+      { id: 'Vidrio Color', label: 'Vidrio Color' },
+      { id: 'Letras Cortadas', label: 'Letras Cortadas' }
     ],
-    'Óleo': [
-      { id: 'Pinturas', label: 'Pinturas' },
-      { id: 'Pinceles', label: 'Pinceles' }
-    ],
-    'Edición': [
-      { id: 'Software', label: 'Software' },
-      { id: 'Hardware', label: 'Hardware' }
+    'Accesorios': [
+      { id: 'Tornillos', label: 'Tornillos' },
+      { id: 'Grapas', label: 'Grapas' },
+      { id: 'Colgadores', label: 'Colgadores' },
+      { id: 'Flexipuntas', label: 'Flexipuntas' },
+      { id: 'Regipuntas', label: 'Regipuntas' }
     ]
   };
   
@@ -149,6 +228,95 @@ const Inventario = () => {
   const totalStockProductos = inventory.reduce((sum, item) => sum + item.stock, 0);
   const lowStockItems = inventory.filter(item => item.stock <= item.stockMinimo);
   const totalAlertas = lowStockItems.length;
+
+  // Función para obtener headers de tabla según la categoría
+  const getTableHeaders = () => {
+    const headers = {
+      'Molduras': ['Color', 'Ancho (pulgadas)'],
+      'Molduras Prearmadas': ['Tamaños Estándar', 'Color', 'Ancho'],
+      'Vidrios': [],
+      'Tapas MDF': ['Tamaños Estándar', 'Color'],
+      'Paspartú': ['Tamaños Personalizados', 'Color'],
+      'Papel Fotográfico': ['Tamaño'],
+      'Químicos': [],
+      'Repuestos': [],
+      'Cuadros Stock': ['Modelo', 'Tamaño', 'Nivel'],
+      'Anuarios': [],
+      'Stock MDF': ['Color'],
+      'Acrílico': [],
+      'Cartón': [],
+      'Tela': [],
+      'Vidrio Color': [],
+      'Letras Cortadas': [],
+      'Tornillos': [],
+      'Grapas': [],
+      'Colgadores': [],
+      'Flexipuntas': [],
+      'Regipuntas': []
+    };
+    return headers[activeSubTab] || [];
+  };
+
+  // Función para obtener campos específicos según la categoría
+  const getSpecificFields = () => {
+    const fields = {
+      'Molduras': [
+        { key: 'color', label: 'Color', type: 'text', placeholder: 'Ej: Negro, Dorado' },
+        { key: 'ancho_pulgadas', label: 'Ancho (pulgadas)', type: 'number', placeholder: 'Ej: 2.5' }
+      ],
+      'Molduras Prearmadas': [
+        { key: 'tamaños_estándar', label: 'Tamaños Estándar', type: 'select', options: [
+          { value: '10x15', label: '10x15' },
+          { value: '13x18', label: '13x18' },
+          { value: '20x30', label: '20x30' },
+          { value: '30x40', label: '30x40' }
+        ]},
+        { key: 'color', label: 'Color', type: 'text', placeholder: 'Ej: Blanco, Negro' },
+        { key: 'ancho', label: 'Ancho', type: 'number', placeholder: 'Ancho en cm' }
+      ],
+      'Vidrios': [],
+      'Tapas MDF': [
+        { key: 'tamaños_estándar', label: 'Tamaños Estándar', type: 'select', options: [
+          { value: '10x15', label: '10x15' },
+          { value: '13x18', label: '13x18' },
+          { value: '20x30', label: '20x30' },
+          { value: '30x40', label: '30x40' }
+        ]},
+        { key: 'color', label: 'Color', type: 'select', options: [
+          { value: 'blanco', label: 'Blanco' },
+          { value: 'negro', label: 'Negro' },
+          { value: 'plomo', label: 'Plomo' },
+          { value: 'crudo', label: 'Crudo' }
+        ]}
+      ],
+      'Paspartú': [
+        { key: 'tamaños_personalizados', label: 'Tamaños Personalizados', type: 'text', placeholder: 'Ej: 15x20, 25x35' },
+        { key: 'color', label: 'Color', type: 'text', placeholder: 'Ej: Blanco, Negro, Beige' }
+      ],
+      'Papel Fotográfico': [
+        { key: 'tamaño', label: 'Tamaño', type: 'text', placeholder: 'Ej: 10x15, 13x18, 20x30' }
+      ],
+      'Repuestos': [],
+      'Cuadros Stock': [
+        { key: 'modelo', label: 'Modelo', type: 'text', placeholder: 'Modelo del cuadro' },
+        { key: 'tamaño', label: 'Tamaño', type: 'text', placeholder: 'Ej: 20x30' },
+        { key: 'nivel', label: 'Nivel', type: 'select', options: [
+          { value: 'inicial', label: 'Inicial' },
+          { value: 'primaria', label: 'Primaria' },
+          { value: 'secundaria', label: 'Secundaria' },
+          { value: 'superior', label: 'Superior' }
+        ]}
+      ],
+      'Stock MDF': [
+        { key: 'color', label: 'Color', type: 'select', options: [
+          { value: 'blanco', label: 'Blanco' },
+          { value: 'negro', label: 'Negro' },
+          { value: 'natural', label: 'Natural' }
+        ]}
+      ]
+    };
+    return fields[activeSubTab] || [];
+  };
 
   // Filtrar inventario según pestañas activas
   const filteredInventory = inventory.filter(item => {
@@ -167,6 +335,10 @@ const Inventario = () => {
     if (itemToDelete) {
       setInventory(inventory.filter(item => item.id !== itemToDelete.id));
       showSuccess('Producto eliminado del inventario');
+      
+      // Notificación persistente para eliminación
+       notifyProductAction('delete', itemToDelete);
+      
       setShowDeleteModal(false);
       setItemToDelete(null);
     }
@@ -242,6 +414,12 @@ const Inventario = () => {
     
     setInventory(updatedInventory);
     showSuccess(`Stock actualizado: ${stockTargetItem.nombre} - ${newStock} ${stockTargetItem.unidad}`);
+    
+    // Verificar si el stock está bajo y enviar notificación
+     if (newStock <= stockTargetItem.stockMinimo) {
+       notifyLowStock({...stockTargetItem, stock: newStock});
+     }
+    
     setShowStockModal(false);
     setStockTargetItem(null);
   };
@@ -296,57 +474,82 @@ const Inventario = () => {
       </div>
 
       {/* Sección de Alertas de Stock */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Alertas de Stock</h2>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleAddItem(true)}
-            className="text-blue-600 border-blue-600 hover:bg-blue-50"
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            Añadir Alerta
-          </Button>
+      <div className="mb-6 bg-white rounded-lg shadow-md border border-gray-200">
+        <div 
+          className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+          onClick={() => setIsAlertsExpanded(!isAlertsExpanded)}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2">
+              <AlertTriangle className="w-5 h-5 text-orange-500" />
+              <h2 className="text-lg font-semibold text-gray-900">Alertas de Stock</h2>
+            </div>
+            {totalAlertas > 0 && (
+              <span className="bg-orange-100 text-orange-800 text-xs font-medium px-2 py-1 rounded-full">
+                {totalAlertas} alerta{totalAlertas !== 1 ? 's' : ''}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddItem(true);
+              }}
+              className="text-blue-600 border-blue-600 hover:bg-blue-50"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              Añadir Alerta
+            </Button>
+            <button className="p-1 hover:bg-gray-200 rounded-md transition-colors">
+              {isAlertsExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
         
-        {lowStockItems.length > 0 ? (
-          <div className="space-y-2">
-            {lowStockItems.map((item, index) => (
-              <div 
-                key={item.id} 
-                className={`p-3 rounded-lg ${
-                  item.stock <= item.stockMinimo * 0.5 
-                    ? 'bg-red-50 border border-red-200' 
-                    : 'bg-yellow-50 border border-yellow-200'
-                }`}
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <AlertTriangle className={`w-5 h-5 ${
-                      item.stock <= item.stockMinimo * 0.5 ? 'text-red-600' : 'text-yellow-600'
-                    }`} />
-                    <span className="font-medium text-gray-900">
-                      Stock Bajo: {item.nombre} ({item.stock} {item.unidad})
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditItem(item)}
-                    className="text-blue-600 hover:bg-blue-50"
+        {isAlertsExpanded && (
+          <div className="border-t border-gray-200 p-4">
+            {lowStockItems.length > 0 ? (
+              <div className="space-y-2">
+                {lowStockItems.map((item, index) => (
+                  <div 
+                    key={item.id} 
+                    className={`p-3 rounded-lg ${
+                      item.stock <= item.stockMinimo * 0.5 
+                        ? 'bg-red-50 border border-red-200' 
+                        : 'bg-yellow-50 border border-yellow-200'
+                    }`}
                   >
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <AlertTriangle className={`w-5 h-5 ${
+                          item.stock <= item.stockMinimo * 0.5 ? 'text-red-600' : 'text-yellow-600'
+                        }`} />
+                        <span className="font-medium text-gray-900">
+                          Stock Bajo: {item.nombre} ({item.stock} {item.unidad})
+                        </span>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditItem(item)}
+                        className="text-blue-600 hover:bg-blue-50"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
-            <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600">No hay alertas de stock actualmente</p>
-            <p className="text-sm text-gray-500 mt-1">Añade una alerta para monitorear productos con stock bajo</p>
+            ) : (
+              <div className="text-center py-8 bg-gray-50 rounded-lg border border-gray-200">
+                <AlertTriangle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600">No hay alertas de stock actualmente</p>
+                <p className="text-sm text-gray-500 mt-1">Añade una alerta para monitorear productos con stock bajo</p>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -382,7 +585,7 @@ const Inventario = () => {
         {/* Título de la sección */}
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
-            {activeMainTab === 'Enmarcado' ? 'Enmarcado de Fotografías' : activeMainTab}
+            {activeMainTab} - {activeSubTab}
           </h2>
         </div>
 
@@ -432,14 +635,25 @@ const Inventario = () => {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Tipo
                 </th>
+                {getTableHeaders().map((header, index) => (
+                  <th key={index} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {header}
+                  </th>
+                ))}
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Stock ({activeSubTab === 'Pinturas y Acabados' ? 'L' : 'Unidades'})
+                  Stock
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Stock Mínimo
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Unidad
+                  Cantidad
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Costo
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Proveedor
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Acciones
@@ -457,6 +671,13 @@ const Inventario = () => {
                       {item.tipo}
                     </span>
                   </td>
+                  {getTableHeaders().map((header, index) => (
+                    <td key={index} className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {item[header.toLowerCase().replace(/\s+/g, '_').replace(/[()]/g, '')] || '-'}
+                      </div>
+                    </td>
+                  ))}
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{item.stock}</div>
                   </td>
@@ -464,7 +685,13 @@ const Inventario = () => {
                     <div className="text-sm text-gray-900">{item.stockMinimo}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{item.unidad}</div>
+                    <div className="text-sm text-gray-900">{item.cantidad || item.stock}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">S/ {item.costo || item.precio || '0.00'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{item.proveedor || '-'}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-2">
@@ -589,15 +816,55 @@ const Inventario = () => {
               </div>
               <div>
                 <label className="form-label">Tipo</label>
-                <input 
-                  defaultValue={selectedItem?.tipo || ''} 
-                  id="inv_tipo" 
-                  type="text" 
-                  className="form-input" 
-                  placeholder="Tipo de producto" 
-                  required
-                />
+                {activeSubTab === 'Repuestos' ? (
+                  <select 
+                    defaultValue={selectedItem?.tipo || ''} 
+                    id="inv_tipo" 
+                    className="form-select"
+                    required
+                  >
+                    <option value="">Seleccionar tipo</option>
+                    <option value="Engranajes">Engranajes</option>
+                    <option value="Consumibles">Consumibles</option>
+                  </select>
+                ) : (
+                  <input 
+                    defaultValue={selectedItem?.tipo || ''} 
+                    id="inv_tipo" 
+                    type="text" 
+                    className="form-input" 
+                    placeholder="Tipo de producto" 
+                    required
+                  />
+                )}
               </div>
+              
+              {/* Campos específicos según categoría */}
+              {getSpecificFields().map((field, index) => (
+                <div key={index}>
+                  <label className="form-label">{field.label}</label>
+                  {field.type === 'select' ? (
+                    <select 
+                      defaultValue={selectedItem?.[field.key] || field.defaultValue || ''} 
+                      id={`inv_${field.key}`} 
+                      className="form-select"
+                    >
+                      {field.options?.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input 
+                      defaultValue={selectedItem?.[field.key] || field.defaultValue || ''} 
+                      id={`inv_${field.key}`} 
+                      type={field.type} 
+                      className="form-input" 
+                      placeholder={field.placeholder}
+                    />
+                  )}
+                </div>
+              ))}
+              
               <div>
                 <label className="form-label">Stock Actual</label>
                 <input 
@@ -617,22 +884,33 @@ const Inventario = () => {
                 />
               </div>
               <div>
-                <label className="form-label">Unidad</label>
-                <select defaultValue={selectedItem?.unidad || 'unidades'} id="inv_unidad" className="form-select">
-                  <option value="unidades">Unidades</option>
-                  <option value="L">Litros</option>
-                  <option value="rollos">Rollos</option>
-                  <option value="kg">Kilogramos</option>
-                </select>
+                <label className="form-label">Cantidad</label>
+                <input 
+                  defaultValue={selectedItem?.cantidad || selectedItem?.stock || 0} 
+                  id="inv_cantidad" 
+                  type="number" 
+                  className="form-input" 
+                />
               </div>
               <div>
-                <label className="form-label">Precio Unitario</label>
+                <label className="form-label">Costo</label>
                 <input 
-                  defaultValue={selectedItem?.precio || 0} 
-                  id="inv_precio" 
+                  defaultValue={selectedItem?.costo || selectedItem?.precio || 0} 
+                  id="inv_costo" 
                   type="number" 
                   step="0.01" 
                   className="form-input" 
+                />
+              </div>
+              <div>
+                <label className="form-label">Proveedor (Obligatorio)</label>
+                <input 
+                  defaultValue={selectedItem?.proveedor || ''} 
+                  id="inv_proveedor" 
+                  type="text" 
+                  className="form-input" 
+                  placeholder="Nombre del proveedor"
+                  required
                 />
               </div>
             </div>
@@ -666,8 +944,15 @@ const Inventario = () => {
                 // Validación básica
                 const nombreVal = document.getElementById('inv_nombre').value.trim();
                 const tipoVal = document.getElementById('inv_tipo').value.trim();
+                const proveedorVal = document.getElementById('inv_proveedor').value.trim();
+                
                 if (!nombreVal || !tipoVal) {
                   showError('Completa al menos Nombre y Tipo del producto');
+                  return;
+                }
+                
+                if (!proveedorVal) {
+                  showError('El proveedor es obligatorio para todos los insumos');
                   return;
                 }
 
@@ -679,19 +964,33 @@ const Inventario = () => {
                   tipo: tipoVal,
                   stock: parseInt(document.getElementById('inv_stock').value || '0', 10),
                   stockMinimo: parseInt(document.getElementById('inv_stock_min').value || '0', 10),
-                  unidad: document.getElementById('inv_unidad').value,
-                  precio: parseFloat(document.getElementById('inv_precio').value || '0'),
-                  proveedor: selectedItem?.proveedor || '',
+                  cantidad: parseInt(document.getElementById('inv_cantidad').value || '0', 10),
+                  costo: parseFloat(document.getElementById('inv_costo').value || '0'),
+                  proveedor: document.getElementById('inv_proveedor').value || '',
                   fechaIngreso: selectedItem?.fechaIngreso || new Date().toISOString().split('T')[0],
-                  ultimaVenta: selectedItem?.ultimaVenta || ''
+                  ultimaVenta: selectedItem?.ultimaVenta || '',
+                  // Campos específicos según categoría
+                  ...getSpecificFields().reduce((acc, field) => {
+                    const element = document.getElementById(`inv_${field.key}`);
+                    if (element) {
+                      acc[field.key] = element.value;
+                    }
+                    return acc;
+                  }, {})
                 };
                 
                 if (selectedItem) {
                   setInventory(prev => prev.map(i => i.id === selectedItem.id ? updated : i));
                   showSuccess('Producto actualizado');
+                  
+                  // Notificación persistente para edición
+                   notifyProductAction('edit', updated);
                 } else {
                   setInventory(prev => [updated, ...prev]);
                   showSuccess('Producto registrado');
+                  
+                  // Notificación persistente para creación
+                   notifyNewProduct(updated);
                 }
               }
               
