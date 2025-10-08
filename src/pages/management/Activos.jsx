@@ -1,12 +1,47 @@
+import { DollarSign, Edit, Eye, HardDrive, Plus, Search, Trash2, Wrench, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { HardDrive, Plus, Search, Eye, Edit, Trash2, DollarSign, Wrench, X } from 'lucide-react';
-import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
 import ActivoForm from '../../components/forms/ActivoForm';
 
 const Activos = () => {
   const [activeTab, setActiveTab] = useState('activos');
+  const [repuestos, setRepuestos] = useState([
+    {
+      id: 1,
+      codigo: 'REP-001',
+      nombre: 'Tóner Negro',
+      categoria: 'Insumos Impresora',
+      stock: 15,
+      stockMinimo: 5,
+      costoUnitario: 120.00,
+      proveedor: 'Insumos Gráficos SAC',
+      ubicacion: 'Almacén A',
+    },
+    {
+      id: 2,
+      codigo: 'REP-002',
+      nombre: 'Rodillo de Goma',
+      categoria: 'Repuestos Impresora',
+      stock: 8,
+      stockMinimo: 3,
+      costoUnitario: 85.50,
+      proveedor: 'TecnoParts',
+      ubicacion: 'Almacén B',
+    },
+    {
+      id: 3,
+      codigo: 'REP-003',
+      nombre: 'Fusor',
+      categoria: 'Repuestos Impresora',
+      stock: 3,
+      stockMinimo: 2,
+      costoUnitario: 320.00,
+      proveedor: 'TecnoParts',
+      ubicacion: 'Almacén A',
+    },
+  ]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [activos, setActivos] = useState([
@@ -143,10 +178,12 @@ const Activos = () => {
   const [showActivoForm, setShowActivoForm] = useState(false);
   const [showFinanciamientoForm, setShowFinanciamientoForm] = useState(false);
   const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
+  const [showRepuestoForm, setShowRepuestoForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedActivo, setSelectedActivo] = useState(null);
   const [selectedFinanciamiento, setSelectedFinanciamiento] = useState(null);
   const [selectedMantenimiento, setSelectedMantenimiento] = useState(null);
+  const [selectedRepuesto, setSelectedRepuesto] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteType, setDeleteType] = useState('');
   const [selectedActivoForDetails, setSelectedActivoForDetails] = useState(null);
@@ -257,6 +294,14 @@ const Activos = () => {
     const matchesActivo = !selectedActivoForDetails || mant.activoId === selectedActivoForDetails.id;
     return matchesSearch && matchesActivo;
   });
+
+  const filteredRepuestos = repuestos.filter(repuesto => 
+    repuesto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.proveedor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getFinanciamientosByActivo = (activoId) => {
     return getActivosFinanciados().filter(fin => fin.activoId === activoId);
@@ -386,6 +431,28 @@ const Activos = () => {
     setSelectedMantenimiento(null);
   };
 
+  const handleSaveRepuesto = (repuestoData) => {
+    if (selectedRepuesto) {
+      setRepuestos(repuestos.map(repuesto => 
+        repuesto.id === selectedRepuesto.id 
+          ? { ...repuestoData, id: repuesto.id }
+          : repuesto
+      ));
+    } else {
+      const newRepuesto = {
+        ...repuestoData,
+        id: Math.max(...repuestos.map(r => r.id), 0) + 1,
+      };
+      setRepuestos([...repuestos, newRepuesto]);
+    }
+    setShowRepuestoForm(false);
+    setSelectedRepuesto(null);
+  };
+
+  const handleDeleteRepuesto = (id) => {
+    setRepuestos(repuestos.filter(repuesto => repuesto.id !== id));
+  };
+
   return (
     <div className="responsive-mobile">
       <div className="mb-6">
@@ -440,6 +507,19 @@ const Activos = () => {
             }`}
           >
             Mantenimientos
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('repuestos');
+              setSelectedActivoForDetails(null);
+            }}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              activeTab === 'repuestos'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Repuestos
           </button>
         </div>
       </div>
@@ -577,6 +657,7 @@ const Activos = () => {
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Monto Financiado</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Cuota Mensual</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Cuotas Pagadas</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Próximo Pago</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Estado</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Acciones</th>
                   </tr>
@@ -592,6 +673,7 @@ const Activos = () => {
                       <td className="py-3 px-3 text-sm text-gray-700">S/ {fin.montoFinanciado.toFixed(2)}</td>
                       <td className="py-3 px-3 text-sm text-gray-700">S/ {fin.cuotaMensual.toFixed(2)}</td>
                       <td className="py-3 px-3 text-sm text-gray-700">{fin.cuotasPagadas} / {fin.cuotasTotales}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{new Date(new Date(fin.fechaInicio).getTime() + (fin.cuotasPagadas * 30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}</td>
                       <td className="py-3 px-3">
                         <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${estadoColors[fin.estado]}`}>
                           {fin.estado}
@@ -694,6 +776,85 @@ const Activos = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(mant, 'mantenimiento')}
+                            className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'repuestos' && (
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-900">Listado de Repuestos</h3>
+              <Button 
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => {
+                  setSelectedRepuesto(null);
+                  setShowRepuestoForm(true);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Nuevo Repuesto
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-auto">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-primary/10">
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Código</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Nombre</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Categoría</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Stock</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Mínimo</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Costo Unitario</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Proveedor</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Ubicación</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRepuestos.map((repuesto, idx) => (
+                    <tr key={repuesto.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-primary/5'} hover:bg-primary/10`}>
+                      <td className="py-3 px-3 text-sm font-medium">
+                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">{repuesto.codigo}</span>
+                      </td>
+                      <td className="py-3 px-3 text-sm text-gray-700 break-words">{repuesto.nombre}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.categoria}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.stock}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.stockMinimo}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">S/ {repuesto.costoUnitario.toFixed(2)}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700 break-words">{repuesto.proveedor}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.ubicacion}</td>
+                      <td className="py-3 px-3">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedRepuesto(repuesto);
+                              setShowRepuestoForm(true);
+                            }}
+                            className="p-1 hover:bg-primary/10 rounded text-primary hover:text-primary"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedRepuesto(repuesto);
+                              setShowRepuestoForm(true);
+                            }}
+                            className="p-1 hover:bg-secondary/10 rounded text-secondary hover:text-secondary"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRepuesto(repuesto.id)}
                             className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -895,66 +1056,70 @@ const Activos = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                 <p className="text-gray-900">{selectedFinanciamiento.fechaInicio}</p>
               </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
-                    <p className="text-gray-900">{selectedFinanciamiento.fechaFin}</p>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                <p className="text-gray-900">{selectedFinanciamiento.fechaFin}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Pago</label>
+                <p className="text-gray-900">{new Date(new Date(selectedFinanciamiento.fechaInicio).getTime() + (selectedFinanciamiento.cuotasPagadas * 30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}</p>
+              </div>
+            </div>
 
-                {selectedFinanciamiento.historialPagos && selectedFinanciamiento.historialPagos.length > 0 && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <DollarSign className="w-5 h-5 mr-2 text-green-600" />
-                      Historial de Pagos
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedFinanciamiento.historialPagos.map((pago, index) => {
-                        const parts = pago.split('-');
-                        const fechaDescripcion = parts[0]?.trim() || '';
-                        const monto = parts[1]?.trim() || '';
-                        const [fecha, descripcion] = fechaDescripcion.split(':');
-                        
-                        return (
-                          <div key={index} className="p-3 bg-white rounded border border-gray-200 hover:shadow-sm transition-shadow">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                    {fecha?.trim() || 'Sin fecha'}
-                                  </span>
-                                  <span className="text-sm text-gray-900">
-                                    {descripcion?.trim() || 'Pago registrado'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm font-semibold text-green-600">
-                                  {monto || 'S/ 0.00'}
-                                </span>
-                              </div>
+            {selectedFinanciamiento.historialPagos && selectedFinanciamiento.historialPagos.length > 0 && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2 text-green-600" />
+                  Historial de Pagos
+                </h4>
+                <div className="space-y-2">
+                  {selectedFinanciamiento.historialPagos.map((pago, index) => {
+                    const parts = pago.split('-');
+                    const fechaDescripcion = parts[0]?.trim() || '';
+                    const monto = parts[1]?.trim() || '';
+                    const [fecha, descripcion] = fechaDescripcion.split(':');
+                    
+                    return (
+                      <div key={index} className="p-3 bg-white rounded border border-gray-200 hover:shadow-sm transition-shadow">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                {fecha?.trim() || 'Sin fecha'}
+                              </span>
+                              <span className="text-sm text-gray-900">
+                                {descripcion?.trim() || 'Pago registrado'}
+                              </span>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                    {selectedFinanciamiento.totalPagado > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-gray-900">Total Pagado:</span>
-                          <span className="text-lg font-bold text-green-600">
-                            S/ {selectedFinanciamiento.totalPagado.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">Saldo Pendiente:</span>
-                          <span className={`font-semibold ${(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            S/ {(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado).toFixed(2)}
-                          </span>
+                          <div className="text-right">
+                            <span className="text-sm font-semibold text-green-600">
+                              {monto || 'S/ 0.00'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    );
+                  })}
+                </div>
+                {selectedFinanciamiento.totalPagado > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900">Total Pagado:</span>
+                      <span className="text-lg font-bold text-green-600">
+                        S/ {selectedFinanciamiento.totalPagado.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Saldo Pendiente:</span>
+                      <span className={`font-semibold ${(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        S/ {(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 )}
+              </div>
+            )}
 
             <Modal.Footer>
               <Button 
@@ -1022,26 +1187,24 @@ const Activos = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <p className="text-gray-900">{selectedMantenimiento.descripcion}</p>
               </div>
-                  {selectedMantenimiento.proximoMantenimiento && (
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Mantenimiento</label>
-                      <p className="text-gray-900">{selectedMantenimiento.proximoMantenimiento}</p>
-                    </div>
-                  )}
-                </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Mantenimiento</label>
+                <p className="text-gray-900">{selectedMantenimiento.proximoMantenimiento}</p>
+              </div>
+            </div>
 
-                {selectedMantenimiento.repuestosInsumos && selectedMantenimiento.repuestosInsumos.length > 0 && (
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Repuestos/Insumos Asociados</h4>
-                    <div className="space-y-2">
-                      {selectedMantenimiento.repuestosInsumos.map((insumo, index) => (
-                        <div key={index} className="p-2 bg-white rounded border text-sm">
-                          {insumo}
-                        </div>
-                      ))}
+            {selectedMantenimiento.repuestosInsumos && selectedMantenimiento.repuestosInsumos.length > 0 && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3">Repuestos/Insumos Asociados</h4>
+                <div className="space-y-2">
+                  {selectedMantenimiento.repuestosInsumos.map((insumo, index) => (
+                    <div key={index} className="p-2 bg-white rounded border text-sm">
+                      {insumo}
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Modal.Footer>
               <Button 
