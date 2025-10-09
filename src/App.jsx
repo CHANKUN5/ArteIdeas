@@ -16,6 +16,7 @@ import Activos from "./pages/management/Activos";
 import Clientes from "./pages/management/Clientes";
 import Contratos from "./pages/management/Contratos";
 import Inventario from "./pages/management/Inventario";
+import Gastos from "./pages/management/Gastos";
 import Pedidos from "./pages/management/Pedidos";
 import Produccion from "./pages/management/Produccion";
 import Configuracion from "./pages/profile/Configuracion";
@@ -87,6 +88,7 @@ function AppContent() {
               {activeSection === "clientes" && <Clientes />}
               {activeSection === "inventario" && <Inventario />}
               {activeSection === "activos" && <Activos />}
+              {activeSection === "gastos" && <Gastos />}
               {activeSection === "produccion" && <Produccion />}
               {activeSection === "contratos" && <Contratos />}
               {activeSection === "reportes" && <Reportes />}
