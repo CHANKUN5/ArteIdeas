@@ -153,6 +153,7 @@ const Contratos = () => {
     fechaFin: '',
     valor: '',
     pagado: '',
+    saldo: '',
     estado: 'Pendiente',
     estudiantes: '',
     observaciones: '',
@@ -167,6 +168,7 @@ const Contratos = () => {
     fechaFin: '',
     valor: '',
     pagado: '',
+    saldo: '',
     estado: 'Pendiente',
     estudiantes: '',
     observaciones: '',
@@ -201,10 +203,52 @@ const Contratos = () => {
 
   const ContractDetail = ({ selectedContract, onClose, onEdit }) => {
     const [activeTab, setActiveTab] = useState('Resumen');
+    const [associatedOrders, setAssociatedOrders] = useState([]);
 
     const tabs = ['Resumen', 'Pagos', 'Agenda', 'Pedidos', 'Producción', 'Documentos'];
 
     const saldoPendiente = (selectedContract.valor || 0) - (selectedContract.pagado || 0);
+
+    // Cargar pedidos asociados cuando cambia el contrato seleccionado
+    useEffect(() => {
+      const loadAssociatedOrders = () => {
+        try {
+          const storedOrders = localStorage.getItem('orders');
+          if (storedOrders) {
+            const orders = JSON.parse(storedOrders);
+            console.log('Buscando pedidos para contrato:', selectedContract.id);
+            console.log('Todos los pedidos:', orders);
+            
+            // Filtrar pedidos que tengan el contratoId del contrato actual
+            const filteredOrders = orders.filter(order => 
+              order.contratoId === selectedContract.id
+            );
+            console.log('Pedidos asociados encontrados:', filteredOrders);
+            setAssociatedOrders(filteredOrders);
+          }
+        } catch (error) {
+          console.error('Error loading associated orders:', error);
+        }
+      };
+
+      loadAssociatedOrders();
+      
+      // Escuchar el evento personalizado de actualización de pedidos
+      const handleOrdersUpdated = () => {
+        console.log('Evento ordersUpdated detectado, recargando pedidos asociados');
+        loadAssociatedOrders();
+      };
+      
+      window.addEventListener('ordersUpdated', handleOrdersUpdated);
+      
+      // También verificar cada segundo para asegurar sincronización
+      const intervalId = setInterval(loadAssociatedOrders, 1000);
+      
+      return () => {
+        window.removeEventListener('ordersUpdated', handleOrdersUpdated);
+        clearInterval(intervalId);
+      };
+    }, [selectedContract.id]);
 
     return (
       <div className="space-y-6">
@@ -305,7 +349,66 @@ const Contratos = () => {
           </div>
         )}
 
-        {activeTab !== 'Resumen' && (
+        {activeTab === 'Pedidos' && (
+          <div className="space-y-4">
+            <h4 className="font-medium text-gray-900 mb-4">Pedidos Asociados</h4>
+            
+            {associatedOrders.length === 0 ? (
+              <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-600">
+                No hay pedidos asociados a este contrato.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {associatedOrders.map((order) => (
+                  <div key={order.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
+                    <div className="flex justify-between items-start mb-2">
+                      <div>
+                        <h5 className="font-medium text-gray-900">{order.cliente}</h5>
+                        <p className="text-sm text-gray-500">Pedido: {order.id}</p>
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        order.estado === 'Completado' ? 'bg-green-100 text-green-800' :
+                        order.estado === 'En proceso' ? 'bg-blue-100 text-blue-800' :
+                        order.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {order.estado}
+                      </span>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">Producto:</span>
+                        <p className="font-medium">{order.tipoProducto}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Fecha:</span>
+                        <p className="font-medium">{order.fechaPedido}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Valor:</span>
+                        <p className="font-medium text-green-600">S/ {Number(order.precioVenta || 0).toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">Entrega:</span>
+                        <p className="font-medium">{order.fechaEntrega || 'Sin definir'}</p>
+                      </div>
+                    </div>
+                    
+                    {order.observaciones && (
+                      <div className="mt-2">
+                        <span className="text-gray-600 text-sm">Observaciones:</span>
+                        <p className="text-sm text-gray-700">{order.observaciones}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab !== 'Resumen' && activeTab !== 'Pedidos' && (
           <div className="p-6 border border-dashed border-gray-300 rounded-lg text-center text-sm text-gray-600">
             Sin datos en "{activeTab}" por ahora.
           </div>
@@ -385,14 +488,19 @@ const Contratos = () => {
   const handleSubmitNewContract = () => {
     if (!validateForm()) return;
     
+    const valor = parseFloat(newContract.valor);
+    const pagado = parseFloat(newContract.pagado) || 0;
+    const saldo = valor - pagado;
+    
     const contractToAdd = {
       ...newContract,
       id: generateContractId(),
-      valor: parseFloat(newContract.valor),
-      pagado: parseFloat(newContract.pagado) || 0,
+      valor: valor,
+      pagado: pagado,
+      saldo: saldo,
       estudiantes: parseInt(newContract.estudiantes) || 0,
-      porcentajePagado: newContract.valor > 0 ? 
-        Math.round((parseFloat(newContract.pagado) / parseFloat(newContract.valor)) * 100) : 0,
+      porcentajePagado: valor > 0 ? 
+        Math.round((pagado / valor) * 100) : 0,
       fechaCreacion: new Date().toISOString().split('T')[0],
       clausulas: newContract.clausulas.filter(c => c.trim() !== '')
     };
@@ -448,6 +556,7 @@ const Contratos = () => {
   // Función para abrir modal de edición
   const openEditModal = (contract) => {
     setEditingContract(contract);
+    const saldo = contract.valor - contract.pagado;
     setEditContract({
       cliente: contract.cliente,
       servicio: contract.servicio,
@@ -456,6 +565,7 @@ const Contratos = () => {
       fechaFin: contract.fechaFin,
       valor: contract.valor.toString(),
       pagado: contract.pagado.toString(),
+      saldo: saldo.toString(),
       estado: contract.estado,
       estudiantes: contract.estudiantes.toString(),
       observaciones: contract.observaciones || '',
@@ -499,6 +609,10 @@ const Contratos = () => {
   const handleSaveEdit = () => {
     if (!validateEditForm()) return;
     
+    const valor = parseFloat(editContract.valor);
+    const pagado = parseFloat(editContract.pagado) || 0;
+    const saldo = valor - pagado;
+    
     const updatedContract = {
       ...editingContract,
       cliente: editContract.cliente,
@@ -506,15 +620,15 @@ const Contratos = () => {
       tipo: editContract.tipo,
       fechaInicio: editContract.fechaInicio,
       fechaFin: editContract.fechaFin,
-      valor: parseFloat(editContract.valor),
-      pagado: parseFloat(editContract.pagado) || 0,
+      valor: valor,
+      pagado: pagado,
+      saldo: saldo,
       estado: editContract.estado,
       estudiantes: parseInt(editContract.estudiantes) || 0,
       observaciones: editContract.observaciones,
       clausulas: editContract.clausulas.filter(c => c.trim() !== ''),
       responsable: editContract.responsable,
-      porcentajePagado: editContract.valor > 0 ? 
-        Math.round((parseFloat(editContract.pagado) / parseFloat(editContract.valor)) * 100) : 0
+      porcentajePagado: valor > 0 ? Math.round((pagado / valor) * 100) : 0
     };
     
     setContracts(contracts.map(c => c.id === editingContract.id ? updatedContract : c));
@@ -1189,13 +1303,46 @@ const Contratos = () => {
                   step="0.01"
                   min="0"
                   value={newContract.pagado}
-                  onChange={(e) => setNewContract({...newContract, pagado: e.target.value})}
+                  onChange={(e) => {
+                    const pagado = parseFloat(e.target.value) || 0;
+                    const valor = parseFloat(newContract.valor) || 0;
+                    const saldo = valor - pagado;
+                    setNewContract({
+                      ...newContract, 
+                      pagado: e.target.value,
+                      saldo: saldo.toFixed(2)
+                    });
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none ${
                     errors.pagado ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="0.00"
                 />
                 {errors.pagado && <p className="text-red-500 text-sm mt-1">{errors.pagado}</p>}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Saldo
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={newContract.saldo}
+                  onChange={(e) => {
+                    const saldo = parseFloat(e.target.value) || 0;
+                    const valor = parseFloat(newContract.valor) || 0;
+                    const pagado = valor - saldo;
+                    setNewContract({
+                      ...newContract, 
+                      saldo: e.target.value,
+                      pagado: pagado >= 0 ? pagado.toFixed(2) : '0.00'
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="0.00"
+                />
               </div>
               
               <div>
@@ -1478,13 +1625,46 @@ const Contratos = () => {
                   step="0.01"
                   min="0"
                   value={editContract.pagado}
-                  onChange={(e) => setEditContract({...editContract, pagado: e.target.value})}
+                  onChange={(e) => {
+                    const pagado = parseFloat(e.target.value) || 0;
+                    const valor = parseFloat(editContract.valor) || 0;
+                    const saldo = valor - pagado;
+                    setEditContract({
+                      ...editContract, 
+                      pagado: e.target.value,
+                      saldo: saldo.toFixed(2)
+                    });
+                  }}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none ${
                     editErrors.pagado ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="0.00"
                 />
                 {editErrors.pagado && <p className="text-red-500 text-sm mt-1">{editErrors.pagado}</p>}
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Saldo
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editContract.saldo}
+                  onChange={(e) => {
+                    const saldo = parseFloat(e.target.value) || 0;
+                    const valor = parseFloat(editContract.valor) || 0;
+                    const pagado = valor - saldo;
+                    setEditContract({
+                      ...editContract, 
+                      saldo: e.target.value,
+                      pagado: pagado >= 0 ? pagado.toFixed(2) : '0.00'
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+                  placeholder="0.00"
+                />
               </div>
               
               <div>
