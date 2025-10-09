@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, Plus, Search, Filter, Eye, Edit, Trash2, Phone, Mail, MapPin, Building } from 'lucide-react';
+import { Users, Plus, Search, Filter, Eye, Edit, Trash2, Phone, MapPin, Package } from 'lucide-react';
 import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
@@ -21,7 +21,8 @@ const Clientes = () => {
       fechaRegistro: '2020-03-15',
       ultimoPedido: '2025-06-08',
       totalPedidos: 15,
-      montoTotal: 3250.00
+      montoTotal: 3250.00,
+      documento: '20123456789'
     },
     {
       id: 'C002',
@@ -35,7 +36,8 @@ const Clientes = () => {
       fechaRegistro: '2021-07-22',
       ultimoPedido: '2025-06-07',
       totalPedidos: 8,
-      montoTotal: 1450.00
+      montoTotal: 1450.00,
+      documento: '45678912'
     },
     {
       id: 'C003',
@@ -49,7 +51,8 @@ const Clientes = () => {
       fechaRegistro: '2019-02-10',
       ultimoPedido: '2025-06-05',
       totalPedidos: 24,
-      montoTotal: 15750.00
+      montoTotal: 15750.00,
+      documento: '20987654321'
     },
     {
       id: 'C004',
@@ -63,7 +66,8 @@ const Clientes = () => {
       fechaRegistro: '2022-11-05',
       ultimoPedido: '2025-06-06',
       totalPedidos: 4,
-      montoTotal: 890.00
+      montoTotal: 890.00,
+      documento: '77889966'
     },
     {
       id: 'C005',
@@ -77,7 +81,8 @@ const Clientes = () => {
       fechaRegistro: '2023-01-18',
       ultimoPedido: '2025-05-28',
       totalPedidos: 6,
-      montoTotal: 2100.00
+      montoTotal: 2100.00,
+      documento: '20555444333'
     }
   ]);
 
@@ -88,6 +93,7 @@ const Clientes = () => {
   const [clientToDelete, setClientToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('todos');
+  const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
@@ -144,9 +150,11 @@ const Clientes = () => {
   };
 
   const filteredClients = clients.filter(client => {
-    const matchesSearch = client.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         client.contacto.includes(searchTerm);
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = client.nombre.toLowerCase().includes(term) ||
+                         (client.email || '').toLowerCase().includes(term) ||
+                         (client.contacto || '').toLowerCase().includes(term) ||
+                         (client.documento || '').toLowerCase().includes(term);
     const matchesType = typeFilter === 'todos' || client.tipo === typeFilter;
     return matchesSearch && matchesType;
   });
@@ -154,97 +162,6 @@ const Clientes = () => {
   const totalPages = Math.ceil(filteredClients.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedClients = filteredClients.slice(startIndex, startIndex + itemsPerPage);
-
-  const ClientCard = ({ client }) => (
-    <Card className="hover:shadow-lg transition-all duration-200">
-      <div className="flex justify-between items-start mb-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-            <Users className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">{client.nombre}</h3>
-            <p className="text-sm text-gray-500">Cliente #{client.id}</p>
-          </div>
-        </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${typeColors[client.tipo]}`}>
-          {client.tipo}
-        </span>
-      </div>
-
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center space-x-2 text-sm text-gray-600">
-          <Phone className="w-4 h-4" />
-          <span>{client.contacto}</span>
-        </div>
-        
-        {client.email && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Mail className="w-4 h-4" />
-            <span>{client.email}</span>
-          </div>
-        )}
-        
-        {client.ie && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Building className="w-4 h-4" />
-            <span>{client.ie}</span>
-          </div>
-        )}
-        
-        {client.direccion && (
-          <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <MapPin className="w-4 h-4" />
-            <span className="truncate">{client.direccion}</span>
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Total Pedidos</p>
-          <p className="font-semibold text-gray-900">{client.totalPedidos}</p>
-        </div>
-        <div className="text-center">
-          <p className="text-xs text-gray-500">Monto Total</p>
-          <p className="font-semibold text-gray-900">S/ {client.montoTotal.toFixed(2)}</p>
-        </div>
-      </div>
-
-      <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-        <Button
-          variant="outline"
-          size="sm"
-          icon={<Eye className="w-4 h-4" />}
-          onClick={() => {
-            setSelectedClient(client);
-            setShowClientModal(true);
-          }}
-        >
-          Ver
-        </Button>
-        
-        <div className="flex space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Edit className="w-4 h-4" />}
-            onClick={() => {
-              setSelectedClient(client);
-              setShowClientForm(true);
-            }}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            icon={<Trash2 className="w-4 h-4" />}
-            onClick={() => handleDeleteClient(client)}
-            className="text-red-600 hover:bg-red-50"
-          />
-        </div>
-      </div>
-    </Card>
-  );
 
   return (
     <div className="responsive-mobile">
@@ -272,40 +189,60 @@ const Clientes = () => {
 
       {/* Filtros */}
       <Card className="mb-6 border border-primary/10 bg-primary/10">
-        <h3 className="font-semibold text-gray-900 mb-4">Filtros</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre</label>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="md:col-span-3">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Buscador</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Buscar por nombre"
+                placeholder="Buscar por nombre, teléfono, email, DNI o RUC..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
               />
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Cliente</label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+          <div className="flex md:justify-end">
+            <button
+              type="button"
+              onClick={() => setShowFilters(prev => !prev)}
+              className={`inline-flex items-center px-4 py-2 border rounded-lg text-sm font-medium transition-all ${showFilters ? 'text-[#32D5E6] border-[#32D5E6] bg-white' : 'text-gray-700 border-gray-300 hover:bg-white/60'}`}
             >
-              <option value="todos">Todos</option>
-              <option value="Particular">Particular</option>
-              <option value="Colegio">Colegio</option>
-              <option value="Empresa">Empresa</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all">
-              Aplicar Filtros
+              <Filter className={`w-4 h-4 mr-2 ${showFilters ? 'text-[#32D5E6]' : 'text-gray-600'}`} />
+              Filtros
             </button>
           </div>
         </div>
+
+        {showFilters && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de cliente</label>
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
+              >
+                <option value="todos">Todos</option>
+                <option value="Particular">Particular</option>
+                <option value="Colegio">Colegio</option>
+                <option value="Empresa">Empresa</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2 flex items-end">
+              <button
+                type="button"
+                onClick={() => { setTypeFilter('todos'); setSearchTerm(''); }}
+                className="px-4 py-2 rounded-lg text-white ml-auto"
+                style={{ backgroundColor: '#32D5E6' }}
+              >
+                Limpiar Filtros
+              </button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* Listado de Clientes */}
@@ -315,30 +252,51 @@ const Clientes = () => {
           <table className="min-w-full table-auto">
             <thead>
               <tr className="border-b border-gray-200 bg-primary/10">
-                <th className="text-left py-3 px-3 font-medium text-gray-800">ID</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Nombre</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Tipo</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Contacto</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Nombre I.E</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Dirección</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Detalles Adicionales</th>
-                <th className="text-left py-3 px-3 font-medium text-gray-800">Acciones</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">CLIENTE</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">TIPO</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">CONTACTO</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">DIRECCIÓN</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">PEDIDOS</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">T. GASTADO</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">U. PEDIDO</th>
+                <th className="text-left py-3 px-3 font-medium text-gray-800">ACCIONES</th>
               </tr>
             </thead>
             <tbody>
               {paginatedClients.map((client, idx) => (
                 <tr key={client.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-primary/5'} hover:bg-primary/10`}>
-                  <td className="py-3 px-3 text-sm font-medium">
-                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">{client.id}</span>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      <div className="flex flex-col">
+                        <span className="font-medium">{client.nombre}</span>
+                        <span className="text-xs text-gray-500">{client.documento || '-'}</span>
+                      </div>
+                    </div>
                   </td>
-                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.nombre}</td>
                   <td className="py-3 px-3">
                     <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${typeColors[client.tipo]}`}>{client.tipo}</span>
                   </td>
-                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.contacto}</td>
-                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.ie || '-'}</td>
-                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.direccion}</td>
-                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.detalles || '-'}</td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-gray-500" />
+                      <span>{client.contacto}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span className="truncate max-w-[280px]">{client.direccion}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">
+                    <div className="flex items-center gap-2">
+                      <Package className="w-4 h-4 text-gray-500" />
+                      <span>{client.totalPedidos}</span>
+                    </div>
+                  </td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">S/ {Number(client.montoTotal || 0).toFixed(2)}</td>
+                  <td className="py-3 px-3 text-sm text-gray-700 break-words">{client.ultimoPedido || '-'}</td>
                   <td className="py-3 px-3">
                     <div className="flex space-x-2">
                       <button
@@ -454,8 +412,8 @@ const Clientes = () => {
                 <p className="text-gray-900">{selectedClient.id}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Registro</label>
-                <p className="text-gray-900">{selectedClient.fechaRegistro}</p>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Unidad de Pedido</label>
+                <p className="text-gray-900">{selectedClient.ultimoPedido || '-'}</p>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
@@ -465,6 +423,12 @@ const Clientes = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <p className="text-gray-900">{selectedClient.email || 'No registrado'}</p>
               </div>
+              {selectedClient.documento && (
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{selectedClient.tipo === 'Particular' ? 'DNI' : 'RUC'}</label>
+                  <p className="text-gray-900">{selectedClient.documento}</p>
+                </div>
+              )}
               {selectedClient.ie && (
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Institución</label>
@@ -486,7 +450,7 @@ const Clientes = () => {
               </div>
               <div className="text-center">
                 <p className="text-2xl font-bold text-green-600">S/ {selectedClient.montoTotal.toFixed(2)}</p>
-                <p className="text-sm text-gray-500">Monto Total</p>
+                <p className="text-sm text-gray-500">Total Gastado</p>
               </div>
             </div>
 

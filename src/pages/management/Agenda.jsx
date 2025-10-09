@@ -1,1017 +1,1282 @@
-import { Calendar, ChevronLeft, ChevronRight, Edit, Eye, Plus, Search, Trash2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { 
+  Calendar, 
+  ChevronLeft, 
+  ChevronRight, 
+  Plus, 
+  X, 
+  Edit, 
+  Trash2,
+  Clock,
+  User,
+  MapPin,
+  FileText
+} from 'lucide-react';
 import Button from '../../components/common/Button';
-import Modal from '../../components/common/Modal';
+import FilterButtons from '../../components/agenda/FilterButtons';
+import EventCard from '../../components/agenda/EventCard';
+import Pagination from '../../components/agenda/Pagination';
 
 const Agenda = () => {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-  const [showEventModal, setShowEventModal] = useState(false); // Detalles del evento
+  // Estados principales
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState('month'); // day, week, month, quarter
+  const [activeFilter, setActiveFilter] = useState('todos');
   const [selectedEvent, setSelectedEvent] = useState(null);
-  const [filter, setFilter] = useState('todos');
-  // Nuevo estado para búsqueda de sesiones
-  const [sessionSearch, setSessionSearch] = useState('');
-  // Estado para filtro de estado
-  const [statusFilter, setStatusFilter] = useState('todos');
-  // Fecha de referencia para el calendario (primer día del mes mostrado)
-  const [currentMonthDate, setCurrentMonthDate] = useState(() => {
-    const base = new Date();
-    return new Date(base.getFullYear(), base.getMonth(), 1);
-  });
+  const [showEventPanel, setShowEventPanel] = useState(false);
+  const [showNewEventForm, setShowNewEventForm] = useState(false);
+  const [showEditEventForm, setShowEditEventForm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  // Removido: const [expandedEventId, setExpandedEventId] = useState(null);
 
-  // Estado de eventos (persistencia inmediata con lazy initializer)
+  // Generar datos mock más extensos para todas las vistas
+  const generateMockEvents = () => {
+    const events = [];
+    const today = new Date();
+    const tipos = ['Sesión Fotográfica', 'Entrega', 'Recordatorio'];
+    const clientes = [
+      'I.E. San Martín de Porres - 5to A', 'Colegio Santa Rosa', 'María González Rodríguez',
+      'Familia Pérez', 'Empresa TechCorp', 'Universidad Nacional', 'Colegio San José',
+      'Ana María López', 'Familia Rodríguez', 'Empresa InnovaTech', 'I.E. Libertador',
+      'Carlos Mendoza', 'Familia García', 'Corporación ABC', 'Colegio La Salle',
+      'Patricia Vásquez', 'Familia Torres', 'StartUp Digital', 'I.E. Bolognesi',
+      'Roberto Silva', 'Familia Morales', 'Empresa Global', 'Colegio Salesiano'
+    ];
+    const ubicaciones = [
+      'Patio principal del colegio', 'Oficina administrativa', 'Estudio fotográfico',
+      'Parque central', 'Oficinas del cliente', 'Aula magna', 'Jardín principal',
+      'Salón de eventos', 'Plaza de armas', 'Centro comercial', 'Auditorio',
+      'Patio de recreo', 'Biblioteca', 'Laboratorio', 'Gimnasio'
+    ];
+
+    // Generar eventos para los próximos 3 meses
+    for (let i = 0; i < 60; i++) {
+      const eventDate = new Date(today);
+      eventDate.setDate(today.getDate() + Math.floor(Math.random() * 90)); // Próximos 90 días
+      
+      const tipo = tipos[Math.floor(Math.random() * tipos.length)];
+      const cliente = clientes[Math.floor(Math.random() * clientes.length)];
+      const ubicacion = ubicaciones[Math.floor(Math.random() * ubicaciones.length)];
+      
+      const hora = `${String(Math.floor(Math.random() * 12) + 8).padStart(2, '0')}:${Math.random() > 0.5 ? '00' : '30'}`;
+      
+      events.push({
+        id: i + 1,
+        cliente,
+        tipo,
+        descripcion: `${tipo} programada para ${cliente}`,
+        fecha: eventDate.toISOString().split('T')[0],
+        hora,
+        ubicacion,
+        estado: Math.random() > 0.3 ? 'confirmada' : 'pendiente'
+      });
+    }
+
+    return events;
+  };
+
+  // Datos mock iniciales
+  const mockEvents = generateMockEvents();
+
+  // Estado de eventos con persistencia
   const [events, setEvents] = useState(() => {
     try {
-      const stored = localStorage.getItem('agenda_events');
-      const parsed = stored ? JSON.parse(stored) : [];
-      return Array.isArray(parsed) ? parsed : [];
+      const stored = localStorage.getItem('agenda_events_new');
+      return stored ? JSON.parse(stored) : mockEvents;
     } catch (e) {
-      console.error('Error leyendo agenda_events de localStorage', e);
-      return [];
+      console.error('Error loading events from localStorage:', e);
+      return mockEvents;
     }
   });
-  
-  // Formulario controlado para crear/editar evento
-  const [showEventForm, setShowEventForm] = useState(false);
-  const [eventFormData, setEventFormData] = useState({
-    title: '',
-    client: '',
-    date: '',
-    time: '',
-    duration: '',
-    location: '',
-    type: 'escolar',
-    status: 'pendiente',
-    participants: 0,
-    notes: '',
-    tasks: []
-  });
-  const [editingEvent, setEditingEvent] = useState(null);
-  const [taskInput, setTaskInput] = useState('');
-  
-  // Modales de confirmación
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [eventToDelete, setEventToDelete] = useState(null);
-  const [confirmEditOpen, setConfirmEditOpen] = useState(false);
-  const [eventToEdit, setEventToEdit] = useState(null);
 
-  // Guardar en localStorage cuando cambien (simple y robusto)
+  // Formulario para nuevo evento
+  const [newEventForm, setNewEventForm] = useState({
+    cliente: '',
+    tipo: 'Sesión Fotográfica',
+    descripcion: '',
+    fecha: '',
+    hora: '',
+    ubicacion: '',
+    estado: 'pendiente'
+  });
+
+  const [editEventForm, setEditEventForm] = useState({
+    cliente: '',
+    tipo: 'Sesión Fotográfica',
+    descripcion: '',
+    fecha: '',
+    hora: '',
+    ubicacion: '',
+    estado: 'pendiente'
+  });
+
+  // Categorías para filtros con colores
+  const categories = [
+    { key: 'todos', label: 'Todos', emoji: '📅', color: 'bg-gray-100' },
+    { key: 'Sesión Fotográfica', label: 'Sesión Fotográfica', emoji: '📸', color: 'bg-blue-100', textColor: 'text-blue-800', borderColor: 'border-blue-200' },
+    { key: 'Entrega', label: 'Entrega', emoji: '📦', color: 'bg-green-100', textColor: 'text-green-800', borderColor: 'border-green-200' },
+    { key: 'Recordatorio', label: 'Recordatorio', emoji: '🔔', color: 'bg-yellow-100', textColor: 'text-yellow-800', borderColor: 'border-yellow-200' }
+  ];
+
+  // Función para obtener el color de un evento según su tipo
+  const getEventColor = (tipo) => {
+    const category = categories.find(cat => cat.key === tipo);
+    return category ? {
+      bg: category.color,
+      text: category.textColor || 'text-gray-800',
+      border: category.borderColor || 'border-gray-200'
+    } : {
+      bg: 'bg-gray-100',
+      text: 'text-gray-800',
+      border: 'border-gray-200'
+    };
+  };
+
+  // Modos de vista del calendario
+  const viewModes = [
+    { key: 'day', label: 'Día' },
+    { key: 'week', label: 'Semana' },
+    { key: 'month', label: 'Mes' },
+    { key: 'quarter', label: 'Trimestral' }
+  ];
+
+  // Persistir eventos en localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('agenda_events', JSON.stringify(events));
+      localStorage.setItem('agenda_events_new', JSON.stringify(events));
     } catch (e) {
-      console.error('Error guardando eventos en localStorage', e);
+      console.error('Error saving events to localStorage:', e);
     }
   }, [events]);
 
-
-  // Tipos de sesión y visuales (colores para chips/ítems, y emojis)
-  const sessionTypes = {
-    escolar: { color: 'bg-yellow-500', label: 'Escolar', emoji: '🎒' },
-    familiar: { color: 'bg-pink-500', label: 'Familiar', emoji: '👨‍👩‍👧‍👦' },
-    retrato: { color: 'bg-blue-500', label: 'Retrato individual', emoji: '🧑' },
-    grupal: { color: 'bg-purple-500', label: 'Grupal', emoji: '👥' },
-    corporativa: { color: 'bg-indigo-500', label: 'Corporativa', emoji: '🏢' },
-    oleo: { color: 'bg-orange-500', label: 'Óleo', emoji: '🖼️' },
-    recordatorio: { color: 'bg-teal-500', label: 'Recordatorio escolar', emoji: '🎓' },
-    otros: { color: 'bg-gray-500', label: 'Otros', emoji: '📸' }
-  };
-
-  // Normalización de eventos antiguos (estados y tipos heredados)
-  const normalizeStatus = (st) => {
-    if (!st) return 'pendiente';
-    if (st === 'confirmado') return 'confirmada';
-    if (st === 'completado') return 'entregado';
-    if (['pendiente','confirmada','en_ejecucion','en_edicion','entregado'].includes(st)) return st;
-    return 'pendiente';
-  };
-  const normalizeType = (tp) => {
-    if (!tp) return 'otros';
-    if (['escolar','familiar','retrato','grupal','corporativa','oleo','recordatorio','otros'].includes(tp)) return tp;
-    // tipos antiguos
-    if (tp === 'sesion') return 'otros';
-    if (tp === 'entrega') return 'otros';
-    if (tp === 'reunion') return 'corporativa';
-    return 'otros';
-  };
-
-  useEffect(() => {
-    // Una sola normalización al montar
-    setEvents(prev => prev.map(ev => ({
-      ...ev,
-      status: normalizeStatus(ev.status),
-      type: normalizeType(ev.type)
-    })));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // Asegurar cliente por defecto según tipo cuando se abre el formulario o cambia el tipo
-  useEffect(() => {
-    if (showEventForm && !editingEvent) {
-      if (!eventFormData.client) {
-        const list = clientOptionsByType[eventFormData.type] || [];
-        if (list.length) setEventFormData(prev => ({ ...prev, client: list[0] }));
+  // Eventos filtrados
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      if (activeFilter !== 'todos' && event.tipo !== activeFilter) {
+        return false;
       }
-    }
-  }, [showEventForm, eventFormData.type]);
+      return true;
+    });
+  }, [events, activeFilter]);
 
-  // Estados normalizados (keys) con etiquetas y clases de color
-  const STATUS = {
-    pendiente: { key: 'pendiente', label: 'Pendiente de confirmación del cliente', badge: 'bg-yellow-100 text-yellow-800', dayBg: 'bg-yellow-100' },
-    confirmada: { key: 'confirmada', label: 'Confirmada', badge: 'bg-blue-100 text-blue-800', dayBg: 'bg-blue-100' },
-    en_ejecucion: { key: 'en_ejecucion', label: 'En ejecución', badge: 'bg-orange-100 text-orange-800', dayBg: 'bg-orange-100' },
-    en_edicion: { key: 'en_edicion', label: 'En edición/retoque', badge: 'bg-gray-200 text-gray-800', dayBg: 'bg-gray-100' },
-    entregado: { key: 'entregado', label: 'Entregado', badge: 'bg-green-100 text-green-800', dayBg: 'bg-green-100' }
-  };
+  // Eventos próximos (ordenados por fecha)
+  const upcomingEvents = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
+    
+    return filteredEvents
+      .filter(event => {
+        const eventDate = new Date(event.fecha);
+        eventDate.setHours(0, 0, 0, 0); // Resetear horas para comparar solo fechas
+        return eventDate >= today;
+      })
+      .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  }, [filteredEvents]);
 
-  const statusColors = Object.fromEntries(Object.entries(STATUS).map(([k, v]) => [k, v.badge]));
+  // Paginación para eventos próximos
+  const itemsPerPage = 16;
+  const totalPages = Math.ceil(upcomingEvents.length / itemsPerPage);
+  const paginatedEvents = upcomingEvents.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  // Prioridad para colorear días con múltiples sesiones
-  const statusPriority = { pendiente: 1, confirmada: 2, en_ejecucion: 3, en_edicion: 4, entregado: 5 };
-
-  // Clientes simulados por tipo de sesión
-  const clientOptionsByType = {
-    escolar: ['Colegio San Marcos', 'Colegio Santa María', 'Instituto Los Álamos'],
-    familiar: ['Familia Pérez', 'Familia Rodríguez', 'Familia Gómez'],
-    retrato: ['Ana López', 'Carlos Ruiz', 'María Fernández'],
-    grupal: ['Equipo Juvenil', 'Grupo Danza Nova', 'Banda Escolar'],
-    corporativa: ['TechCorp', 'Innova SA', 'BlueOcean Ltd.'],
-    oleo: ['Encargo de Galería', 'Retrato al óleo', 'Paisaje personalizado'],
-    recordatorio: ['3°A Primaria', '5°B Secundaria', '6°A Primaria'],
-    otros: ['Cliente especial', 'Evento particular', 'Sin clasificar']
-  };
-
-  const deriveStatusFromType = () => 'pendiente';
-
-  // Sincronizar el calendario con el filtro de fecha
-  useEffect(() => {
-    if (!selectedDate) return;
-    const d = new Date(`${selectedDate}T00:00:00`);
-    setCurrentMonthDate(new Date(d.getFullYear(), d.getMonth(), 1));
-  }, [selectedDate]);
-
-  const filteredEvents = events.filter(event => {
-    if (filter !== 'todos' && event.type !== filter) return false;
-    if (sessionSearch.trim()) {
-      const term = sessionSearch.trim().toLowerCase();
-      if (!(event.title || '').toLowerCase().includes(term) && 
-          !(event.client || '').toLowerCase().includes(term) &&
-          !(event.location || '').toLowerCase().includes(term)) return false;
-    }
-    if (statusFilter !== 'todos') {
-      const eventStatus = event.status || deriveStatusFromType(event.type);
-      if (eventStatus !== statusFilter) return false;
-    }
-    if (selectedDate) {
-      // Comparación de fecha exacta (YYYY-MM-DD)
-      if ((event.date || '').slice(0, 10) !== selectedDate) return false;
-    }
-    return true;
-  });
-
-  // Orden y paginación
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
-  const sortedEvents = [...filteredEvents].sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
-  const totalPages = Math.max(1, Math.ceil(sortedEvents.length / itemsPerPage));
-  const pageStart = (currentPage - 1) * itemsPerPage;
-  const paginatedEvents = sortedEvents.slice(pageStart, pageStart + itemsPerPage);
-
-  // Progreso según tareas
-  const getProgress = (ev) => {
-    if (!ev || !Array.isArray(ev.tasks) || ev.tasks.length === 0) return 0;
-    const completed = ev.tasks.filter(t => t.completed).length;
-    return Math.round((completed / ev.tasks.length) * 100);
-  };
-
-  // Utilidades de calendario
-  const monthLabel = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' }).format(currentMonthDate);
-  const pad2 = (n) => (n < 10 ? `0${n}` : `${n}`);
-  // statusPriority redefinido arriba según nuevos estados
-
-  // Generar calendario para el mes en currentMonthDate
+  // Generar calendario según la vista
   const generateCalendar = () => {
-    const days = [];
-    const year = currentMonthDate.getFullYear();
-    const month = currentMonthDate.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const startWeekday = firstDay.getDay(); // 0=Dom, 6=Sab para alinear con cabecera DOM..SÁB
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const date = currentDate.getDate();
 
-    // Relleno de días en blanco antes del 1
-    for (let i = 0; i < startWeekday; i++) {
-      days.push(<div key={`blank-${i}`} className="py-3 border border-gray-100 bg-white" />);
+    switch (viewMode) {
+      case 'day':
+        return generateDayView();
+      case 'week':
+        return generateWeekView();
+      case 'month':
+        return generateMonthView();
+      case 'quarter':
+        return generateQuarterView();
+      default:
+        return generateMonthView();
     }
+  };
 
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${pad2(month + 1)}-${pad2(d)}`;
-      const eventsInDay = events.filter(ev => (ev.date || '').slice(0, 10) === dateStr);
+  // Vista de día
+  const generateDayView = () => {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const dayEvents = events.filter(event => event.fecha === dateStr);
+    
+    return [{
+      date: new Date(currentDate),
+      dateStr,
+      dayEvents,
+      isCurrentMonth: true,
+      isToday: currentDate.toDateString() === new Date().toDateString()
+    }];
+  };
 
-      // Determinar estado dominante del día
-      let dominantStatus = null;
-      for (const ev of eventsInDay) {
-        const st = ev.status || deriveStatusFromType(ev.type);
-        if (!dominantStatus || statusPriority[st] > statusPriority[dominantStatus]) {
-          dominantStatus = st;
-        }
-      }
+  // Vista de semana
+  const generateWeekView = () => {
+    const startOfWeek = new Date(currentDate);
+    const day = startOfWeek.getDay();
+    startOfWeek.setDate(currentDate.getDate() - day);
 
-      let bgClass = '';
-      if (dominantStatus && STATUS[dominantStatus]) {
-        bgClass = STATUS[dominantStatus].dayBg;
-      }
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const current = new Date(startOfWeek);
+      current.setDate(startOfWeek.getDate() + i);
+      const dateStr = current.toISOString().split('T')[0];
+      const dayEvents = events.filter(event => event.fecha === dateStr);
 
-      days.push(
-        <div
-          key={`day-${dateStr}`}
-          className={`text-center py-3 border border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors ${bgClass}`}
-          onClick={() => setSelectedDate(dateStr)}
-        >
-          <div className="relative">
-            <div className="text-sm font-medium">{d}</div>
+      days.push({
+        date: new Date(current),
+        dateStr,
+        dayEvents,
+        isCurrentMonth: true,
+        isToday: current.toDateString() === new Date().toDateString()
+      });
+    }
+    return days;
+  };
+
+  // Vista de mes
+  const generateMonthView = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDay = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc.
+    
+    const days = [];
+    
+    // Agregar días del mes anterior si el mes no comienza en domingo
+    if (startDay > 0) {
+      const prevMonth = new Date(year, month - 1, 0); // Último día del mes anterior
+      const prevMonthLastDay = prevMonth.getDate();
       
-            {/* Si hay eventos, mostramos solo el acumulador */}
-            {eventsInDay.length > 0 && (
-              <div className="absolute bottom-1 right-1 flex flex-col items-end">
-                <div className="relative group">
-                  <button
-                    className="text-[11px] text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-full px-2 py-0.5"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    +{eventsInDay.length}
-                  </button>
-      
-                  {/* Tooltip con todos los emojis */}
-                  <div className="absolute bottom-6 right-0 hidden group-hover:flex flex-col bg-white text-black text-xs rounded-lg shadow-lg px-2 py-2 z-10 min-w-[160px] max-w-[240px] whitespace-normal break-words">
-                    {eventsInDay.map((ev) => (
-                      <button
-                        key={`all-${ev.id}`}
-                        className="flex items-center gap-2 text-left hover:bg-gray-100 px-1 py-0.5 rounded"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedEvent(ev);
-                          setShowEventModal(true);
-                        }}
-                      >
-                        <span className="text-sm">
-                          {sessionTypes[ev.type]?.emoji || "📸"}
-                        </span>
-                        <span className="truncate">
-                          {sessionTypes[ev.type]?.label || ev.type} • {ev.title || ""}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      );         
+      for (let day = prevMonthLastDay - startDay + 1; day <= prevMonthLastDay; day++) {
+        const current = new Date(year, month - 1, day);
+        const dateStr = current.toISOString().split('T')[0];
+        // Filtrar eventos según el filtro activo
+        const allDayEvents = events.filter(event => event.fecha === dateStr);
+        const dayEvents = activeFilter === 'todos' 
+          ? allDayEvents 
+          : allDayEvents.filter(event => event.tipo === activeFilter);
+        const isToday = current.toDateString() === new Date().toDateString();
+
+        days.push({
+          date: new Date(current),
+          dateStr,
+          dayEvents,
+          isCurrentMonth: false,
+          isToday
+        });
+      }
+    }
+    
+    // Agregar los días del mes actual
+    for (let day = 1; day <= lastDay.getDate(); day++) {
+      const current = new Date(year, month, day);
+      const dateStr = current.toISOString().split('T')[0];
+      // Filtrar eventos según el filtro activo
+      const allDayEvents = events.filter(event => event.fecha === dateStr);
+      const dayEvents = activeFilter === 'todos' 
+        ? allDayEvents 
+        : allDayEvents.filter(event => event.tipo === activeFilter);
+      const isToday = current.toDateString() === new Date().toDateString();
+
+      days.push({
+        date: new Date(current),
+        dateStr,
+        dayEvents,
+        isCurrentMonth: true,
+        isToday
+      });
     }
 
     return days;
   };
-  
-  // Componente para mostrar una tarea
-  const TaskItem = ({ task, onToggle }) => (
-    <div className="flex items-center space-x-2 py-1">
-      <div 
-        className={`w-4 h-4 rounded-full border flex items-center justify-center cursor-pointer ${
-          task.completed ? 'bg-primary border-primary' : 'border-gray-300'
-        }`}
-        onClick={onToggle}
-      >
-        {task.completed && <div className="w-2 h-2 bg-white rounded-full"></div>}
+
+  // Vista trimestral
+  const generateQuarterView = () => {
+    const year = currentDate.getFullYear();
+    const quarter = Math.floor(currentDate.getMonth() / 3);
+    const startMonth = quarter * 3;
+    
+    const months = [];
+    for (let monthOffset = 0; monthOffset < 3; monthOffset++) {
+      const monthDate = new Date(year, startMonth + monthOffset, 1);
+      const monthEvents = events.filter(event => {
+        const eventDate = new Date(event.fecha);
+        return eventDate.getFullYear() === year && 
+               eventDate.getMonth() === startMonth + monthOffset;
+      });
+
+      months.push({
+        date: monthDate,
+        dateStr: monthDate.toISOString().split('T')[0],
+        dayEvents: monthEvents,
+        isCurrentMonth: true,
+        isToday: false,
+        monthName: monthDate.toLocaleDateString('es-ES', { month: 'long' }),
+        eventCount: monthEvents.length
+      });
+    }
+    return months;
+  };
+
+  // Manejar creación de nuevo evento
+  const handleCreateEvent = (e) => {
+    e.preventDefault();
+    if (!newEventForm.cliente || !newEventForm.fecha || !newEventForm.hora) {
+      alert('Por favor completa todos los campos requeridos');
+      return;
+    }
+
+    const newEvent = {
+      id: Date.now(),
+      ...newEventForm
+    };
+
+    setEvents(prev => [...prev, newEvent]);
+    setNewEventForm({
+      cliente: '',
+      tipo: 'Sesión Fotográfica',
+      descripcion: '',
+      fecha: '',
+      hora: '',
+      ubicacion: '',
+      estado: 'pendiente'
+    });
+    setShowNewEventForm(false);
+  };
+
+  // Manejar eliminación de evento
+  const handleDeleteEvent = (eventId) => {
+    setEventToDelete(eventId);
+    setShowDeleteModal(true);
+  };
+
+  // Confirmar eliminación de evento
+  const confirmDeleteEvent = () => {
+    if (eventToDelete) {
+      setEvents(prev => prev.filter(event => event.id !== eventToDelete));
+      setShowEventPanel(false);
+      setSelectedEvent(null);
+      setShowDeleteModal(false);
+      setEventToDelete(null);
+    }
+  };
+
+  // Cancelar eliminación de evento
+  const cancelDeleteEvent = () => {
+    setShowDeleteModal(false);
+    setEventToDelete(null);
+  };
+
+  // Manejar edición de evento
+  const handleEditEvent = (event) => {
+    setEditEventForm({
+      cliente: event.cliente,
+      tipo: event.tipo,
+      descripcion: event.descripcion,
+      fecha: event.fecha,
+      hora: event.hora,
+      ubicacion: event.ubicacion,
+      estado: event.estado
+    });
+    setShowEditEventForm(true);
+    setShowEventPanel(false);
+  };
+
+  // Guardar evento editado
+  const handleSaveEditEvent = () => {
+    if (selectedEvent && editEventForm.cliente && editEventForm.fecha && editEventForm.hora) {
+      setEvents(prev => prev.map(event => 
+        event.id === selectedEvent.id 
+          ? { ...event, ...editEventForm }
+          : event
+      ));
+      setShowEditEventForm(false);
+      setSelectedEvent(null);
+      setEditEventForm({
+        cliente: '',
+        tipo: 'Sesión Fotográfica',
+        descripcion: '',
+        fecha: '',
+        hora: '',
+        ubicacion: '',
+        estado: 'pendiente'
+      });
+    }
+  };
+
+  // Cancelar edición de evento
+  const handleCancelEditEvent = () => {
+    setShowEditEventForm(false);
+    setEditEventForm({
+      cliente: '',
+      tipo: 'Sesión Fotográfica',
+      descripcion: '',
+      fecha: '',
+      hora: '',
+      ubicacion: '',
+      estado: 'pendiente'
+    });
+  };
+
+  // Navegación del calendario
+  const navigateCalendar = (direction) => {
+    const newDate = new Date(currentDate);
+    
+    switch (viewMode) {
+      case 'day':
+        newDate.setDate(currentDate.getDate() + direction);
+        break;
+      case 'week':
+        newDate.setDate(currentDate.getDate() + (direction * 7));
+        break;
+      case 'month':
+        newDate.setMonth(currentDate.getMonth() + direction);
+        break;
+      case 'quarter':
+        newDate.setMonth(currentDate.getMonth() + (direction * 3));
+        break;
+      default:
+        newDate.setMonth(currentDate.getMonth() + direction);
+    }
+    
+    setCurrentDate(newDate);
+  };
+
+  // Función para obtener el título del calendario según la vista
+  const getCalendarTitle = () => {
+    switch (viewMode) {
+      case 'day':
+        return currentDate.toLocaleDateString('es-ES', { 
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long', 
+          year: 'numeric' 
+        });
+      case 'week':
+        const startOfWeek = new Date(currentDate);
+        const day = startOfWeek.getDay();
+        startOfWeek.setDate(currentDate.getDate() - day);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        
+        return `${startOfWeek.getDate()} - ${endOfWeek.getDate()} de ${currentDate.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })}`;
+      case 'quarter':
+        const quarter = Math.floor(currentDate.getMonth() / 3) + 1;
+        return `Q${quarter} ${currentDate.getFullYear()}`;
+      default:
+        return currentDate.toLocaleDateString('es-ES', { 
+          month: 'long', 
+          year: 'numeric' 
+        });
+    }
+  };
+
+  // Renderizar calendario según la vista
+  const renderCalendarContent = () => {
+    switch (viewMode) {
+      case 'day':
+        return renderDayView();
+      case 'week':
+        return renderWeekView();
+      case 'month':
+        return renderMonthView();
+      case 'quarter':
+        return renderQuarterView();
+      default:
+        return renderMonthView();
+    }
+  };
+
+  // Vista diaria
+  const renderDayView = () => {
+    const dayEvents = events.filter(event => {
+      const eventDate = new Date(event.fecha);
+      return eventDate.toDateString() === currentDate.toDateString();
+    });
+
+    return (
+      <div className="p-4">
+        <div className="space-y-2">
+          {dayEvents.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              No hay eventos para este día
+            </div>
+          ) : (
+            dayEvents.map(event => (
+              <div
+                key={event.id}
+                onClick={() => {
+                  setSelectedEvent(event);
+                  setShowEventPanel(true);
+                }}
+                className="p-3 bg-primary/10 text-primary rounded-lg cursor-pointer hover:bg-primary/20 transition-colors"
+              >
+                <div className="font-medium">{event.cliente}</div>
+                <div className="text-sm opacity-75">{event.hora} - {event.tipo}</div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
-      <span className={`text-sm ${task.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-        {task.name}
-      </span>
-    </div>
-  );
+    );
+  };
+
+  // Vista semanal
+  const renderWeekView = () => {
+    const startOfWeek = new Date(currentDate);
+    startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
+    
+    const weekDays = [];
+    for (let i = 0; i < 7; i++) {
+      const day = new Date(startOfWeek);
+      day.setDate(startOfWeek.getDate() + i);
+      weekDays.push(day);
+    }
+
+    return (
+      <div className="p-4">
+        <div className="grid grid-cols-7 gap-2">
+          {weekDays.map((day, index) => {
+            const dayEvents = events.filter(event => {
+              const eventDate = new Date(event.fecha);
+              return eventDate.toDateString() === day.toDateString();
+            });
+
+            return (
+              <div key={index} className="border border-gray-200 rounded-lg p-2 min-h-[120px]">
+                <div className="text-sm font-medium text-gray-700 mb-2">
+                  {day.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric' })}
+                </div>
+                <div className="space-y-1">
+                  {dayEvents.slice(0, 3).map(event => (
+                    <div
+                      key={event.id}
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setShowEventPanel(true);
+                      }}
+                      className="text-xs p-1 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20 transition-colors"
+                    >
+                      {event.cliente}
+                    </div>
+                  ))}
+                  {dayEvents.length > 3 && (
+                    <div className="text-xs text-gray-500">+{dayEvents.length - 3} más</div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Vista trimestral
+  const renderQuarterView = () => {
+    const currentMonth = currentDate.getMonth();
+    const quarterStart = Math.floor(currentMonth / 3) * 3;
+    const months = [];
+    
+    for (let i = 0; i < 3; i++) {
+      const monthDate = new Date(currentDate.getFullYear(), quarterStart + i, 1);
+      months.push(monthDate);
+    }
+
+    return (
+      <div className="p-4">
+        <div className="grid grid-cols-3 gap-4">
+          {months.map((month, monthIndex) => {
+            const monthEvents = events.filter(event => {
+              const eventDate = new Date(event.fecha);
+              return eventDate.getMonth() === month.getMonth() && 
+                     eventDate.getFullYear() === month.getFullYear();
+            });
+
+            return (
+              <div key={monthIndex} className="border border-gray-200 rounded-lg p-3">
+                <h4 className="text-sm font-medium text-gray-700 mb-3">
+                  {month.toLocaleDateString('es-ES', { month: 'long' })}
+                </h4>
+                <div className="space-y-2">
+                  {monthEvents.slice(0, 5).map(event => (
+                    <div
+                      key={event.id}
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setShowEventPanel(true);
+                      }}
+                      className="text-xs p-2 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20 transition-colors"
+                    >
+                      <div className="font-medium">{event.cliente}</div>
+                      <div className="opacity-75">
+                        {new Date(event.fecha).getDate()} - {event.tipo}
+                      </div>
+                    </div>
+                  ))}
+                  {monthEvents.length > 5 && (
+                    <div className="text-xs text-gray-500 text-center">
+                      +{monthEvents.length - 5} eventos más
+                    </div>
+                  )}
+                  {monthEvents.length === 0 && (
+                    <div className="text-xs text-gray-400 text-center py-4">
+                      Sin eventos
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  // Generar días del calendario
+  const calendarDays = generateCalendar();
+
+  // Vista mensual
+  const renderMonthView = () => {
+    const daysInMonth = calendarDays.length;
+    const rows = Math.ceil(daysInMonth / 7);
+    
+    return (
+      <div className="p-4 h-full flex flex-col">
+        <div 
+          className="grid gap-1 flex-1" 
+          style={{ 
+            gridTemplateColumns: 'repeat(7, 1fr)',
+            gridTemplateRows: `repeat(${rows}, 1fr)`,
+            height: '100%'
+          }}
+        >
+          {calendarDays.map((day, index) => (
+            <div
+              key={index}
+              className={`
+                p-2 border border-gray-100 rounded-lg cursor-pointer
+                transition-colors hover:bg-gray-50 flex flex-col
+                ${day.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}
+                ${day.isToday ? 'ring-2 ring-primary ring-opacity-50' : ''}
+              `}
+              style={{ 
+                minHeight: '80px'
+              }}
+            >
+              <div className="flex justify-between items-start mb-1 flex-shrink-0">
+                <span className={`text-sm font-medium ${
+                  day.isToday ? 'text-primary' : 
+                  day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                }`}>
+                  {day.date.getDate()}
+                </span>
+                {day.dayEvents.length > 0 && (
+                  <span className="text-xs bg-primary text-white rounded-full px-1">
+                    {day.dayEvents.length}
+                  </span>
+                )}
+              </div>
+              
+              {/* Eventos del día */}
+              <div className="space-y-1 flex-1 overflow-hidden">
+                {day.dayEvents.slice(0, 2).map(event => {
+                  const eventColors = getEventColor(event.tipo);
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedEvent(event);
+                        setShowEventPanel(true);
+                      }}
+                      className={`text-xs p-1 rounded truncate transition-colors cursor-pointer border ${eventColors.bg} ${eventColors.text} ${eventColors.border} hover:opacity-80`}
+                    >
+                      {event.cliente}
+                    </div>
+                  );
+                })}
+                {day.dayEvents.length > 2 && (
+                  <div className="text-xs text-gray-500">
+                    +{day.dayEvents.length - 2} más
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
       <div className="mb-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
               <Calendar className="w-6 h-6 text-primary" />
             </div>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
-              <p className="text-sm text-gray-500">Gestiona tus citas y eventos</p>
-            </div>
-          </div>
-          <Button 
-            icon={<Plus className="w-4 h-4" />}
-            onClick={() => setShowEventForm(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Nueva Sesión
-          </Button>
-        </div>
-      </div>
-
-      {/* Sección de Filtros */}
-      <div className="mb-6">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Filtros</h2>
-        </div>
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="flex flex-col md:flex-row gap-6 items-end">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Buscar Sesión</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Buscar por título, cliente o ubicación"
-                  value={sessionSearch}
-                  onChange={(e) => setSessionSearch(e.target.value)}
-                  className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
-              </div>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Estado</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="todos">Todos los estados</option>
-                <option value="pendiente">Pendiente de confirmación del cliente</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="en_ejecucion">En ejecución</option>
-                <option value="en_edicion">En edición/retoque</option>
-                <option value="entregado">Entregado</option>
-              </select>
-            </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de sesión</label>
-              <select
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="todos">Todos los tipos</option>
-                {Object.entries(sessionTypes).map(([key, info]) => (
-                  <option key={key} value={key}>{info.label}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-end">
-              <Button
-                onClick={() => {
-                  setSelectedDate('');
-                  setSessionSearch('');
-                  setStatusFilter('todos');
-                  setFilter('todos');
-                }}
-                className="bg-primary hover:bg-primary/90 text-white px-6 py-2 rounded-lg font-medium transition-all"
-              >
-                Limpiar filtros
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Calendario */}
-      <div className="mb-6">
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          {/* Header del calendario */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCurrentMonthDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}>
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
-              </button>
-              <h2 className="text-lg font-semibold text-gray-900">{monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)}</h2>
-              <button className="p-1 hover:bg-gray-100 rounded" onClick={() => setCurrentMonthDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}>
-                <ChevronRight className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            
-            {/* Leyenda de sesiones */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Pendiente de confirmación</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Confirmada</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">En ejecución</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                <span className="text-xs text-gray-600">En edición/retoque</span>
-              </div>
-              <div className="flex items-center space-x-1">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-xs text-gray-600">Entregado</span>
-              </div>
+              <p className="text-gray-600">Gestiona tus sesiones y eventos</p>
             </div>
           </div>
           
-          {/* Grid del calendario */}
-          <div className="grid grid-cols-7">
-            {/* Días de la semana */}
-            {['DOM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB'].map((day) => (
-              <div key={day} className="p-3 text-center text-sm font-medium text-gray-500 bg-gray-50 border-b border-gray-200">
-                {day}
-              </div>
-            ))}
-            
-            {/* Días del mes */}
-            {generateCalendar()}
-          </div>
+          <Button
+            onClick={() => setShowNewEventForm(true)}
+            className="bg-primary hover:bg-primary/90"
+            icon={<Plus className="w-4 h-4" />}
+          >
+            Nuevo Evento
+          </Button>
         </div>
-      </div>
-      
-      {/* Tabla de Sesiones Programadas */}
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Sesiones Programadas</h2>
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Cliente
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Dirección
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Hora
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Avance
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {paginatedEvents.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {event.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {event.client}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {event.location}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {event.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {event.time} hrs
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[event.status] || 'bg-gray-100 text-gray-800'}`}>
-                        {(STATUS[event.status]?.label) || event.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div 
-                          className="bg-blue-600 h-2 rounded-full" 
-                          style={{ width: `${getProgress(event)}%` }}
-                        ></div>
-                      </div>
-                  </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setSelectedEvent(event); setShowEventModal(true); }}
-                          className="text-blue-600 hover:bg-blue-50"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setEventToEdit(event); setConfirmEditOpen(true); }}
-                          className="text-yellow-600 hover:bg-yellow-50"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => { setEventToDelete(event); setConfirmDeleteOpen(true); }}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+
+        {/* Filtros por categoría */}
+        <FilterButtons
+          activeFilter={activeFilter}
+          onFilterChange={setActiveFilter}
+          categories={categories}
+        />
       </div>
 
-      {/* Paginación de sesiones */}
-      <div className="flex justify-between items-center mt-6">
-        <div className="text-sm text-gray-700">
-          Mostrando {sortedEvents.length === 0 ? 0 : pageStart + 1} a {Math.min(pageStart + itemsPerPage, sortedEvents.length)} de {sortedEvents.length} resultados
-        </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-            <button
-              key={page}
-              onClick={() => setCurrentPage(page)}
-              className={`px-3 py-1 border rounded text-sm ${
-                page === currentPage
-                  ? 'bg-primary text-white border-primary'
-                  : 'border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              {page}
-            </button>
-          ))}
-          <button
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+      <div className={`grid gap-6 transition-all duration-300 ${
+        showEventPanel ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1'
+      }`}>
+        {/* Calendario principal */}
+        <div className={`transition-all duration-300 ${
+          showEventPanel ? 'lg:col-span-3' : 'col-span-1'
+        }`}>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[600px] flex flex-col">
+            {/* Header del calendario */}
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => navigateCalendar(-1)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    {getCalendarTitle()}
+                  </h2>
+                  
+                  <button
+                    onClick={() => navigateCalendar(1)}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
 
-      {/* Modal de Detalles del Evento */}
-      <Modal
-        isOpen={showEventModal}
-        onClose={() => {
-          setShowEventModal(false);
-          setSelectedEvent(null);
-        }}
-        title={'Detalles del Evento'}
-        size="lg"
-      >
-        {selectedEvent ? (
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-            <span className="text-xl">{sessionTypes[selectedEvent.type]?.emoji || '📸'}</span>
-            <h3 className="text-xl font-semibold">{selectedEvent.title}</h3>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${statusColors[selectedEvent.status] || 'bg-gray-100 text-gray-800'}`}>
-                {(STATUS[selectedEvent.status]?.label) || selectedEvent.status}
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="font-medium text-gray-700">Tipo de sesión:</label>
-                <p className="text-gray-600">{sessionTypes[selectedEvent.type]?.label || selectedEvent.type}</p>
-              </div>
-              <div>
-                <label className="font-medium text-gray-700">Cliente:</label>
-                <p className="text-gray-600">{selectedEvent.client}</p>
-              </div>
-              <div>
-                <label className="font-medium text-gray-700">Fecha:</label>
-                <p className="text-gray-600">{selectedEvent.date}</p>
-              </div>
-              <div>
-                <label className="font-medium text-gray-700">Hora:</label>
-                <p className="text-gray-600">{selectedEvent.time}</p>
-              </div>
-              <div>
-                <label className="font-medium text-gray-700">Duración:</label>
-                <p className="text-gray-600">{selectedEvent.duration}</p>
-              </div>
-              <div className="col-span-2">
-                <label className="font-medium text-gray-700">Ubicación:</label>
-                <p className="text-gray-600">{selectedEvent.location}</p>
-              </div>
-              <div>
-                <label className="font-medium text-gray-700">Participantes:</label>
-                <p className="text-gray-600">{selectedEvent.participants} persona{selectedEvent.participants !== 1 ? 's' : ''}</p>
-              </div>
-            </div>
-            
-            {selectedEvent.notes && (
-              <div>
-                <label className="font-medium text-gray-700">Notas:</label>
-                <p className="text-gray-600 bg-gray-50 p-3 rounded-lg mt-1">{selectedEvent.notes}</p>
-              </div>
-            )}
-            
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-medium text-gray-700">Tareas relacionadas</h4>
-                <div className="text-xs text-gray-500">
-                  {Array.isArray(selectedEvent.tasks) ? selectedEvent.tasks.filter(t => t.completed).length : 0} de {Array.isArray(selectedEvent.tasks) ? selectedEvent.tasks.length : 0} completadas
+                {/* Botones de vista */}
+                <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+                  {viewModes.map(mode => (
+                    <button
+                      key={mode.key}
+                      onClick={() => setViewMode(mode.key)}
+                      className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                        viewMode === mode.key
+                          ? 'bg-white text-gray-900 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
                 </div>
               </div>
-              <div className="mb-3">
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${getProgress(selectedEvent)}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div className="space-y-2 bg-gray-50 p-3 rounded-lg">
-                {Array.isArray(selectedEvent.tasks) && selectedEvent.tasks.length > 0 ? (
-                  selectedEvent.tasks.map((t) => (
-                    <TaskItem
-                      key={t.id}
-                      task={t}
-                      onToggle={() => {
-                        setSelectedEvent(prev => {
-                          if (!prev) return prev;
-                          const updatedTasks = (prev.tasks || []).map(task => task.id === t.id ? { ...task, completed: !task.completed } : task);
-                          return { ...prev, tasks: updatedTasks };
-                        });
-                      }}
-                    />
-                  ))
-                ) : (
-                  <div className="text-sm text-gray-500">No hay tareas registradas.</div>
-                )}
-              </div>
-            </div>
-            
-            <Modal.Footer>
-              <Button variant="outline" onClick={() => setShowEventModal(false)}>
-                Cerrar
-              </Button>
-              <Button 
-                variant="secondary"
-                onClick={() => { setEventToEdit(selectedEvent); setConfirmEditOpen(true); setShowEventModal(false); }}
-              >
-                Editar
-              </Button>
-              <Button
-                onClick={() => {
-                  if (!selectedEvent) return;
-                  // Confirmar tareas y persistir en events/localStorage
-                  setEvents(prev => prev.map(ev => ev.id === selectedEvent.id ? { ...ev, tasks: selectedEvent.tasks || [] } : ev));
-                  setShowEventModal(false);
-                  setSelectedEvent(null);
-                }}
-              >
-                Confirmar
-              </Button>
-            </Modal.Footer>
-          </div>
-        ) : null}
-      </Modal>
 
-      {/* Modal de Crear/Editar Evento */}
-      <Modal
-        isOpen={showEventForm}
-        onClose={() => {
-          setShowEventForm(false);
-          setEditingEvent(null);
-          setEventFormData({
-            title: '', client: '', date: '', time: '', duration: '', location: '', type: 'escolar', status: 'pendiente', participants: 0, notes: ''
-          });
-        }}
-        title={editingEvent ? 'Editar Evento' : 'Nueva Sesión'}
-        size="lg"
-      >
-        <div className="space-y-4 py-2">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tipo de sesión</label>
-              <select
-                name="type"
-                value={eventFormData.type}
-                onChange={(e) => {
-                  const newType = e.target.value;
-                  const list = clientOptionsByType[newType] || [];
-                  setEventFormData(prev => ({ ...prev, type: newType, client: list[0] || '' }));
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                {Object.entries(sessionTypes).map(([key, info]) => (
-                  <option key={key} value={key}>{info.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Título</label>
-              <input
-                type="text"
-                name="title"
-                value={eventFormData.title}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="Título del evento"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
-              <select
-                name="client"
-                value={eventFormData.client}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, client: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                {(clientOptionsByType[eventFormData.type] || []).map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-                {!(clientOptionsByType[eventFormData.type] || []).length && (
-                  <option value="">Selecciona tipo primero</option>
-                )}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
-              <input
-                type="date"
-                name="date"
-                value={eventFormData.date}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
-              <input
-                type="time"
-                name="time"
-                value={eventFormData.time}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Duración</label>
-              <input
-                type="text"
-                name="duration"
-                value={eventFormData.duration}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="Ej: 2 horas"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-              <select
-                name="status"
-                value={eventFormData.status}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="pendiente">Pendiente de confirmación del cliente</option>
-                <option value="confirmada">Confirmada</option>
-                <option value="en_ejecucion">En ejecución</option>
-                <option value="en_edicion">En edición/retoque</option>
-                <option value="entregado">Entregado</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Participantes</label>
-              <input
-                type="number"
-                min="0"
-                name="participants"
-                value={eventFormData.participants}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: Number(e.target.value) }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="Número de participantes"
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ubicación</label>
-              <input
-                type="text"
-                name="location"
-                value={eventFormData.location}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                placeholder="Dirección o lugar"
-              />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notas</label>
-              <textarea
-                name="notes"
-                value={eventFormData.notes}
-                onChange={(e) => setEventFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                rows="3"
-                placeholder="Detalles adicionales"
-              ></textarea>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Tareas relacionadas</label>
-              <div className="flex gap-2 mb-3">
-                <input
-                  type="text"
-                  value={taskInput}
-                  onChange={(e) => setTaskInput(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Nombre de la tarea"
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      const name = taskInput.trim();
-                      if (!name) return;
-                      setEventFormData(prev => ({ ...prev, tasks: [...(prev.tasks || []), { id: Date.now(), name, completed: false }] }));
-                      setTaskInput('');
-                    }
-                  }}
-                />
-                <Button onClick={() => {
-                  const name = taskInput.trim();
-                  if (!name) return;
-                  setEventFormData(prev => ({ ...prev, tasks: [...(prev.tasks || []), { id: Date.now(), name, completed: false }] }));
-                  setTaskInput('');
-                }}>Añadir</Button>
-              </div>
-              {Array.isArray(eventFormData.tasks) && eventFormData.tasks.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-500">
-                      {eventFormData.tasks.filter(t => t.completed).length} de {eventFormData.tasks.length} completadas
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mb-3">
-                    <div 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${getProgress({ tasks: eventFormData.tasks })}%` }}
-                    ></div>
-                  </div>
-                  {eventFormData.tasks.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div 
-                          className={`w-4 h-4 rounded-full border flex items-center justify-center cursor-pointer ${
-                            t.completed ? 'bg-blue-600 border-blue-600' : 'border-gray-300'
-                          }`}
-                          onClick={() => setEventFormData(prev => ({
-                            ...prev,
-                            tasks: prev.tasks.map(task => 
-                              task.id === t.id ? { ...task, completed: !task.completed } : task
-                            )
-                          }))}
-                        >
-                          {t.completed && <div className="w-2 h-2 bg-white rounded-full"></div>}
-                        </div>
-                        <span className={`text-sm ${t.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
-                          {t.name}
-                        </span>
-                      </div>
-                      <button 
-                        className="text-red-500 text-sm hover:text-red-700" 
-                        onClick={() => setEventFormData(prev => ({ ...prev, tasks: prev.tasks.filter(x => x.id !== t.id) }))}
-                      >
-                        Eliminar
-                      </button>
+              {/* Días de la semana - solo para vista mensual */}
+              {viewMode === 'month' && (
+                <div className="grid grid-cols-7 gap-1">
+                  {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(day => (
+                    <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                      {day}
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* Contenido del calendario */}
+            <div className="flex-1 overflow-hidden">
+              {renderCalendarContent()}
+            </div>
           </div>
-
-          <Modal.Footer>
-            <Button variant="outline" onClick={() => {
-              setShowEventForm(false);
-              setEditingEvent(null);
-              setEventFormData({
-                title: '', client: '', date: '', time: '', duration: '', location: '', type: 'escolar', status: 'pendiente', participants: 0, notes: '', tasks: []
-              });
-              setTaskInput('');
-            }}>
-              Cancelar
-            </Button>
-            <Button onClick={() => {
-              if (!eventFormData.title.trim() || !eventFormData.client.trim()) {
-                alert('Título y Cliente son requeridos');
-                return;
-              }
-              if (editingEvent) {
-                // Actualizar
-                setEvents(prev => prev.map(ev => ev.id === editingEvent.id ? { 
-                  ...editingEvent, 
-                  ...eventFormData
-                } : ev));
-              } else {
-                // Crear simulado
-                const nextId = (events.reduce((max, ev) => Math.max(max, Number(ev.id) || 0), 0) + 1) || 1;
-                const newEvent = { 
-                  id: nextId, 
-                  ...eventFormData
-                };
-                setEvents(prev => [newEvent, ...prev]);
-              }
-              setShowEventForm(false);
-              setEditingEvent(null);
-              setEventFormData({ title: '', client: '', date: '', time: '', duration: '', location: '', type: 'escolar', status: 'pendiente', participants: 0, notes: '', tasks: [] });
-              setTaskInput('');
-              setCurrentPage(1);
-            }}>
-              {editingEvent ? 'Actualizar' : 'Guardar Evento'}
-            </Button>
-          </Modal.Footer>
         </div>
-      </Modal>
 
-      {/* Confirmación Eliminar */}
-      <Modal
-        isOpen={confirmDeleteOpen}
-        onClose={() => { setConfirmDeleteOpen(false); setEventToDelete(null); }}
-        title="Eliminar Sesión"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            ¿Estás seguro de eliminar la sesión
-            {eventToDelete ? (<>
-              {' '}<span className="font-semibold">{eventToDelete.title}</span> del cliente{' '}<span className="font-semibold">{eventToDelete.client}</span>?
-            </>) : ' seleccionada?'}
-            <br />
-            <span className="text-red-500">Esta acción no se puede deshacer.</span>
-          </p>
-          <Modal.Footer>
-            <Button variant="outline" onClick={() => { setConfirmDeleteOpen(false); setEventToDelete(null); }}>Cancelar</Button>
-            <Button variant="danger" icon={<Trash2 className="w-4 h-4" />} onClick={() => {
-              if (eventToDelete) {
-                setEvents(prev => prev.filter(ev => ev.id !== eventToDelete.id));
-              }
-              setConfirmDeleteOpen(false);
-              setEventToDelete(null);
-            }}>Eliminar</Button>
-          </Modal.Footer>
-        </div>
-      </Modal>
+        {/* Panel lateral de detalles del evento con animación */}
+        <div className={`transition-all duration-300 overflow-hidden ${
+          showEventPanel ? 'lg:col-span-1 opacity-100' : 'lg:col-span-0 opacity-0 lg:w-0'
+        }`}>
+          {showEventPanel && selectedEvent && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[600px] flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-gray-900">Detalles del Evento</h3>
+                <button
+                  onClick={() => {
+                    setShowEventPanel(false);
+                    setSelectedEvent(null);
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
-      {/* Confirmación Editar */}
-      <Modal
-        isOpen={confirmEditOpen}
-        onClose={() => { setConfirmEditOpen(false); setEventToEdit(null); }}
-        title="Editar Sesión"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            ¿Deseas editar la sesión
-            {eventToEdit ? (<>
-              {' '}<span className="font-semibold">{eventToEdit.title}</span> del cliente{' '}<span className="font-semibold">{eventToEdit.client}</span>?
-            </>) : ' seleccionada?'}
-          </p>
-          <Modal.Footer>
-            <Button variant="outline" onClick={() => { setConfirmEditOpen(false); setEventToEdit(null); }}>Cancelar</Button>
-            <Button variant="secondary" onClick={() => {
-              if (eventToEdit) {
-                setEditingEvent(eventToEdit);
-                setEventFormData({
-                  title: eventToEdit.title || '',
-                  client: eventToEdit.client || '',
-                  date: eventToEdit.date || '',
-                  time: eventToEdit.time || '',
-                  duration: eventToEdit.duration || '',
-                  location: eventToEdit.location || '',
-                  type: eventToEdit.type || 'escolar',
-                  status: eventToEdit.status || 'pendiente',
-                  participants: eventToEdit.participants || 0,
-                  notes: eventToEdit.notes || '',
-                  tasks: Array.isArray(eventToEdit.tasks) ? eventToEdit.tasks : []
-                });
-                setShowEventForm(true);
-              }
-              setConfirmEditOpen(false);
-              setEventToEdit(null);
-            }}>Continuar</Button>
-          </Modal.Footer>
+              <div className="flex-1 space-y-4 overflow-y-auto">
+                {/* Información del Cliente */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Cliente</span>
+                  </div>
+                  <p className="text-sm font-medium text-gray-900">{selectedEvent.cliente}</p>
+                </div>
+
+                {/* Tipo de Evento */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Tipo de Evento</span>
+                  </div>
+                  <span className="inline-flex items-center px-2 py-1 bg-primary text-white rounded text-xs font-medium">
+                    {selectedEvent.tipo}
+                  </span>
+                </div>
+
+                {/* Fecha y Hora */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Fecha y Hora</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-gray-900">
+                      {new Date(selectedEvent.fecha).toLocaleDateString('es-ES', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                    <p className="text-primary font-semibold text-xs">{selectedEvent.hora}</p>
+                  </div>
+                </div>
+
+                {/* Ubicación */}
+                {selectedEvent.ubicacion && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPin className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Ubicación</span>
+                    </div>
+                    <p className="text-sm text-gray-900">{selectedEvent.ubicacion}</p>
+                  </div>
+                )}
+
+                {/* Descripción */}
+                {selectedEvent.descripcion && (
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <FileText className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Descripción</span>
+                    </div>
+                    <p className="text-sm text-gray-900 leading-relaxed">{selectedEvent.descripcion}</p>
+                  </div>
+                )}
+
+                {/* Estado */}
+                <div className="bg-gray-50 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-4 h-4 rounded-full ${
+                      selectedEvent.estado === 'confirmada' 
+                        ? 'bg-green-500' 
+                        : selectedEvent.estado === 'pendiente'
+                        ? 'bg-yellow-500'
+                        : 'bg-red-500'
+                    }`}></div>
+                    <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Estado</span>
+                  </div>
+                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                    selectedEvent.estado === 'confirmada' 
+                      ? 'bg-green-100 text-green-800' 
+                      : selectedEvent.estado === 'pendiente'
+                      ? 'bg-yellow-100 text-yellow-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}>
+                    {selectedEvent.estado === 'confirmada' ? 'Confirmada' : 
+                     selectedEvent.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex space-x-2 pt-4 border-t border-gray-200 mt-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleEditEvent(selectedEvent)}
+                  icon={<Edit className="w-4 h-4" />}
+                  className="flex-1"
+                >
+                  Editar
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleDeleteEvent(selectedEvent.id)}
+                  icon={<Trash2 className="w-4 h-4" />}
+                  className="flex-1 text-red-600 hover:text-red-700 hover:border-red-300"
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
-      </Modal>
+      </div>
+
+      {/* Próximos eventos */}
+      <div className="mt-8">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Próximos Eventos</h2>
+        
+        {paginatedEvents.length > 0 ? (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {paginatedEvents.map(event => (
+                <EventCard
+                  key={event.id}
+                  event={event}
+                  onClick={(event) => {
+                    setSelectedEvent(event);
+                    setShowEventPanel(true);
+                  }}
+                />
+              ))}
+            </div>
+            
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={upcomingEvents.length}
+            />
+          </>
+        ) : (
+          <div className="text-center py-8 text-gray-500">
+            No hay eventos próximos
+          </div>
+        )}
+      </div>
+
+      {/* Formulario de nuevo evento */}
+      {showNewEventForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Nuevo Evento</h3>
+                <button
+                  onClick={() => setShowNewEventForm(false)}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateEvent} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cliente / Título *
+                  </label>
+                  <input
+                    type="text"
+                    value={newEventForm.cliente}
+                    onChange={(e) => setNewEventForm(prev => ({ ...prev, cliente: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de evento *
+                  </label>
+                  <select
+                    value={newEventForm.tipo}
+                    onChange={(e) => setNewEventForm(prev => ({ ...prev, tipo: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="Sesión Fotográfica">Sesión Fotográfica</option>
+                    <option value="Entrega">Entrega</option>
+                    <option value="Recordatorio">Recordatorio</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={newEventForm.descripcion}
+                    onChange={(e) => setNewEventForm(prev => ({ ...prev, descripcion: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fecha *
+                    </label>
+                    <input
+                      type="date"
+                      value={newEventForm.fecha}
+                      onChange={(e) => setNewEventForm(prev => ({ ...prev, fecha: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hora *
+                    </label>
+                    <input
+                      type="time"
+                      value={newEventForm.hora}
+                      onChange={(e) => setNewEventForm(prev => ({ ...prev, hora: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ubicación
+                  </label>
+                  <input
+                    type="text"
+                    value={newEventForm.ubicacion}
+                    onChange={(e) => setNewEventForm(prev => ({ ...prev, ubicacion: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowNewEventForm(false)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                  >
+                    Guardar Evento
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Formulario de editar evento */}
+      {showEditEventForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Editar Evento</h3>
+                <button
+                  onClick={handleCancelEditEvent}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <form onSubmit={(e) => { e.preventDefault(); handleSaveEditEvent(); }} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cliente / Título *
+                  </label>
+                  <input
+                    type="text"
+                    value={editEventForm.cliente}
+                    onChange={(e) => setEditEventForm(prev => ({ ...prev, cliente: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de evento *
+                  </label>
+                  <select
+                    value={editEventForm.tipo}
+                    onChange={(e) => setEditEventForm(prev => ({ ...prev, tipo: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="Sesión Fotográfica">Sesión Fotográfica</option>
+                    <option value="Entrega">Entrega</option>
+                    <option value="Recordatorio">Recordatorio</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descripción
+                  </label>
+                  <textarea
+                    value={editEventForm.descripcion}
+                    onChange={(e) => setEditEventForm(prev => ({ ...prev, descripcion: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    rows="3"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Fecha *
+                    </label>
+                    <input
+                      type="date"
+                      value={editEventForm.fecha}
+                      onChange={(e) => setEditEventForm(prev => ({ ...prev, fecha: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Hora *
+                    </label>
+                    <input
+                      type="time"
+                      value={editEventForm.hora}
+                      onChange={(e) => setEditEventForm(prev => ({ ...prev, hora: e.target.value }))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Ubicación
+                  </label>
+                  <input
+                    type="text"
+                    value={editEventForm.ubicacion}
+                    onChange={(e) => setEditEventForm(prev => ({ ...prev, ubicacion: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Estado
+                  </label>
+                  <select
+                    value={editEventForm.estado}
+                    onChange={(e) => setEditEventForm(prev => ({ ...prev, estado: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                  >
+                    <option value="pendiente">Pendiente</option>
+                    <option value="confirmado">Confirmado</option>
+                    <option value="completado">Completado</option>
+                    <option value="cancelado">Cancelado</option>
+                  </select>
+                </div>
+
+                <div className="flex space-x-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCancelEditEvent}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="flex-1"
+                  >
+                    Guardar Cambios
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de confirmación de eliminación */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">Confirmar Eliminación</h3>
+                <button
+                  onClick={cancelDeleteEvent}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-600">
+                  ¿Estás seguro de que deseas eliminar este evento? Esta acción no se puede deshacer.
+                </p>
+              </div>
+
+              <div className="flex space-x-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={cancelDeleteEvent}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={confirmDeleteEvent}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
