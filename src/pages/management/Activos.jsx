@@ -1,12 +1,49 @@
+import { DollarSign, Edit, Eye, HardDrive, Plus, Search, Trash2, Wrench, X } from 'lucide-react';
 import React, { useState } from 'react';
-import { HardDrive, Plus, Search, Eye, Edit, Trash2, DollarSign, Wrench, X } from 'lucide-react';
-import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
+import Card from '../../components/common/Card';
 import Modal from '../../components/common/Modal';
 import ActivoForm from '../../components/forms/ActivoForm';
+import FinanciamientoForm from '../../components/forms/FinanciamientoForm';
+import MantenimientoForm from '../../components/forms/MantenimientoForm';
 
 const Activos = () => {
   const [activeTab, setActiveTab] = useState('activos');
+  const [repuestos, setRepuestos] = useState([
+    {
+      id: 1,
+      codigo: 'REP-001',
+      nombre: 'Tóner Negro',
+      categoria: 'Insumos Impresora',
+      stock: 15,
+      stockMinimo: 5,
+      costoUnitario: 120.00,
+      proveedor: 'Insumos Gráficos SAC',
+      ubicacion: 'Almacén A',
+    },
+    {
+      id: 2,
+      codigo: 'REP-002',
+      nombre: 'Rodillo de Goma',
+      categoria: 'Repuestos Impresora',
+      stock: 8,
+      stockMinimo: 3,
+      costoUnitario: 85.50,
+      proveedor: 'TecnoParts',
+      ubicacion: 'Almacén B',
+    },
+    {
+      id: 3,
+      codigo: 'REP-003',
+      nombre: 'Fusor',
+      categoria: 'Repuestos Impresora',
+      stock: 3,
+      stockMinimo: 2,
+      costoUnitario: 320.00,
+      proveedor: 'TecnoParts',
+      ubicacion: 'Almacén A',
+    },
+  ]);
   const [searchTerm, setSearchTerm] = useState('');
 
   const [activos, setActivos] = useState([
@@ -143,10 +180,12 @@ const Activos = () => {
   const [showActivoForm, setShowActivoForm] = useState(false);
   const [showFinanciamientoForm, setShowFinanciamientoForm] = useState(false);
   const [showMantenimientoForm, setShowMantenimientoForm] = useState(false);
+  const [showRepuestoForm, setShowRepuestoForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedActivo, setSelectedActivo] = useState(null);
   const [selectedFinanciamiento, setSelectedFinanciamiento] = useState(null);
   const [selectedMantenimiento, setSelectedMantenimiento] = useState(null);
+  const [selectedRepuesto, setSelectedRepuesto] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteType, setDeleteType] = useState('');
   const [selectedActivoForDetails, setSelectedActivoForDetails] = useState(null);
@@ -258,6 +297,14 @@ const Activos = () => {
     return matchesSearch && matchesActivo;
   });
 
+  const filteredRepuestos = repuestos.filter(repuesto => 
+    repuesto.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.categoria.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.proveedor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    repuesto.ubicacion.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const getFinanciamientosByActivo = (activoId) => {
     return getActivosFinanciados().filter(fin => fin.activoId === activoId);
   };
@@ -323,6 +370,38 @@ const Activos = () => {
     setShowActivoForm(false);
   };
 
+  const handleCreateFinanciamiento = (financiamientoData) => {
+    const activoId = financiamientoData.activoId;
+    
+    setFinanciamientoData(prev => ({
+      ...prev,
+      [activoId]: {
+        entidad: financiamientoData.entidad,
+        montoFinanciado: financiamientoData.montoFinanciado,
+        cuotasTotales: financiamientoData.cuotasTotales,
+        cuotaMensual: financiamientoData.cuotaMensual,
+        fechaInicio: financiamientoData.fechaInicio,
+        fechaFin: financiamientoData.fechaFin,
+        cuotasPagadas: 0,
+        estado: financiamientoData.estado || 'Activo',
+        historialPagos: []
+      }
+    }));
+
+    setActivos(activos.map(activo => 
+      activo.id === activoId 
+        ? { 
+            ...activo, 
+            tipoPago: financiamientoData.tipoPago,
+            costoTotal: financiamientoData.montoFinanciado
+          }
+        : activo
+    ));
+    
+    setShowFinanciamientoForm(false);
+    setSelectedFinanciamiento(null);
+  };
+
   const handleEditFinanciamiento = (financiamientoData) => {
     const activoId = selectedFinanciamiento.activoId;
     
@@ -355,6 +434,36 @@ const Activos = () => {
     setSelectedFinanciamiento(null);
   };
 
+  const handleCreateMantenimiento = (mantenimientoData) => {
+    const activoId = mantenimientoData.activoId;
+    
+    setMantenimientoData(prev => ({
+      ...prev,
+      [activoId]: {
+        tipo: mantenimientoData.tipo,
+        fechaMantenimiento: mantenimientoData.fechaMantenimiento,
+        costo: mantenimientoData.costo,
+        proveedor: mantenimientoData.proveedor,
+        descripcion: mantenimientoData.descripcion,
+        proximoMantenimiento: mantenimientoData.proximoMantenimiento,
+        estado: mantenimientoData.estadoMantenimiento,
+        repuestosInsumos: mantenimientoData.repuestosInsumos || []
+      }
+    }));
+
+    setActivos(activos.map(activo => 
+      activo.id === activoId 
+        ? { 
+            ...activo, 
+            estado: mantenimientoData.estado
+          }
+        : activo
+    ));
+    
+    setShowMantenimientoForm(false);
+    setSelectedMantenimiento(null);
+  };
+
   const handleEditMantenimiento = (mantenimientoData) => {
     const activoId = selectedMantenimiento.activoId;
     
@@ -384,6 +493,28 @@ const Activos = () => {
     
     setShowMantenimientoForm(false);
     setSelectedMantenimiento(null);
+  };
+
+  const handleSaveRepuesto = (repuestoData) => {
+    if (selectedRepuesto) {
+      setRepuestos(repuestos.map(repuesto => 
+        repuesto.id === selectedRepuesto.id 
+          ? { ...repuestoData, id: repuesto.id }
+          : repuesto
+      ));
+    } else {
+      const newRepuesto = {
+        ...repuestoData,
+        id: Math.max(...repuestos.map(r => r.id), 0) + 1,
+      };
+      setRepuestos([...repuestos, newRepuesto]);
+    }
+    setShowRepuestoForm(false);
+    setSelectedRepuesto(null);
+  };
+
+  const handleDeleteRepuesto = (id) => {
+    setRepuestos(repuestos.filter(repuesto => repuesto.id !== id));
   };
 
   return (
@@ -440,6 +571,19 @@ const Activos = () => {
             }`}
           >
             Mantenimientos
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('repuestos');
+              setSelectedActivoForDetails(null);
+            }}
+            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-all ${
+              activeTab === 'repuestos'
+                ? 'bg-white text-primary shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            Repuestos
           </button>
         </div>
       </div>
@@ -566,6 +710,16 @@ const Activos = () => {
           <>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-gray-900">Listado de Financiamientos</h3>
+              <Button 
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => {
+                  setSelectedFinanciamiento(null);
+                  setShowFinanciamientoForm(true);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Nuevo Financiamiento
+              </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full table-auto">
@@ -577,6 +731,7 @@ const Activos = () => {
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Monto Financiado</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Cuota Mensual</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Cuotas Pagadas</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Próximo Pago</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Estado</th>
                     <th className="text-left py-3 px-3 font-medium text-gray-800">Acciones</th>
                   </tr>
@@ -592,6 +747,7 @@ const Activos = () => {
                       <td className="py-3 px-3 text-sm text-gray-700">S/ {fin.montoFinanciado.toFixed(2)}</td>
                       <td className="py-3 px-3 text-sm text-gray-700">S/ {fin.cuotaMensual.toFixed(2)}</td>
                       <td className="py-3 px-3 text-sm text-gray-700">{fin.cuotasPagadas} / {fin.cuotasTotales}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{new Date(new Date(fin.fechaInicio).getTime() + (fin.cuotasPagadas * 30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}</td>
                       <td className="py-3 px-3">
                         <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${estadoColors[fin.estado]}`}>
                           {fin.estado}
@@ -637,6 +793,16 @@ const Activos = () => {
           <>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold text-gray-900">Listado de Mantenimientos</h3>
+              <Button 
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => {
+                  setSelectedMantenimiento(null);
+                  setShowMantenimientoForm(true);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Nuevo Mantenimiento
+              </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full table-auto">
@@ -694,6 +860,85 @@ const Activos = () => {
                           </button>
                           <button
                             onClick={() => handleDelete(mant, 'mantenimiento')}
+                            className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'repuestos' && (
+          <>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold text-gray-900">Listado de Repuestos</h3>
+              <Button 
+                icon={<Plus className="w-4 h-4" />}
+                onClick={() => {
+                  setSelectedRepuesto(null);
+                  setShowRepuestoForm(true);
+                }}
+                className="bg-primary hover:bg-primary/90 text-white"
+              >
+                Nuevo Repuesto
+              </Button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full table-auto">
+                <thead>
+                  <tr className="border-b border-gray-200 bg-primary/10">
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Código</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Nombre</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Categoría</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Stock</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Mínimo</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Costo Unitario</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Proveedor</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Ubicación</th>
+                    <th className="text-left py-3 px-3 font-medium text-gray-800">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRepuestos.map((repuesto, idx) => (
+                    <tr key={repuesto.id} className={`border-b border-gray-100 ${idx % 2 === 0 ? 'bg-white' : 'bg-primary/5'} hover:bg-primary/10`}>
+                      <td className="py-3 px-3 text-sm font-medium">
+                        <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">{repuesto.codigo}</span>
+                      </td>
+                      <td className="py-3 px-3 text-sm text-gray-700 break-words">{repuesto.nombre}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.categoria}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.stock}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.stockMinimo}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">S/ {repuesto.costoUnitario.toFixed(2)}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700 break-words">{repuesto.proveedor}</td>
+                      <td className="py-3 px-3 text-sm text-gray-700">{repuesto.ubicacion}</td>
+                      <td className="py-3 px-3">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedRepuesto(repuesto);
+                              setShowRepuestoForm(true);
+                            }}
+                            className="p-1 hover:bg-primary/10 rounded text-primary hover:text-primary"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedRepuesto(repuesto);
+                              setShowRepuestoForm(true);
+                            }}
+                            className="p-1 hover:bg-secondary/10 rounded text-secondary hover:text-secondary"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteRepuesto(repuesto.id)}
                             className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -895,66 +1140,70 @@ const Activos = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                 <p className="text-gray-900">{selectedFinanciamiento.fechaInicio}</p>
               </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
-                    <p className="text-gray-900">{selectedFinanciamiento.fechaFin}</p>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+                <p className="text-gray-900">{selectedFinanciamiento.fechaFin}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Pago</label>
+                <p className="text-gray-900">{new Date(new Date(selectedFinanciamiento.fechaInicio).getTime() + (selectedFinanciamiento.cuotasPagadas * 30 * 24 * 60 * 60 * 1000)).toLocaleDateString()}</p>
+              </div>
+            </div>
 
-                {selectedFinanciamiento.historialPagos && selectedFinanciamiento.historialPagos.length > 0 && (
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <DollarSign className="w-5 h-5 mr-2 text-green-600" />
-                      Historial de Pagos
-                    </h4>
-                    <div className="space-y-2">
-                      {selectedFinanciamiento.historialPagos.map((pago, index) => {
-                        const parts = pago.split('-');
-                        const fechaDescripcion = parts[0]?.trim() || '';
-                        const monto = parts[1]?.trim() || '';
-                        const [fecha, descripcion] = fechaDescripcion.split(':');
-                        
-                        return (
-                          <div key={index} className="p-3 bg-white rounded border border-gray-200 hover:shadow-sm transition-shadow">
-                            <div className="flex justify-between items-start">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-2">
-                                  <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                    {fecha?.trim() || 'Sin fecha'}
-                                  </span>
-                                  <span className="text-sm text-gray-900">
-                                    {descripcion?.trim() || 'Pago registrado'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-sm font-semibold text-green-600">
-                                  {monto || 'S/ 0.00'}
-                                </span>
-                              </div>
+            {selectedFinanciamiento.historialPagos && selectedFinanciamiento.historialPagos.length > 0 && (
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2 text-green-600" />
+                  Historial de Pagos
+                </h4>
+                <div className="space-y-2">
+                  {selectedFinanciamiento.historialPagos.map((pago, index) => {
+                    const parts = pago.split('-');
+                    const fechaDescripcion = parts[0]?.trim() || '';
+                    const monto = parts[1]?.trim() || '';
+                    const [fecha, descripcion] = fechaDescripcion.split(':');
+                    
+                    return (
+                      <div key={index} className="p-3 bg-white rounded border border-gray-200 hover:shadow-sm transition-shadow">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-xs font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                                {fecha?.trim() || 'Sin fecha'}
+                              </span>
+                              <span className="text-sm text-gray-900">
+                                {descripcion?.trim() || 'Pago registrado'}
+                              </span>
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
-                    {selectedFinanciamiento.totalPagado > 0 && (
-                      <div className="mt-3 pt-3 border-t border-gray-200">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium text-gray-900">Total Pagado:</span>
-                          <span className="text-lg font-bold text-green-600">
-                            S/ {selectedFinanciamiento.totalPagado.toFixed(2)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-500">Saldo Pendiente:</span>
-                          <span className={`font-semibold ${(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                            S/ {(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado).toFixed(2)}
-                          </span>
+                          <div className="text-right">
+                            <span className="text-sm font-semibold text-green-600">
+                              {monto || 'S/ 0.00'}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    )}
+                    );
+                  })}
+                </div>
+                {selectedFinanciamiento.totalPagado > 0 && (
+                  <div className="mt-3 pt-3 border-t border-gray-200">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900">Total Pagado:</span>
+                      <span className="text-lg font-bold text-green-600">
+                        S/ {selectedFinanciamiento.totalPagado.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Saldo Pendiente:</span>
+                      <span className={`font-semibold ${(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                        S/ {(selectedFinanciamiento.montoFinanciado - selectedFinanciamiento.totalPagado).toFixed(2)}
+                      </span>
+                    </div>
                   </div>
                 )}
+              </div>
+            )}
 
             <Modal.Footer>
               <Button 
@@ -1022,26 +1271,24 @@ const Activos = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                 <p className="text-gray-900">{selectedMantenimiento.descripcion}</p>
               </div>
-                  {selectedMantenimiento.proximoMantenimiento && (
-                    <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Mantenimiento</label>
-                      <p className="text-gray-900">{selectedMantenimiento.proximoMantenimiento}</p>
-                    </div>
-                  )}
-                </div>
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Mantenimiento</label>
+                <p className="text-gray-900">{selectedMantenimiento.proximoMantenimiento}</p>
+              </div>
+            </div>
 
-                {selectedMantenimiento.repuestosInsumos && selectedMantenimiento.repuestosInsumos.length > 0 && (
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-semibold text-gray-900 mb-3">Repuestos/Insumos Asociados</h4>
-                    <div className="space-y-2">
-                      {selectedMantenimiento.repuestosInsumos.map((insumo, index) => (
-                        <div key={index} className="p-2 bg-white rounded border text-sm">
-                          {insumo}
-                        </div>
-                      ))}
+            {selectedMantenimiento.repuestosInsumos && selectedMantenimiento.repuestosInsumos.length > 0 && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-3">Repuestos/Insumos Asociados</h4>
+                <div className="space-y-2">
+                  {selectedMantenimiento.repuestosInsumos.map((insumo, index) => (
+                    <div key={index} className="p-2 bg-white rounded border text-sm">
+                      {insumo}
                     </div>
-                  </div>
-                )}
+                  ))}
+                </div>
+              </div>
+            )}
 
             <Modal.Footer>
               <Button 
@@ -1080,213 +1327,18 @@ const Activos = () => {
           setShowFinanciamientoForm(false);
           setSelectedFinanciamiento(null);
         }}
-        title="Editar Financiamiento"
-        size="lg"
+        title={selectedFinanciamiento ? 'Editar Financiamiento' : 'Nuevo Financiamiento'}
+        size="xl"
       >
-        {selectedFinanciamiento && (
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const financiamientoData = {
-              tipoPago: formData.get('tipoPago'),
-              montoFinanciado: parseFloat(formData.get('montoFinanciado')),
-              entidad: formData.get('entidad'),
-              cuotasTotales: parseInt(formData.get('cuotasTotales')),
-              cuotaMensual: parseFloat(formData.get('cuotaMensual')),
-              fechaInicio: formData.get('fechaInicio'),
-              fechaFin: formData.get('fechaFin'),
-              estado: formData.get('estado'),
-              historialPagos: Array.from(formData.getAll('historialPagos')).filter(line => line.trim())
-            };
-            handleEditFinanciamiento(financiamientoData);
-          }} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Activo
-                </label>
-                <p className="text-gray-900">{getActivoNombre(selectedFinanciamiento.activoId)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Pago *
-                </label>
-                <select
-                  name="tipoPago"
-                  defaultValue={selectedFinanciamiento.entidad === 'Banco de Crédito' ? 'Financiado' : 'Leasing'}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="Financiado">Financiado</option>
-                  <option value="Leasing">Leasing</option>
-                  <option value="Contado">Contado (Eliminar financiamiento)</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Entidad Financiera *
-                </label>
-                <input
-                  type="text"
-                  name="entidad"
-                  defaultValue={selectedFinanciamiento.entidad}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: Banco de Crédito"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Monto Financiado *
-                </label>
-                <input
-                  type="number"
-                  name="montoFinanciado"
-                  defaultValue={selectedFinanciamiento.montoFinanciado}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: 8500.00"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cuotas Totales *
-                </label>
-                <input
-                  type="number"
-                  name="cuotasTotales"
-                  defaultValue={selectedFinanciamiento.cuotasTotales}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: 24"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Cuota Mensual *
-                </label>
-                <input
-                  type="number"
-                  name="cuotaMensual"
-                  defaultValue={selectedFinanciamiento.cuotaMensual}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: 425.00"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de Inicio *
-                </label>
-                <input
-                  type="date"
-                  name="fechaInicio"
-                  defaultValue={selectedFinanciamiento.fechaInicio}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de Fin *
-                </label>
-                <input
-                  type="date"
-                  name="fechaFin"
-                  defaultValue={selectedFinanciamiento.fechaFin}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado
-                </label>
-                <select
-                  name="estado"
-                  defaultValue={selectedFinanciamiento.estado}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="Activo">Activo</option>
-                  <option value="Pagado">Pagado</option>
-                  <option value="Mora">Mora</option>
-                </select>
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Historial de Pagos
-                </label>
-                <div className="space-y-2">
-                  {selectedFinanciamiento.historialPagos?.map((pago, index) => (
-                    <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded border">
-                      <input
-                        type="text"
-                        defaultValue={pago}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
-                        placeholder="Fecha: Descripción - S/ Monto"
-                      />
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.target.closest('.flex').remove();
-                        }}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      const container = e.target.closest('.space-y-2');
-                      const newInput = document.createElement('div');
-                      newInput.className = 'flex items-center space-x-2 p-2 bg-gray-50 rounded border';
-                      newInput.innerHTML = `
-                        <input
-                          type="text"
-                          name="historialPagos"
-                          class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-primary focus:border-transparent outline-none text-sm"
-                          placeholder="Fecha: Descripción - S/ Monto"
-                        />
-                        <button
-                          type="button"
-                          class="text-red-500 hover:text-red-700 p-1"
-                          onclick="this.closest('.flex').remove()"
-                        >
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                          </svg>
-                        </button>
-                      `;
-                      container.insertBefore(newInput, e.target);
-                    }}
-                    className="w-full py-2 px-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-500 hover:border-primary hover:text-primary transition-colors text-sm"
-                  >
-                    + Agregar Pago
-                  </button>
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Formato: YYYY-MM-DD: Descripción del pago - S/ Monto
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowFinanciamientoForm(false);
-                  setSelectedFinanciamiento(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="px-8"
-              >
-                Actualizar
-              </Button>
-            </div>
-          </form>
-        )}
+        <FinanciamientoForm
+          financiamiento={selectedFinanciamiento}
+          activos={activos}
+          onSubmit={selectedFinanciamiento ? handleEditFinanciamiento : handleCreateFinanciamiento}
+          onCancel={() => {
+            setShowFinanciamientoForm(false);
+            setSelectedFinanciamiento(null);
+          }}
+        />
       </Modal>
 
       <Modal
@@ -1295,180 +1347,39 @@ const Activos = () => {
           setShowMantenimientoForm(false);
           setSelectedMantenimiento(null);
         }}
-        title="Editar Mantenimiento"
-        size="lg"
+        title={selectedMantenimiento ? 'Editar Mantenimiento' : 'Nuevo Mantenimiento'}
+        size="xl"
       >
-        {selectedMantenimiento && (
-          <form onSubmit={(e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            const mantenimientoData = {
-              estado: formData.get('estado'),
-              tipo: formData.get('tipo'),
-              fechaMantenimiento: formData.get('fechaMantenimiento'),
-              costo: parseFloat(formData.get('costo')) || 0,
-              proveedor: formData.get('proveedor'),
-              estadoMantenimiento: formData.get('estadoMantenimiento'),
-              proximoMantenimiento: formData.get('proximoMantenimiento'),
-              descripcion: formData.get('descripcion'),
-              repuestosInsumos: Array.from(formData.getAll('repuestosInsumos'))
-            };
-            handleEditMantenimiento(mantenimientoData);
-          }} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Activo
-                </label>
-                <p className="text-gray-900">{getActivoNombre(selectedMantenimiento.activoId)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado del Activo *
-                </label>
-                <select
-                  name="estado"
-                  defaultValue="Mantenimiento"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="Mantenimiento">Mantenimiento</option>
-                  <option value="Activo">Activo (Eliminar mantenimiento)</option>
-                  <option value="Inactivo">Inactivo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Mantenimiento *
-                </label>
-                <select
-                  name="tipo"
-                  defaultValue={selectedMantenimiento.tipo}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="Preventivo">Preventivo</option>
-                  <option value="Correctivo">Correctivo</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Fecha de Mantenimiento *
-                </label>
-                <input
-                  type="date"
-                  name="fechaMantenimiento"
-                  defaultValue={selectedMantenimiento.fechaMantenimiento}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Costo
-                </label>
-                <input
-                  type="number"
-                  name="costo"
-                  defaultValue={selectedMantenimiento.costo}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: 150.00"
-                  step="0.01"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Proveedor
-                </label>
-                <input
-                  type="text"
-                  name="proveedor"
-                  defaultValue={selectedMantenimiento.proveedor}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Ej: Servicio Técnico Especializado"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Estado del Mantenimiento
-                </label>
-                <select
-                  name="estadoMantenimiento"
-                  defaultValue={selectedMantenimiento.estado}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="Programado">Programado</option>
-                  <option value="Completado">Completado</option>
-                  <option value="Cancelado">Cancelado</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Próximo Mantenimiento
-                </label>
-                <input
-                  type="date"
-                  name="proximoMantenimiento"
-                  defaultValue={selectedMantenimiento.proximoMantenimiento}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Descripción
-                </label>
-                <textarea
-                  name="descripcion"
-                  defaultValue={selectedMantenimiento.descripcion}
-                  rows={3}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                  placeholder="Descripción del mantenimiento..."
-                />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Repuestos/Insumos Asociados
-                </label>
-                <div className="space-y-2 max-h-40 overflow-y-auto border border-gray-300 rounded-lg p-3">
-                  {[
-                    'Papel Fotográfico 15x20',
-                    'Revelador C-41',
-                    'Fijador Universal',
-                    'Papel Fotográfico Blanco/Negro',
-                    'Revelador D-76'
-                  ].map((insumo) => (
-                    <label key={insumo} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded cursor-pointer">
-                      <input
-                        type="checkbox"
-                        name="repuestosInsumos"
-                        value={insumo}
-                        defaultChecked={selectedMantenimiento.repuestosInsumos?.includes(insumo) || false}
-                        className="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"
-                      />
-                      <span className="text-sm text-gray-900">{insumo}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
+        <MantenimientoForm
+          mantenimiento={selectedMantenimiento}
+          activos={activos}
+          repuestos={repuestos}
+          onSubmit={selectedMantenimiento ? handleEditMantenimiento : handleCreateMantenimiento}
+          onCancel={() => {
+            setShowMantenimientoForm(false);
+            setSelectedMantenimiento(null);
+          }}
+        />
+      </Modal>
 
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowMantenimientoForm(false);
-                  setSelectedMantenimiento(null);
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="px-8"
-              >
-                Actualizar
-              </Button>
-            </div>
-          </form>
-        )}
+      <Modal
+        isOpen={showRepuestoForm}
+        onClose={() => {
+          setShowRepuestoForm(false);
+          setSelectedRepuesto(null);
+        }}
+        title={selectedRepuesto ? 'Editar Repuesto' : 'Nuevo Repuesto'}
+        size="xl"
+      >
+        <ActivoForm
+          mode="repuesto"
+          repuesto={selectedRepuesto}
+          onSubmit={handleSaveRepuesto}
+          onCancel={() => {
+            setShowRepuestoForm(false);
+            setSelectedRepuesto(null);
+          }}
+        />
       </Modal>
 
       <Modal
