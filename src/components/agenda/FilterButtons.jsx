@@ -16,7 +16,7 @@ const FilterButtons = ({ activeFilter, onFilterChange, categories }) => {
           `}
         >
           <span className="flex items-center gap-2">
-            {category.emoji && <span>{category.emoji}</span>}
+            {category.icon && <category.icon className="w-4 h-4" />}
             {category.label}
           </span>
         </button>
