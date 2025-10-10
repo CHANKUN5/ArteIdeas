@@ -1,5 +1,20 @@
 import React, { useCallback, memo, useState } from 'react';
-import { Calendar, Clock, User, Camera, ChevronDown, MapPin, FileText } from 'lucide-react';
+import { 
+  Calendar, 
+  Clock, 
+  User, 
+  Camera, 
+  ChevronDown, 
+  MapPin, 
+  FileText, 
+  Package, 
+  Bell, 
+  Backpack, 
+  Users, 
+  Building, 
+  Image, 
+  GraduationCap 
+} from 'lucide-react';
 import Card from '../common/Card';
 
 const EventCard = memo(({ event, onClick }) => {
@@ -7,17 +22,17 @@ const EventCard = memo(({ event, onClick }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const sessionTypes = {
-    'Sesión Fotográfica': { color: 'bg-blue-500', label: 'Sesión Fotográfica', emoji: '📸' },
-    'Entrega': { color: 'bg-green-500', label: 'Entrega', emoji: '📦' },
-    'Recordatorio': { color: 'bg-orange-500', label: 'Recordatorio', emoji: '🔔' },
-    escolar: { color: 'bg-yellow-500', label: 'Escolar', emoji: '🎒' },
-    familiar: { color: 'bg-pink-500', label: 'Familiar', emoji: '👨‍👩‍👧‍👦' },
-    retrato: { color: 'bg-blue-500', label: 'Retrato individual', emoji: '🧑' },
-    grupal: { color: 'bg-purple-500', label: 'Grupal', emoji: '👥' },
-    corporativa: { color: 'bg-indigo-500', label: 'Corporativa', emoji: '🏢' },
-    oleo: { color: 'bg-orange-500', label: 'Óleo', emoji: '🖼️' },
-    recordatorio: { color: 'bg-teal-500', label: 'Recordatorio escolar', emoji: '🎓' },
-    otros: { color: 'bg-gray-500', label: 'Otros', emoji: '📸' }
+    'Sesión Fotográfica': { color: 'bg-blue-500', label: 'Sesión Fotográfica', icon: Camera },
+    'Entrega': { color: 'bg-green-500', label: 'Entrega', icon: Package },
+    'Recordatorio': { color: 'bg-orange-500', label: 'Recordatorio', icon: Bell },
+    escolar: { color: 'bg-yellow-500', label: 'Escolar', icon: Backpack },
+    familiar: { color: 'bg-pink-500', label: 'Familiar', icon: Users },
+    retrato: { color: 'bg-blue-500', label: 'Retrato individual', icon: User },
+    grupal: { color: 'bg-purple-500', label: 'Grupal', icon: Users },
+    corporativa: { color: 'bg-indigo-500', label: 'Corporativa', icon: Building },
+    oleo: { color: 'bg-orange-500', label: 'Óleo', icon: Image },
+    recordatorio: { color: 'bg-teal-500', label: 'Recordatorio escolar', icon: GraduationCap },
+    otros: { color: 'bg-gray-500', label: 'Otros', icon: Camera }
   };
 
   const typeInfo = sessionTypes[event.tipo] || sessionTypes.otros;
@@ -58,7 +73,7 @@ const EventCard = memo(({ event, onClick }) => {
       >
         <div className="flex items-center space-x-3 flex-1 min-w-0">
           <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-            <span className="text-lg">{typeInfo.emoji}</span>
+            <typeInfo.icon className="w-6 h-6 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-gray-900 truncate">

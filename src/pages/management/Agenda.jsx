@@ -10,7 +10,10 @@ import {
   Clock,
   User,
   MapPin,
-  FileText
+  FileText,
+  Camera,
+  Package,
+  Bell
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import FilterButtons from '../../components/agenda/FilterButtons';
@@ -24,12 +27,12 @@ const Agenda = () => {
   const [activeFilter, setActiveFilter] = useState('todos');
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [showEventPanel, setShowEventPanel] = useState(false);
+  const [showEventModal, setShowEventModal] = useState(false);
   const [showNewEventForm, setShowNewEventForm] = useState(false);
   const [showEditEventForm, setShowEditEventForm] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  // Removido: const [expandedEventId, setExpandedEventId] = useState(null);
 
   // Generar datos mock más extensos para todas las vistas
   const generateMockEvents = () => {
@@ -112,12 +115,12 @@ const Agenda = () => {
     estado: 'pendiente'
   });
 
-  // Categorías para filtros con colores
+  // Categorías para filtros con colores mejorados
   const categories = [
-    { key: 'todos', label: 'Todos', emoji: '📅', color: 'bg-gray-100' },
-    { key: 'Sesión Fotográfica', label: 'Sesión Fotográfica', emoji: '📸', color: 'bg-blue-100', textColor: 'text-blue-800', borderColor: 'border-blue-200' },
-    { key: 'Entrega', label: 'Entrega', emoji: '📦', color: 'bg-green-100', textColor: 'text-green-800', borderColor: 'border-green-200' },
-    { key: 'Recordatorio', label: 'Recordatorio', emoji: '🔔', color: 'bg-yellow-100', textColor: 'text-yellow-800', borderColor: 'border-yellow-200' }
+    { key: 'todos', label: 'Todos', icon: Calendar, color: 'bg-gray-100' },
+    { key: 'Sesión Fotográfica', label: 'Sesión Fotográfica', icon: Camera, color: 'bg-blue-100', textColor: 'text-blue-900', borderColor: 'border-blue-300' },
+    { key: 'Entrega', label: 'Entrega', icon: Package, color: 'bg-emerald-100', textColor: 'text-emerald-900', borderColor: 'border-emerald-300' },
+    { key: 'Recordatorio', label: 'Recordatorio', icon: Bell, color: 'bg-amber-100', textColor: 'text-amber-900', borderColor: 'border-amber-300' }
   ];
 
   // Función para obtener el color de un evento según su tipo
@@ -247,11 +250,14 @@ const Agenda = () => {
     const month = currentDate.getMonth();
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
-    const startDay = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc.
+    
+    // Ajustar para que el calendario comience en lunes (1) en lugar de domingo (0)
+    let startDay = firstDay.getDay(); // 0 = domingo, 1 = lunes, etc.
+    startDay = startDay === 0 ? 6 : startDay - 1; // Convertir: domingo=6, lunes=0, martes=1, etc.
     
     const days = [];
     
-    // Agregar días del mes anterior si el mes no comienza en domingo
+    // Agregar días del mes anterior si el mes no comienza en lunes
     if (startDay > 0) {
       const prevMonth = new Date(year, month - 1, 0); // Último día del mes anterior
       const prevMonthLastDay = prevMonth.getDate();
@@ -292,6 +298,27 @@ const Agenda = () => {
         dateStr,
         dayEvents,
         isCurrentMonth: true,
+        isToday
+      });
+    }
+
+    // Agregar días del mes siguiente para completar la grilla de 6 filas (42 celdas)
+    const remainingCells = 42 - days.length;
+    for (let day = 1; day <= remainingCells; day++) {
+      const current = new Date(year, month + 1, day);
+      const dateStr = current.toISOString().split('T')[0];
+      // Filtrar eventos según el filtro activo
+      const allDayEvents = events.filter(event => event.fecha === dateStr);
+      const dayEvents = activeFilter === 'todos' 
+        ? allDayEvents 
+        : allDayEvents.filter(event => event.tipo === activeFilter);
+      const isToday = current.toDateString() === new Date().toDateString();
+
+      days.push({
+        date: new Date(current),
+        dateStr,
+        dayEvents,
+        isCurrentMonth: false,
         isToday
       });
     }
@@ -500,7 +527,9 @@ const Agenda = () => {
   const renderDayView = () => {
     const dayEvents = events.filter(event => {
       const eventDate = new Date(event.fecha);
-      return eventDate.toDateString() === currentDate.toDateString();
+      const matchesDate = eventDate.toDateString() === currentDate.toDateString();
+      const matchesFilter = activeFilter === 'todos' || event.tipo === activeFilter;
+      return matchesDate && matchesFilter;
     });
 
     return (
@@ -548,7 +577,9 @@ const Agenda = () => {
           {weekDays.map((day, index) => {
             const dayEvents = events.filter(event => {
               const eventDate = new Date(event.fecha);
-              return eventDate.toDateString() === day.toDateString();
+              const matchesDate = eventDate.toDateString() === day.toDateString();
+              const matchesFilter = activeFilter === 'todos' || event.tipo === activeFilter;
+              return matchesDate && matchesFilter;
             });
 
             return (
@@ -598,8 +629,10 @@ const Agenda = () => {
           {months.map((month, monthIndex) => {
             const monthEvents = events.filter(event => {
               const eventDate = new Date(event.fecha);
-              return eventDate.getMonth() === month.getMonth() && 
+              const matchesMonth = eventDate.getMonth() === month.getMonth() && 
                      eventDate.getFullYear() === month.getFullYear();
+              const matchesFilter = activeFilter === 'todos' || event.tipo === activeFilter;
+              return matchesMonth && matchesFilter;
             });
 
             return (
@@ -647,17 +680,14 @@ const Agenda = () => {
 
   // Vista mensual
   const renderMonthView = () => {
-    const daysInMonth = calendarDays.length;
-    const rows = Math.ceil(daysInMonth / 7);
-    
     return (
       <div className="p-4 h-full flex flex-col">
         <div 
-          className="grid gap-1 flex-1" 
+          className="grid gap-1" 
           style={{ 
             gridTemplateColumns: 'repeat(7, 1fr)',
-            gridTemplateRows: `repeat(${rows}, 1fr)`,
-            height: '100%'
+            gridTemplateRows: `repeat(6, 1fr)`, // Siempre 6 filas para consistencia
+            height: '650px' // Aumentar altura para que se vean todas las filas completas y sea simétrica
           }}
         >
           {calendarDays.map((day, index) => (
@@ -670,7 +700,8 @@ const Agenda = () => {
                 ${day.isToday ? 'ring-2 ring-primary ring-opacity-50' : ''}
               `}
               style={{ 
-                minHeight: '80px'
+                height: '100%', // Usar 100% de la altura disponible en la grilla
+                minHeight: '90px' // Aumentar altura mínima para mejor simetría
               }}
             >
               <div className="flex justify-between items-start mb-1 flex-shrink-0">
@@ -757,7 +788,7 @@ const Agenda = () => {
         <div className={`transition-all duration-300 ${
           showEventPanel ? 'lg:col-span-3' : 'col-span-1'
         }`}>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[600px] flex flex-col">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[700px] flex flex-col">
             {/* Header del calendario */}
             <div className="p-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
@@ -823,7 +854,7 @@ const Agenda = () => {
           showEventPanel ? 'lg:col-span-1 opacity-100' : 'lg:col-span-0 opacity-0 lg:w-0'
         }`}>
           {showEventPanel && selectedEvent && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[600px] flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900">Detalles del Evento</h3>
                 <button
@@ -957,14 +988,46 @@ const Agenda = () => {
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {paginatedEvents.map(event => (
-                <EventCard
+                <div
                   key={event.id}
-                  event={event}
-                  onClick={(event) => {
+                  onClick={() => {
                     setSelectedEvent(event);
-                    setShowEventPanel(true);
+                    setShowEventModal(true);
                   }}
-                />
+                  className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-200 cursor-pointer p-4"
+                >
+                  <div className="flex items-center space-x-3 mb-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-6 h-6 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {event.cliente || event.title || 'Sin título'}
+                      </h3>
+                      <p className="text-sm text-gray-500 truncate">
+                        #{event.id} - {new Date(event.fecha).toLocaleDateString('es-ES', { 
+                          day: 'numeric', 
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    {(() => {
+                      const eventColors = getEventColor(event.tipo);
+                      return (
+                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${eventColors.bg} ${eventColors.textColor || eventColors.text} ${eventColors.borderColor || eventColors.border}`}>
+                          {event.tipo}
+                        </span>
+                      );
+                    })()}
+                    <span className="text-sm text-gray-500">
+                      {event.hora && event.hora.slice(0, 5)}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
             
@@ -987,7 +1050,7 @@ const Agenda = () => {
       {showNewEventForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+            <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">Nuevo Evento</h3>
                 <button
@@ -1272,6 +1335,148 @@ const Agenda = () => {
                 >
                   Eliminar
                 </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de detalles del evento */}
+      {showEventModal && selectedEvent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-xl font-semibold text-gray-900">Detalles del Evento</h3>
+                <button
+                  onClick={() => setShowEventModal(false)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="space-y-5">
+                {/* Header del evento */}
+                <div className="flex items-center space-x-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Calendar className="w-8 h-8 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-lg font-semibold text-gray-900">
+                      {selectedEvent.cliente || selectedEvent.title || 'Sin título'}
+                    </h4>
+                    <p className="text-gray-500">#{selectedEvent.id}</p>
+                    {(() => {
+                      const eventColors = getEventColor(selectedEvent.tipo);
+                      return (
+                        <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${eventColors.bg} ${eventColors.textColor || eventColors.text} ${eventColors.borderColor || eventColors.border} mt-2`}>
+                          {selectedEvent.tipo}
+                        </span>
+                      );
+                    })()}
+                  </div>
+                </div>
+
+                {/* Información del evento */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+                      <p className="text-gray-900">
+                        {new Date(selectedEvent.fecha).toLocaleDateString('es-ES', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                    </div>
+                    
+                    {selectedEvent.hora && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Hora</label>
+                        <p className="text-gray-900">{selectedEvent.hora}</p>
+                      </div>
+                    )}
+
+                    {selectedEvent.duracion && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Duración</label>
+                        <p className="text-gray-900">{selectedEvent.duracion}</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-4">
+                    {selectedEvent.telefono && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                        <p className="text-gray-900">{selectedEvent.telefono}</p>
+                      </div>
+                    )}
+
+                    {selectedEvent.email && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                        <p className="text-gray-900">{selectedEvent.email}</p>
+                      </div>
+                    )}
+
+                    {selectedEvent.presupuesto && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Presupuesto</label>
+                        <p className="text-gray-900">${selectedEvent.presupuesto.toLocaleString()}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Ubicación */}
+                {selectedEvent.ubicacion && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Ubicación</label>
+                    <div className="flex items-center space-x-2 text-gray-900">
+                      <MapPin className="w-4 h-4 text-gray-500" />
+                      <span>{selectedEvent.ubicacion}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Descripción */}
+                {selectedEvent.descripcion && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Descripción</label>
+                    <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                      {selectedEvent.descripcion}
+                    </p>
+                  </div>
+                )}
+
+                {/* Botones de acción */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
+                  <Button
+                    onClick={() => {
+                      setShowEventModal(false);
+                      handleEditEvent(selectedEvent);
+                    }}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Edit className="w-4 h-4 mr-2" />
+                    Editar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowEventModal(false);
+                      handleDeleteEvent(selectedEvent);
+                    }}
+                    variant="outline"
+                    className="flex-1 text-red-600 border-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
