@@ -54,7 +54,7 @@ const StatsCard = ({
   return (
     <div 
       onClick={handleClick}
-      className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer hover:border-primary/20 hover:scale-105 h-full min-h-[140px] flex flex-col justify-between"
+      className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200 hover:border-primary/20 hover:scale-105 h-full min-h-[140px] flex flex-col justify-between"
     >
       <div>
         <div className="flex items-center justify-between mb-4">
