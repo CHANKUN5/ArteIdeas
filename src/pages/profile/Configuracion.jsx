@@ -1,47 +1,199 @@
-import { Database, DollarSign, Download, Edit, Globe, Plus, Settings, Shield, Trash2, Upload, Users } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import Button from '../../components/common/Button';
+import React, { useState, useEffect } from 'react';
 import Card from '../../components/common/Card';
+import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
-import { useApp } from '../../context/AppContext';
+import { 
+  Users, 
+  DollarSign, 
+  Shield, 
+  Settings, 
+  Plus, 
+  UserCheck,
+  Trash2
+} from 'lucide-react';
 import authService from '../../services/authService';
+import { useApp } from '../../context/AppContext';
+
+// Importar componentes extraídos
+import UserTable from '../../components/tables/UserTable';
+import ServicesTable from '../../components/tables/ServicesTable';
+import SecuritySettings from '../../components/settings/SecuritySettings';
+import BusinessConfig from '../../components/settings/BusinessConfig';
+import RolePermissions from '../../components/settings/RolePermissions';
+import UserForm from '../../components/forms/UserForm';
 
 const Configuracion = () => {
-  const { showSuccess, showError } = useApp();
-  const [settings, setSettings] = useState({
-    security: {
-      twoFactor: false,
-      sessionTimeout: 30,
-      passwordExpiry: false
+  // Estados principales
+  const [users, setUsers] = useState([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteItem, setDeleteItem] = useState(null);
+  const [selectedRole, setSelectedRole] = useState('admin');
+
+  // Servicios de ejemplo
+  const [services] = useState([
+    { id: 1, name: 'Impresión Minilab', basePrice: 5.00, status: 'Activo' }
+  ]);
+
+  // Configuraciones de seguridad
+  const [securitySettings, setSecuritySettings] = useState({
+    twoFactorAuth: false,
+    passwordExpiration: true,
+    loginNotifications: false,
+    sessionTimeout: true
+  });
+
+  // Configuración del negocio
+  const [businessConfig, setBusinessConfig] = useState({
+    companyName: 'Arte Ideas Diseño Gráfico',
+    address: 'Av. Lima 123, San Juan de Lurigancho',
+    phone: '987654321',
+    email: 'info@arte-ideas.com',
+    ruc: '20123456789',
+    currency: 'PEN'
+  });
+
+  // Estado de permisos
+  const [permissions, setPermissions] = useState({
+    admin: {
+      modules: {
+        users: true,
+        services: true,
+        gallery: true,
+        appointments: true,
+        reports: true,
+        settings: true,
+        security: true,
+        documents: true
+      },
+      sensitiveActions: {
+        delete_users: true,
+        modify_prices: true,
+        access_reports: true,
+        system_backup: true,
+        user_permissions: true
+      }
     },
-    business: {
-      companyName: 'Arte Ideas Diseño Gráfico',
-      address: 'Av. Lima 123, San Juan de Lurigancho',
-      phone: '987654321',
-      email: 'info@arteideas.com',
-      tax: '20123456789',
-      currency: 'PEN'
+    editor: {
+      modules: {
+        users: false,
+        services: true,
+        gallery: true,
+        appointments: true,
+        reports: false,
+        settings: false,
+        security: false,
+        documents: true
+      },
+      sensitiveActions: {
+        delete_users: false,
+        modify_prices: false,
+        access_reports: false,
+        system_backup: false,
+        user_permissions: false
+      }
+    },
+    viewer: {
+      modules: {
+        users: false,
+        services: false,
+        gallery: true,
+        appointments: false,
+        reports: false,
+        settings: false,
+        security: false,
+        documents: false
+      },
+      sensitiveActions: {
+        delete_users: false,
+        modify_prices: false,
+        access_reports: false,
+        system_backup: false,
+        user_permissions: false
+      }
     }
   });
 
-  const [users, setUsers] = useState([]);
-  const [loadingUsers, setLoadingUsers] = useState(true);
-
-  const [services, setServices] = useState([
-    {
-      id: 1,
-      servicio: 'Impresión Minilab',
-      precioBase: 50.00,
-      estado: 'Activo'
+  // Definición de permisos por rol
+  const rolePermissions = {
+    Administrador: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: true,
+        clientes: true,
+        inventario: true,
+        reportes: true,
+        configuracion: true
+      },
+      sensitiveData: {
+        precios: true,
+        costos: true,
+        ganancias: true,
+        reportesFinancieros: true,
+        datosPersonales: true
+      }
+    },
+    Ventas: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: true,
+        clientes: true,
+        inventario: false,
+        reportes: false,
+        configuracion: false
+      },
+      sensitiveData: {
+        precios: true,
+        costos: false,
+        ganancias: false,
+        reportesFinancieros: false,
+        datosPersonales: true
+      }
+    },
+    Produccion: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: true,
+        clientes: false,
+        inventario: true,
+        reportes: false,
+        configuracion: false
+      },
+      sensitiveData: {
+        precios: false,
+        costos: true,
+        ganancias: false,
+        reportesFinancieros: false,
+        datosPersonales: false
+      }
+    },
+    Operario: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: false,
+        clientes: false,
+        inventario: true,
+        reportes: false,
+        configuracion: false
+      },
+      sensitiveData: {
+        precios: false,
+        costos: false,
+        ganancias: false,
+        reportesFinancieros: false,
+        datosPersonales: false
+      }
     }
-  ]);
+  };
 
-  const [showUserModal, setShowUserModal] = useState(false);
-  const [showServiceModal, setShowServiceModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [selectedService, setSelectedService] = useState(null);
-  const [deleteItem, setDeleteItem] = useState(null);
+  // Notificaciones
+  const { showSuccess, showError } = useApp();
 
   // Cargar usuarios al montar el componente
   useEffect(() => {
@@ -53,19 +205,16 @@ const Configuracion = () => {
     try {
       const result = await authService.getUsers();
       if (result.success) {
-        // Formatear usuarios para la tabla
         const formattedUsers = result.users.map(user => ({
           id: user.id,
-          usuario: user.name,
+          name: user.name,
           email: user.email,
-          rol: user.role === 'admin' ? 'Administrador' : 'Empleado',
-          estado: user.isNewUser ? 'Pendiente' : 'Activo',
-          ultimoAcceso: user.createdAt ? new Date(user.createdAt).toLocaleString() : 'N/A',
-          originalData: user
+          role: user.role || 'Empleado',
+          status: user.status || 'Activo'
         }));
         setUsers(formattedUsers);
       } else {
-        showError(result.error);
+        showError('Error al cargar usuarios');
       }
     } catch (error) {
       showError('Error al cargar usuarios');
@@ -74,804 +223,384 @@ const Configuracion = () => {
     }
   };
 
-  const handleSettingChange = (category, field, value) => {
-    setSettings(prev => ({
-      ...prev,
-      [category]: {
-        ...prev[category],
-        [field]: value
-      }
-    }));
-  };
-
-  const handleSave = () => {
-    // Simular guardado
-    alert('Configuración guardada correctamente');
-  };
-
-  const SettingSwitch = ({ checked, onChange, label, description }) => (
-    <div className="flex items-center justify-between py-3">
-      <div className="flex-1">
-        <p className="font-medium text-gray-900">{label}</p>
-        {description && <p className="text-sm text-gray-500">{description}</p>}
-      </div>
-      <button
-        onClick={() => onChange(!checked)}
-        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-          checked ? 'bg-primary' : 'bg-gray-200'
-        }`}
-      >
-        <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
-    </div>
-  );
-
-  // Funciones para manejar usuarios
   const handleAddUser = async (userData) => {
     try {
       const result = await authService.createUser({
-        name: userData.usuario,
-        email: userData.email,
-        role: userData.rol === 'Administrador' ? 'admin' : 'empleado'
+        ...userData,
+        role: userData.role || 'Empleado',
+        status: 'Activo'
       });
-
       if (result.success) {
-        showSuccess(`Usuario ${userData.usuario} creado exitosamente. Contraseña predeterminada: 12345678`);
-        loadUsers(); // Recargar la lista de usuarios
+        await loadUsers();
         setShowUserModal(false);
+        showSuccess('Usuario creado exitosamente');
       } else {
-        showError(result.error);
+        showError(result.message || 'Error al crear usuario');
       }
     } catch (error) {
       showError('Error al crear usuario');
     }
   };
 
-  const handleEditUser = async (userData) => {
-    // Por ahora, solo mostrar mensaje ya que la edición de usuarios requiere más lógica
-    showError('La edición de usuarios no está implementada en esta versión');
-    setSelectedUser(null);
-    setShowUserModal(false);
+  const handleEditUser = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
   };
 
-  // Funciones para manejar servicios
-  const handleAddService = (serviceData) => {
-    const newService = {
-      id: services.length + 1,
-      ...serviceData,
-      estado: 'Activo'
-    };
-    setServices([...services, newService]);
-    setShowServiceModal(false);
+  const handleDeleteUser = (user) => {
+    setDeleteItem({ type: 'usuario', item: user });
+    setShowDeleteModal(true);
   };
 
-  const handleEditService = (serviceData) => {
-    setServices(services.map(service => 
-      service.id === selectedService.id ? { ...service, ...serviceData } : service
-    ));
-    setSelectedService(null);
-    setShowServiceModal(false);
-  };
-
-  // Función para manejar eliminación
-  const handleDelete = () => {
-    if (deleteItem.type === 'user') {
+  const confirmDelete = () => {
+    if (deleteItem?.type === 'usuario') {
       setUsers(users.filter(u => u.id !== deleteItem.item.id));
-    } else if (deleteItem.type === 'service') {
-      setServices(services.filter(s => s.id !== deleteItem.item.id));
+      showSuccess('Usuario eliminado exitosamente');
     }
     setShowDeleteModal(false);
     setDeleteItem(null);
   };
 
+  const handleBusinessConfigChange = (field, value) => {
+    setBusinessConfig(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSaveBusinessConfig = () => {
+    showSuccess('Configuración del negocio guardada exitosamente');
+  };
+
+  // Función para manejar cambio de rol
+  const handleRoleChange = (role) => {
+    setSelectedRole(role);
+    if (role && rolePermissions[role]) {
+      setPermissions(rolePermissions[role]);
+    } else {
+      setPermissions({
+        modules: {
+          dashboard: false,
+          agenda: false,
+          pedidos: false,
+          clientes: false,
+          inventario: false,
+          reportes: false,
+          configuracion: false
+        },
+        sensitiveData: {
+          precios: false,
+          costos: false,
+          ganancias: false,
+          reportesFinancieros: false,
+          datosPersonales: false
+        }
+      });
+    }
+  };
+
+  // Función para manejar cambios de permisos individuales
+  const handlePermissionChange = (category, permission, value) => {
+    setPermissions(prev => ({
+      ...prev,
+      [category]: {
+        ...prev[category],
+        [permission]: value
+      }
+    }));
+  };
+
+  // Función para guardar permisos
+  const handleSavePermissions = async () => {
+    if (!selectedRole) {
+      showError('Selecciona un rol para guardar los permisos');
+      return;
+    }
+
+    try {
+      // Aquí iría la lógica para guardar en el backend
+      showSuccess(`Permisos para ${selectedRole} guardados exitosamente`);
+    } catch (error) {
+      showError('Error al guardar los permisos. Inténtalo de nuevo.');
+    }
+  };
+
+  // Función para obtener resumen de permisos activos
+  const getPermissionsSummary = () => {
+    if (!selectedRole) return null;
+    
+    const activeModules = Object.entries(permissions.modules)
+      .filter(([_, hasAccess]) => hasAccess)
+      .length;
+    
+    const activeSensitiveData = Object.entries(permissions.sensitiveData)
+      .filter(([_, hasAccess]) => hasAccess)
+      .length;
+    
+    return {
+      role: selectedRole,
+      activeModules,
+      totalModules: Object.keys(permissions.modules).length,
+      activeSensitiveData,
+      totalSensitiveData: Object.keys(permissions.sensitiveData).length
+    };
+  };
+
+  // Función para resetear permisos a valores por defecto del rol
+  const resetPermissionsToDefault = () => {
+    if (selectedRole && rolePermissions[selectedRole]) {
+      setPermissions(rolePermissions[selectedRole]);
+      showSuccess(`Permisos restablecidos a los valores por defecto para ${selectedRole}`);
+    }
+  };
+
+  // Función para manejar cambios en configuración de seguridad
+  const handleSecuritySettingChange = (setting, value) => {
+    setSecuritySettings(prev => ({
+      ...prev,
+      [setting]: value
+    }));
+  };
+
+  // Función para obtener etiquetas de módulos en español
+  const getModuleLabel = (module) => {
+    const labels = {
+      dashboard: 'Dashboard',
+      agenda: 'Agenda',
+      pedidos: 'Pedidos',
+      clientes: 'Clientes',
+      inventario: 'Inventario',
+      reportes: 'Reportes',
+      configuracion: 'Configuración'
+    };
+    return labels[module] || module;
+  };
+
+  // Componente ToggleSwitch
+  const ToggleSwitch = ({ checked, onChange }) => (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+        checked ? 'bg-primary' : 'bg-gray-200'
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          checked ? 'translate-x-6' : 'translate-x-1'
+        }`}
+      />
+    </button>
+  );
+
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8">
-        <div className="flex items-center space-x-3 mb-4 md:mb-0">
-          <Settings className="w-8 h-8 text-primary" />
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
-            <p className="text-gray-600">Personaliza tu experiencia en la plataforma</p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Configuración</h1>
+          <p className="text-gray-600">Personaliza tu experiencia en la plataforma</p>
         </div>
-        
-        <Button onClick={handleSave}>
+        <Button className="bg-primary hover:bg-primary/90">
           Guardar Cambios
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Gestión de Usuarios */}
+      {/* GRID 2x2: Distribución según imagen */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* FILA SUPERIOR IZQUIERDA: Gestión de Usuarios */}
         <Card>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <Users className="w-6 h-6 text-primary" />
-              <h2 className="text-xl font-semibold text-gray-900">Gestión de Usuarios</h2>
+          <Card.Header>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+                <div>
+                  <Card.Title>Gestión de Usuarios</Card.Title>
+                </div>
+              </div>
+              <Button
+                onClick={() => {
+                  setSelectedUser(null);
+                  setShowUserModal(true);
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Usuario
+              </Button>
             </div>
-            <Button
-              onClick={() => setShowUserModal(true)}
-              icon={<Plus className="w-4 h-4" />}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Nuevo Usuario
-            </Button>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Usuario
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Email
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Rol
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Creado
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loadingUsers ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                      Cargando usuarios...
-                    </td>
-                  </tr>
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td colSpan="6" className="px-4 py-8 text-center text-gray-500">
-                      No hay usuarios registrados
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {user.usuario}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {user.email}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          user.rol === 'Administrador' 
-                            ? 'bg-purple-100 text-purple-800' 
-                            : 'bg-blue-100 text-blue-800'
-                        }`}>
-                          {user.rol}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          user.estado === 'Activo' 
-                            ? 'bg-green-100 text-green-800' 
-                            : user.estado === 'Pendiente'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {user.estado}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {user.ultimoAcceso}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowUserModal(true);
-                            }}
-                            className="text-yellow-600 hover:bg-yellow-50"
-                            title="Editar usuario"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setDeleteItem({ type: 'user', item: user });
-                              setShowDeleteModal(true);
-                            }}
-                            className="text-red-600 hover:bg-red-50"
-                            title="Eliminar usuario"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Servicios y Precios */}
-        <Card>
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-3">
-              <DollarSign className="w-6 h-6 text-primary" />
-              <h2 className="text-xl font-semibold text-gray-900">Servicios y Precios</h2>
-            </div>
-            <Button
-              onClick={() => setShowServiceModal(true)}
-              icon={<Plus className="w-4 h-4" />}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Nuevo Servicio
-            </Button>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Servicio
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Precio Base
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {services.map((service) => (
-                  <tr key={service.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {service.servicio}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                      S/{service.precioBase.toFixed(2)}
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                        {service.estado}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedService(service);
-                            setShowServiceModal(true);
-                          }}
-                          className="text-yellow-600 hover:bg-yellow-50"
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            setDeleteItem({ type: 'service', item: service });
-                            setShowDeleteModal(true);
-                          }}
-                          className="text-red-600 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-
-        {/* Security */}
-        <Card>
-          <div className="flex items-center space-x-3 mb-6">
-            <Shield className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-semibold text-gray-900">Seguridad</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <SettingSwitch
-              checked={settings.security.twoFactor}
-              onChange={(value) => handleSettingChange('security', 'twoFactor', value)}
-              label="Autenticación de Dos Factores"
-              description="Añade una capa extra de seguridad a tu cuenta"
+          </Card.Header>
+          <Card.Content>
+            <UserTable
+              users={users}
+              loading={loadingUsers}
+              onEdit={handleEditUser}
+              onDelete={handleDeleteUser}
             />
-            
-
-            <SettingSwitch
-              checked={settings.security.passwordExpiry}
-              onChange={(value) => handleSettingChange('security', 'passwordExpiry', value)}
-              label="Expiración de Contraseña"
-              description="Requerir cambio de contraseña cada 90 días"
-            />
-          </div>
+          </Card.Content>
         </Card>
 
-        {/* Business Settings */}
+        {/* FILA SUPERIOR DERECHA: Servicios y Precios */}
         <Card>
-          <div className="flex items-center space-x-3 mb-6">
-            <Globe className="w-6 h-6 text-primary" />
-            <h2 className="text-xl font-semibold text-gray-900">Configuración del Negocio</h2>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Nombre de la Empresa</label>
-              <input
-                type="text"
-                value={settings.business.companyName}
-                onChange={(e) => handleSettingChange('business', 'companyName', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
+          <Card.Header>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <DollarSign className="w-6 h-6 text-green-600" />
+                </div>
+                <div>
+                  <Card.Title>Servicios y Precios</Card.Title>
+                </div>
+              </div>
+              <Button className="bg-green-600 hover:bg-green-700 text-white">
+                <Plus className="w-4 h-4 mr-2" />
+                Nuevo Servicio
+              </Button>
             </div>
+          </Card.Header>
+          <Card.Content>
+            <ServicesTable
+              services={services}
+              loading={false}
+              onEdit={(service) => console.log('Edit service:', service)}
+              onDelete={(service) => console.log('Delete service:', service)}
+            />
+          </Card.Content>
+        </Card>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Dirección</label>
-              <input
-                type="text"
-                value={settings.business.address}
-                onChange={(e) => handleSettingChange('business', 'address', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              />
+        {/* FILA INFERIOR IZQUIERDA: Seguridad */}
+        <Card>
+          <Card.Header>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <Shield className="w-6 h-6 text-red-600" />
+              </div>
+              <div>
+                <Card.Title>Seguridad</Card.Title>
+              </div>
             </div>
+          </Card.Header>
+          <Card.Content>
+            <SecuritySettings
+              settings={securitySettings}
+              onSettingChange={handleSecuritySettingChange}
+            />
+          </Card.Content>
+        </Card>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Teléfono</label>
-                <input
-                  type="tel"
-                  value={settings.business.phone}
-                  onChange={(e) => handleSettingChange('business', 'phone', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
+        {/* FILA INFERIOR DERECHA: Configuración del Negocio */}
+        <Card>
+          <Card.Header>
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Settings className="w-6 h-6 text-purple-600" />
               </div>
-              
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                <input
-                  type="email"
-                  value={settings.business.email}
-                  onChange={(e) => handleSettingChange('business', 'email', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
+                <Card.Title>Configuración del Negocio</Card.Title>
               </div>
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">RUC</label>
-                <input
-                  type="text"
-                  value={settings.business.tax}
-                  onChange={(e) => handleSettingChange('business', 'tax', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Moneda</label>
-                <select
-                  value={settings.business.currency}
-                  onChange={(e) => handleSettingChange('business', 'currency', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-                >
-                  <option value="PEN">Soles (S/)</option>
-                </select>
-              </div>
-            </div>
-          </div>
+          </Card.Header>
+          <Card.Content>
+            <BusinessConfig
+              config={businessConfig}
+              onChange={handleBusinessConfigChange}
+              onSave={handleSaveBusinessConfig}
+              loading={false}
+            />
+          </Card.Content>
         </Card>
       </div>
 
-      {/* Data Management */}
-      <Card className="mt-8">
-        <div className="flex items-center space-x-3 mb-6">
-          <Database className="w-6 h-6 text-primary" />
-          <h2 className="text-xl font-semibold text-gray-900">Gestión de Datos</h2>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="text-center p-6 border border-gray-200 rounded-lg">
-            <Download className="w-12 h-12 text-green-500 mx-auto mb-4" />
-            <h3 className="font-semibold text-gray-900 mb-2">Exportar Datos</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Descarga una copia de todos tus datos en formato JSON
-            </p>
-            <Button variant="outline" size="sm">
-              Exportar Datos
+      {/* Roles y Permisos - Sección completa debajo del grid */}
+      <Card>
+        <Card.Header>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-indigo-100 rounded-lg">
+                <UserCheck className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <Card.Title>Roles y Permisos</Card.Title>
+                <p className="text-sm text-gray-600 mt-1">Configura los permisos para cada rol de usuario</p>
+              </div>
+            </div>
+            <Button
+              onClick={handleSavePermissions}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              disabled={!selectedRole}
+            >
+              <Save className="w-4 h-4 mr-2" />
+              Guardar Permisos
             </Button>
           </div>
-          
-          <div className="text-center p-6 border border-gray-200 rounded-lg">
-            <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />
-            <h3 className="font-semibold text-gray-900 mb-2">Importar Datos</h3>
-            <p className="text-sm text-gray-600 mb-4">
-              Sube un archivo de respaldo para restaurar tus datos
-            </p>
-            <Button variant="outline" size="sm">
-              Importar Datos
-            </Button>
-          </div>
-        </div>
-        
-        <div className="mt-8 p-6 bg-red-50 border border-red-200 rounded-lg">
-          <h3 className="font-semibold text-red-800 mb-2">Zona de Peligro</h3>
-          <p className="text-sm text-red-600 mb-4">
-            Estas acciones son irreversibles. Procede con precaución.
-          </p>
-          <div className="flex space-x-4">
-            <Button variant="outline" size="sm" className="border-red-300 text-red-600 hover:bg-red-50">
-              Resetear Configuración
-            </Button>
-            <Button variant="outline" size="sm" className="border-red-300 text-red-600 hover:bg-red-50">
-              Eliminar Cuenta
-            </Button>
-          </div>
-        </div>
+        </Card.Header>
+        <Card.Content>
+          <RolePermissions
+            selectedRole={selectedRole}
+            permissions={permissions}
+            onRoleChange={handleRoleChange}
+            onPermissionChange={handlePermissionChange}
+            onSave={handleSavePermissions}
+            onReset={resetPermissionsToDefault}
+            getPermissionsSummary={getPermissionsSummary}
+          />
+        </Card.Content>
       </Card>
 
-      {/* Modal de Usuario */}
+      {/* Modal para Crear/Editar Usuario */}
       <Modal
         isOpen={showUserModal}
         onClose={() => {
           setShowUserModal(false);
-          setSelectedUser(null);
+          setEditingUser(null);
         }}
-        title={selectedUser ? 'Editar Usuario' : 'Nuevo Usuario'}
+        title={editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
       >
         <UserForm
-          user={selectedUser}
-          onSubmit={selectedUser ? handleEditUser : handleAddUser}
+          user={editingUser}
+          onSubmit={editingUser ? handleEditUser : handleAddUser}
           onCancel={() => {
             setShowUserModal(false);
-            setSelectedUser(null);
+            setEditingUser(null);
           }}
         />
       </Modal>
 
-      {/* Modal de Servicio */}
+      {/* Modal de Confirmación para Eliminar */}
       <Modal
-        isOpen={showServiceModal}
-        onClose={() => {
-          setShowServiceModal(false);
-          setSelectedService(null);
-        }}
-        title={selectedService ? 'Editar Servicio' : 'Nuevo Servicio'}
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
       >
-        <ServiceForm
-          service={selectedService}
-          onSubmit={selectedService ? handleEditService : handleAddService}
-          onCancel={() => {
-            setShowServiceModal(false);
-            setSelectedService(null);
-          }}
-        />
-       </Modal>
-
-       {/* Modal de Confirmación de Eliminación */}
-       <Modal
-         isOpen={showDeleteModal}
-         onClose={() => {
-           setShowDeleteModal(false);
-           setDeleteItem(null);
-         }}
-         title="Confirmar Eliminación"
-       >
-         <div className="space-y-4">
-           <div className="flex items-center space-x-3">
-             <div className="flex-shrink-0">
-               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                 <Trash2 className="w-5 h-5 text-red-600" />
-               </div>
-             </div>
-             <div className="flex-1">
-               <h3 className="text-lg font-medium text-gray-900">
-                 ¿Estás seguro de eliminar este {deleteItem?.type === 'user' ? 'usuario' : 'servicio'}?
-               </h3>
-               <p className="text-sm text-gray-500">
-                  {deleteItem?.type === 'user' 
-                    ? `El usuario "${deleteItem?.item?.usuario}" será eliminado permanentemente.`
-                    : `El servicio "${deleteItem?.item?.servicio}" será eliminado permanentemente.`
-                  }
-                </p>
-             </div>
-           </div>
-           
-           <div className="flex justify-end space-x-3 pt-4">
-             <Button
-               type="button"
-               variant="outline"
-               onClick={() => {
-                 setShowDeleteModal(false);
-                 setDeleteItem(null);
-               }}
-             >
-               Cancelar
-             </Button>
-             <Button
-               type="button"
-               onClick={handleDelete}
-               className="bg-red-600 hover:bg-red-700 text-white"
-             >
-               Eliminar
-             </Button>
-           </div>
-         </div>
-       </Modal>
-     </div>
-   );
- };
-
-// Componente de formulario para usuarios
-const UserForm = ({ user, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    usuario: user?.usuario || '',
-    email: user?.email || '',
-    rol: user?.rol || 'Empleado',
-    estado: user?.estado || 'Activo'
-  });
-
-  const [errors, setErrors] = useState({});
-
-  useEffect(() => {
-    if (user) {
-      setFormData({
-        usuario: user.usuario,
-        email: user.email || '',
-        rol: user.rol,
-        estado: user.estado
-      });
-    } else {
-      setFormData({
-        usuario: '',
-        email: '',
-        rol: 'Empleado',
-        estado: 'Activo'
-      });
-    }
-  }, [user]);
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!formData.usuario.trim()) {
-      newErrors.usuario = 'El nombre de usuario es requerido';
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'El email es requerido';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'El email no tiene un formato válido';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (validateForm()) {
-      onSubmit(formData);
-    }
-  };
-
-  const handleChange = (field, value) => {
-    setFormData({ ...formData, [field]: value });
-    if (errors[field]) {
-      setErrors({ ...errors, [field]: '' });
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nombre de Usuario *
-        </label>
-        <input
-          type="text"
-          value={formData.usuario}
-          onChange={(e) => handleChange('usuario', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none ${
-            errors.usuario ? 'border-red-300' : 'border-gray-300'
-          }`}
-          placeholder="Ingrese el nombre del usuario"
-          disabled={!!user} // Deshabilitar edición del nombre si es edición
-        />
-        {errors.usuario && (
-          <p className="mt-1 text-sm text-red-600">{errors.usuario}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Email *
-        </label>
-        <input
-          type="email"
-          value={formData.email}
-          onChange={(e) => handleChange('email', e.target.value)}
-          className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none ${
-            errors.email ? 'border-red-300' : 'border-gray-300'
-          }`}
-          placeholder="usuario@ejemplo.com"
-          disabled={!!user} // Deshabilitar edición del email si es edición
-        />
-        {errors.email && (
-          <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Rol
-        </label>
-        <select
-          value={formData.rol}
-          onChange={(e) => handleChange('rol', e.target.value)}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-        >
-          <option value="Empleado">Empleado</option>
-          <option value="Administrador">Administrador</option>
-        </select>
-      </div>
-
-      {user && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Estado
-          </label>
-          <select
-            value={formData.estado}
-            onChange={(e) => handleChange('estado', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          >
-            <option value="Activo">Activo</option>
-            <option value="Pendiente">Pendiente</option>
-            <option value="Inactivo">Inactivo</option>
-          </select>
-        </div>
-      )}
-
-      {!user && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-sm text-blue-800">
-            <strong>Nota:</strong> El usuario recibirá la contraseña predeterminada <code className="bg-blue-100 px-1 rounded">12345678</code> y deberá cambiarla en su primer inicio de sesión.
+        <div className="text-center py-4">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+            <Trash2 className="h-6 w-6 text-red-600" />
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            ¿Estás seguro de que quieres eliminar este {deleteItem?.type}?
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Esta acción no se puede deshacer.
           </p>
+          <div className="flex justify-center space-x-4">
+            <Button
+              onClick={() => setShowDeleteModal(false)}
+              variant="outline"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Eliminar
+            </Button>
+          </div>
         </div>
-      )}
-
-      <div className="flex justify-end space-x-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit">
-          {user ? 'Actualizar' : 'Crear'} Usuario
-        </Button>
-      </div>
-    </form>
-  );
-};
-
-// Componente de formulario para servicios
-const ServiceForm = ({ service, onSubmit, onCancel }) => {
-  const [formData, setFormData] = useState({
-    servicio: service?.servicio || '',
-    precioBase: service?.precioBase || 0,
-    estado: service?.estado || 'Activo'
-  });
-
-  useEffect(() => {
-    if (service) {
-      setFormData({
-        servicio: service.servicio,
-        precioBase: service.precioBase,
-        estado: service.estado
-      });
-    } else {
-      setFormData({
-        servicio: '',
-        precioBase: 0,
-        estado: 'Activo'
-      });
-    }
-  }, [service]);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit({
-      ...formData,
-      precioBase: parseFloat(formData.precioBase)
-    });
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Nombre del Servicio
-        </label>
-        <input
-          type="text"
-          value={formData.servicio}
-          onChange={(e) => setFormData({ ...formData, servicio: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Precio Base
-        </label>
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          value={formData.precioBase}
-          onChange={(e) => setFormData({ ...formData, precioBase: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          required
-        />
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Estado
-        </label>
-        <select
-          value={formData.estado}
-          onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-        >
-          <option value="Activo">Activo</option>
-          <option value="Inactivo">Inactivo</option>
-        </select>
-      </div>
-
-      <div className="flex justify-end space-x-3 pt-4">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={onCancel}
-        >
-          Cancelar
-        </Button>
-        <Button type="submit">
-          {service ? 'Actualizar' : 'Crear'} Servicio
-        </Button>
-      </div>
-    </form>
+      </Modal>
+    </div>
   );
 };
 
