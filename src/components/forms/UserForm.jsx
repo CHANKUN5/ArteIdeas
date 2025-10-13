@@ -5,7 +5,8 @@ const UserForm = ({ user, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: user?.name || '',
     email: user?.email || '',
-    role: user?.role || 'Empleado'
+    role: user?.role || 'Empleado',
+    status: user?.status || 'Activo'
   });
 
   const [errors, setErrors] = useState({});
@@ -94,6 +95,23 @@ const UserForm = ({ user, onSubmit, onCancel }) => {
           <option value="Operario">Operario</option>
         </select>
       </div>
+
+      {user && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Estado
+          </label>
+          <select
+            value={formData.status}
+            onChange={(e) => handleInputChange('status', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
+            <option value="Activo">Activo</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      )}
 
       {!user && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 text-blue-700 p-4">

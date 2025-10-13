@@ -305,7 +305,7 @@ const Configuracion = () => {
     try {
       setUsers(prev => prev.map(u => (
         u.id === editingUser?.id 
-          ? { ...u, name: updatedData.name, email: updatedData.email, role: updatedData.role || u.role }
+          ? { ...u, name: updatedData.name, email: updatedData.email, role: updatedData.role || u.role, status: updatedData.status || u.status }
           : u
       )));
       setShowUserModal(false);
