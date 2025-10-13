@@ -103,15 +103,7 @@ const BusinessConfig = ({ config, onChange, onSave, loading }) => {
         })}
       </div>
 
-      {/* Información adicional */}
-      <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h5 className="font-medium text-yellow-900 mb-2">ℹ️ Información Importante</h5>
-        <ul className="text-sm text-yellow-800 space-y-1">
-          <li>• Esta información aparecerá en tus facturas y documentos oficiales</li>
-          <li>• Asegúrate de que todos los datos sean correctos y estén actualizados</li>
-          <li>• El RUC debe tener 11 dígitos para empresas en Perú</li>
-        </ul>
-      </div>
+      {/* Sección de Información Importante eliminada según requerimiento */}
 
       {/* Botón de guardar */}
       <div className="flex justify-end">

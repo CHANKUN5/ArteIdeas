@@ -4,20 +4,18 @@ import Button from '../../components/common/Button';
 import Modal from '../../components/common/Modal';
 import { 
   Users, 
-  DollarSign, 
-  Shield, 
   Settings, 
   Plus, 
   UserCheck,
-  Trash2
+  Trash2,
+  Save
 } from 'lucide-react';
 import authService from '../../services/authService';
 import { useApp } from '../../context/AppContext';
 
 // Importar componentes extraídos
 import UserTable from '../../components/tables/UserTable';
-import ServicesTable from '../../components/tables/ServicesTable';
-import SecuritySettings from '../../components/settings/SecuritySettings';
+// Se removieron Servicios y Precios, y Seguridad según requerimiento
 import BusinessConfig from '../../components/settings/BusinessConfig';
 import RolePermissions from '../../components/settings/RolePermissions';
 import UserForm from '../../components/forms/UserForm';
@@ -55,139 +53,194 @@ const Configuracion = () => {
     currency: 'PEN'
   });
 
-  // Estado de permisos
+  // Estado de permisos simulados (coincide con la lista de la imagen)
   const [permissions, setPermissions] = useState({
     admin: {
-      modules: {
-        users: true,
-        services: true,
-        gallery: true,
-        appointments: true,
-        reports: true,
-        settings: true,
-        security: true,
-        documents: true
-      },
-      sensitiveActions: {
-        delete_users: true,
-        modify_prices: true,
-        access_reports: true,
-        system_backup: true,
-        user_permissions: true
-      }
-    },
-    editor: {
-      modules: {
-        users: false,
-        services: true,
-        gallery: true,
-        appointments: true,
-        reports: false,
-        settings: false,
-        security: false,
-        documents: true
-      },
-      sensitiveActions: {
-        delete_users: false,
-        modify_prices: false,
-        access_reports: false,
-        system_backup: false,
-        user_permissions: false
-      }
-    },
-    viewer: {
-      modules: {
-        users: false,
-        services: false,
-        gallery: true,
-        appointments: false,
-        reports: false,
-        settings: false,
-        security: false,
-        documents: false
-      },
-      sensitiveActions: {
-        delete_users: false,
-        modify_prices: false,
-        access_reports: false,
-        system_backup: false,
-        user_permissions: false
-      }
-    }
-  });
-
-  // Definición de permisos por rol
-  const rolePermissions = {
-    Administrador: {
       modules: {
         dashboard: true,
         agenda: true,
         pedidos: true,
         clientes: true,
         inventario: true,
-        reportes: true,
-        configuracion: true
+        activos: true,
+        gastos: true,
+        produccion: true,
+        contratos: true,
+        reportes: true
       },
-      sensitiveData: {
-        precios: true,
-        costos: true,
-        ganancias: true,
-        reportesFinancieros: true,
-        datosPersonales: true
+      sensitiveActions: {
+        view_costs: true,
+        view_prices: true,
+        view_margins: true,
+        view_client_data: true,
+        view_financial_data: true,
+        edit_prices: true,
+        delete_records: true
       }
     },
-    Ventas: {
+    ventas: {
       modules: {
         dashboard: true,
         agenda: true,
         pedidos: true,
         clientes: true,
         inventario: false,
-        reportes: false,
-        configuracion: false
+        activos: false,
+        gastos: true,
+        produccion: false,
+        contratos: true,
+        reportes: true
       },
-      sensitiveData: {
-        precios: true,
-        costos: false,
-        ganancias: false,
-        reportesFinancieros: false,
-        datosPersonales: true
+      sensitiveActions: {
+        view_costs: false,
+        view_prices: true,
+        view_margins: true,
+        view_client_data: true,
+        view_financial_data: true,
+        edit_prices: true,
+        delete_records: false
       }
     },
-    Produccion: {
+    produccion: {
       modules: {
         dashboard: true,
         agenda: true,
         pedidos: true,
         clientes: false,
         inventario: true,
-        reportes: false,
-        configuracion: false
+        activos: true,
+        gastos: false,
+        produccion: true,
+        contratos: false,
+        reportes: false
       },
-      sensitiveData: {
-        precios: false,
-        costos: true,
-        ganancias: false,
-        reportesFinancieros: false,
-        datosPersonales: false
+      sensitiveActions: {
+        view_costs: true,
+        view_prices: false,
+        view_margins: false,
+        view_client_data: false,
+        view_financial_data: false,
+        edit_prices: false,
+        delete_records: false
       }
     },
-    Operario: {
+    operario: {
       modules: {
         dashboard: true,
         agenda: true,
         pedidos: false,
         clientes: false,
         inventario: true,
-        reportes: false,
-        configuracion: false
+        activos: true,
+        gastos: false,
+        produccion: true,
+        contratos: false,
+        reportes: false
       },
-      sensitiveData: {
-        precios: false,
-        costos: false,
-        ganancias: false,
-        reportesFinancieros: false,
-        datosPersonales: false
+      sensitiveActions: {
+        view_costs: false,
+        view_prices: false,
+        view_margins: false,
+        view_client_data: false,
+        view_financial_data: false,
+        edit_prices: false,
+        delete_records: false
+      }
+    }
+  });
+
+  // Valores por defecto de permisos (simulado) para cada rol
+  const roleDefaults = {
+    admin: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: true,
+        clientes: true,
+        inventario: true,
+        activos: true,
+        gastos: true,
+        produccion: true,
+        contratos: true,
+        reportes: true
+      },
+      sensitiveActions: {
+        view_costs: true,
+        view_prices: true,
+        view_margins: true,
+        view_client_data: true,
+        view_financial_data: true,
+        edit_prices: true,
+        delete_records: true
+      }
+    },
+    ventas: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: true,
+        clientes: true,
+        inventario: false,
+        activos: false,
+        gastos: true,
+        produccion: false,
+        contratos: true,
+        reportes: true
+      },
+      sensitiveActions: {
+        view_costs: false,
+        view_prices: true,
+        view_margins: true,
+        view_client_data: true,
+        view_financial_data: true,
+        edit_prices: true,
+        delete_records: false
+      }
+    },
+    produccion: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: true,
+        clientes: false,
+        inventario: true,
+        activos: true,
+        gastos: false,
+        produccion: true,
+        contratos: false,
+        reportes: false
+      },
+      sensitiveActions: {
+        view_costs: true,
+        view_prices: false,
+        view_margins: false,
+        view_client_data: false,
+        view_financial_data: false,
+        edit_prices: false,
+        delete_records: false
+      }
+    },
+    operario: {
+      modules: {
+        dashboard: true,
+        agenda: true,
+        pedidos: false,
+        clientes: false,
+        inventario: true,
+        activos: true,
+        gastos: false,
+        produccion: true,
+        contratos: false,
+        reportes: false
+      },
+      sensitiveActions: {
+        view_costs: false,
+        view_prices: false,
+        view_margins: false,
+        view_client_data: false,
+        view_financial_data: false,
+        edit_prices: false,
+        delete_records: false
       }
     }
   };
@@ -243,8 +296,24 @@ const Configuracion = () => {
   };
 
   const handleEditUser = (user) => {
-    setSelectedUser(user);
+    setEditingUser(user);
     setShowUserModal(true);
+  };
+
+  // Actualizar usuario (simulado) usando estado local
+  const handleUpdateUser = (updatedData) => {
+    try {
+      setUsers(prev => prev.map(u => (
+        u.id === editingUser?.id 
+          ? { ...u, name: updatedData.name, email: updatedData.email, role: updatedData.role || u.role }
+          : u
+      )));
+      setShowUserModal(false);
+      setEditingUser(null);
+      showSuccess('Usuario actualizado exitosamente');
+    } catch (error) {
+      showError('Error al actualizar usuario');
+    }
   };
 
   const handleDeleteUser = (user) => {
@@ -272,40 +341,21 @@ const Configuracion = () => {
     showSuccess('Configuración del negocio guardada exitosamente');
   };
 
-  // Función para manejar cambio de rol
+  // Función para manejar cambio de rol (solo actualiza selección)
   const handleRoleChange = (role) => {
     setSelectedRole(role);
-    if (role && rolePermissions[role]) {
-      setPermissions(rolePermissions[role]);
-    } else {
-      setPermissions({
-        modules: {
-          dashboard: false,
-          agenda: false,
-          pedidos: false,
-          clientes: false,
-          inventario: false,
-          reportes: false,
-          configuracion: false
-        },
-        sensitiveData: {
-          precios: false,
-          costos: false,
-          ganancias: false,
-          reportesFinancieros: false,
-          datosPersonales: false
-        }
-      });
-    }
   };
 
   // Función para manejar cambios de permisos individuales
-  const handlePermissionChange = (category, permission, value) => {
+  const handlePermissionChange = (roleKey, category, itemKey, value) => {
     setPermissions(prev => ({
       ...prev,
-      [category]: {
-        ...prev[category],
-        [permission]: value
+      [roleKey]: {
+        ...prev[roleKey],
+        [category]: {
+          ...prev[roleKey][category],
+          [itemKey]: value
+        }
       }
     }));
   };
@@ -327,29 +377,32 @@ const Configuracion = () => {
 
   // Función para obtener resumen de permisos activos
   const getPermissionsSummary = () => {
-    if (!selectedRole) return null;
+    if (!selectedRole || !permissions[selectedRole]) return null;
     
-    const activeModules = Object.entries(permissions.modules)
+    const activeModules = Object.entries(permissions[selectedRole].modules || {})
       .filter(([_, hasAccess]) => hasAccess)
       .length;
     
-    const activeSensitiveData = Object.entries(permissions.sensitiveData)
+    const activeSensitive = Object.entries(permissions[selectedRole].sensitiveActions || {})
       .filter(([_, hasAccess]) => hasAccess)
       .length;
     
     return {
       role: selectedRole,
       activeModules,
-      totalModules: Object.keys(permissions.modules).length,
-      activeSensitiveData,
-      totalSensitiveData: Object.keys(permissions.sensitiveData).length
+      totalModules: Object.keys(permissions[selectedRole].modules || {}).length,
+      activeSensitiveData: activeSensitive,
+      totalSensitiveData: Object.keys(permissions[selectedRole].sensitiveActions || {}).length
     };
   };
 
   // Función para resetear permisos a valores por defecto del rol
   const resetPermissionsToDefault = () => {
-    if (selectedRole && rolePermissions[selectedRole]) {
-      setPermissions(rolePermissions[selectedRole]);
+    if (selectedRole && roleDefaults[selectedRole]) {
+      setPermissions(prev => ({
+        ...prev,
+        [selectedRole]: roleDefaults[selectedRole]
+      }));
       showSuccess(`Permisos restablecidos a los valores por defecto para ${selectedRole}`);
     }
   };
@@ -422,7 +475,7 @@ const Configuracion = () => {
               </div>
               <Button
                 onClick={() => {
-                  setSelectedUser(null);
+                  setEditingUser(null);
                   setShowUserModal(true);
                 }}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
@@ -442,53 +495,9 @@ const Configuracion = () => {
           </Card.Content>
         </Card>
 
-        {/* FILA SUPERIOR DERECHA: Servicios y Precios */}
-        <Card>
-          <Card.Header>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <DollarSign className="w-6 h-6 text-green-600" />
-                </div>
-                <div>
-                  <Card.Title>Servicios y Precios</Card.Title>
-                </div>
-              </div>
-              <Button className="bg-green-600 hover:bg-green-700 text-white">
-                <Plus className="w-4 h-4 mr-2" />
-                Nuevo Servicio
-              </Button>
-            </div>
-          </Card.Header>
-          <Card.Content>
-            <ServicesTable
-              services={services}
-              loading={false}
-              onEdit={(service) => console.log('Edit service:', service)}
-              onDelete={(service) => console.log('Delete service:', service)}
-            />
-          </Card.Content>
-        </Card>
+      {/* Sección de Servicios y Precios eliminada */}
 
-        {/* FILA INFERIOR IZQUIERDA: Seguridad */}
-        <Card>
-          <Card.Header>
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <Shield className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <Card.Title>Seguridad</Card.Title>
-              </div>
-            </div>
-          </Card.Header>
-          <Card.Content>
-            <SecuritySettings
-              settings={securitySettings}
-              onSettingChange={handleSecuritySettingChange}
-            />
-          </Card.Content>
-        </Card>
+      {/* Sección de Seguridad eliminada */}
 
         {/* FILA INFERIOR DERECHA: Configuración del Negocio */}
         <Card>
@@ -560,7 +569,7 @@ const Configuracion = () => {
       >
         <UserForm
           user={editingUser}
-          onSubmit={editingUser ? handleEditUser : handleAddUser}
+          onSubmit={editingUser ? handleUpdateUser : handleAddUser}
           onCancel={() => {
             setShowUserModal(false);
             setEditingUser(null);

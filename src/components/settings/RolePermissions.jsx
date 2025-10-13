@@ -1,6 +1,18 @@
 import React from 'react';
 import ToggleSwitch from '../common/ToggleSwitch';
-import { Users, Shield, Settings, FileText, Camera, Calendar, DollarSign, BarChart } from 'lucide-react';
+import { 
+  LayoutDashboard,
+  Calendar,
+  ClipboardList,
+  Users,
+  Package,
+  Wallet,
+  Cog,
+  FileText,
+  BarChart,
+  Shield,
+  AlertTriangle
+} from 'lucide-react';
 
 const RolePermissions = ({ 
   selectedRole, 
@@ -11,32 +23,37 @@ const RolePermissions = ({
   onReset, 
   loading 
 }) => {
-  const roles = ['admin', 'editor', 'viewer'];
+  const roles = ['admin', 'ventas', 'produccion', 'operario'];
   
   const modules = [
-    { key: 'users', label: 'Gestión de Usuarios', icon: Users },
-    { key: 'services', label: 'Servicios y Precios', icon: DollarSign },
-    { key: 'gallery', label: 'Galería de Fotos', icon: Camera },
-    { key: 'appointments', label: 'Citas y Reservas', icon: Calendar },
-    { key: 'reports', label: 'Reportes y Estadísticas', icon: BarChart },
-    { key: 'settings', label: 'Configuración del Sistema', icon: Settings },
-    { key: 'security', label: 'Configuración de Seguridad', icon: Shield },
-    { key: 'documents', label: 'Documentos y Facturas', icon: FileText }
+    { key: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { key: 'agenda', label: 'Agenda', icon: Calendar },
+    { key: 'pedidos', label: 'Pedidos', icon: ClipboardList },
+    { key: 'clientes', label: 'Clientes', icon: Users },
+    { key: 'inventario', label: 'Inventario', icon: Package },
+    { key: 'activos', label: 'Activos', icon: Package },
+    { key: 'gastos', label: 'Gastos', icon: Wallet },
+    { key: 'produccion', label: 'Producción', icon: Cog },
+    { key: 'contratos', label: 'Contratos', icon: FileText },
+    { key: 'reportes', label: 'Reportes', icon: BarChart }
   ];
 
   const sensitiveActions = [
-    { key: 'delete_users', label: 'Eliminar Usuarios' },
-    { key: 'modify_prices', label: 'Modificar Precios' },
-    { key: 'access_reports', label: 'Acceder a Reportes Financieros' },
-    { key: 'system_backup', label: 'Realizar Respaldos del Sistema' },
-    { key: 'user_permissions', label: 'Modificar Permisos de Usuario' }
+    { key: 'view_costs', label: 'Ver Costos' },
+    { key: 'view_prices', label: 'Ver Precios' },
+    { key: 'view_margins', label: 'Ver Márgenes' },
+    { key: 'view_client_data', label: 'Ver Datos de Clientes' },
+    { key: 'view_financial_data', label: 'Ver Datos Financieros' },
+    { key: 'edit_prices', label: 'Editar Precios' },
+    { key: 'delete_records', label: 'Eliminar Registros' }
   ];
 
   const getRoleLabel = (role) => {
     const labels = {
       admin: 'Administrador',
-      editor: 'Editor',
-      viewer: 'Visualizador'
+      ventas: 'Ventas',
+      produccion: 'Producción',
+      operario: 'Operario'
     };
     return labels[role] || role;
   };
@@ -151,7 +168,10 @@ const RolePermissions = ({
 
       {/* Advertencia de Seguridad */}
       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-        <h5 className="font-medium text-yellow-900 mb-2">⚠️ Advertencia de Seguridad</h5>
+        <div className="flex items-center space-x-2 mb-2">
+          <AlertTriangle className="w-5 h-5 text-yellow-700" />
+          <h5 className="font-medium text-yellow-900">Advertencia de Seguridad</h5>
+        </div>
         <p className="text-sm text-yellow-800">
           Las acciones sensibles pueden afectar la seguridad y funcionamiento del sistema. 
           Asigna estos permisos solo a usuarios de confianza.
