@@ -821,12 +821,12 @@ const Agenda = () => {
         </div>
       </div>
 
-      <div className={`flex gap-6 transition-all duration-300 ${
-        showEventPanel || showAllEventsPanel ? 'flex-row' : 'flex-col'
+      <div className={`flex gap-6 ${
+        (showEventPanel || showAllEventsPanel) ? 'flex-row' : 'flex-col'
       }`}>
         {/* Calendario principal */}
-        <div className={`transition-all duration-300 ${
-          showEventPanel || showAllEventsPanel ? 'flex-1' : 'w-full'
+        <div className={`${
+          (showEventPanel || showAllEventsPanel) ? 'flex-1' : 'w-full'
         }`}>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[700px] flex flex-col">
             {/* Header del calendario */}
@@ -889,12 +889,12 @@ const Agenda = () => {
           </div>
         </div>
 
-        {/* Panel lateral de detalles del evento con animación */}
-        <div className={`transition-all duration-300 overflow-hidden ${
-          showEventPanel ? 'lg:col-span-1 opacity-100' : 'lg:col-span-0 opacity-0 lg:w-0'
-        }`}>
+        {/* Panel lateral de detalles del evento o todos los eventos */}
+        <div className={`overflow-hidden ${
+          (showEventPanel || showAllEventsPanel) ? 'w-96' : 'w-0'
+        }`} style={{ width: (showEventPanel || showAllEventsPanel) ? '380px' : '0px' }}>
           {showEventPanel && selectedEvent && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col w-full max-w-96 min-w-96 flex-shrink-0" style={{ width: '380px', maxWidth: '380px', minWidth: '380px' }}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900">Detalles del Evento</h3>
                 <button
@@ -908,14 +908,14 @@ const Agenda = () => {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-4 overflow-y-auto">
+              <div className="flex-1 space-y-4 overflow-y-auto" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                 {/* Información del Cliente */}
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <User className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Cliente</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-900">{selectedEvent.cliente}</p>
+                  <p className="text-sm font-medium text-gray-900 w-full break-words">{selectedEvent.cliente}</p>
                 </div>
 
                 {/* Tipo de Evento */}
@@ -924,9 +924,11 @@ const Agenda = () => {
                     <Calendar className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Tipo de Evento</span>
                   </div>
-                  <span className="inline-flex items-center px-2 py-1 bg-primary text-white rounded text-xs font-medium">
-                    {selectedEvent.tipo}
-                  </span>
+                  <div className="w-full">
+                    <span className="inline-flex items-center px-2 py-1 bg-primary text-white rounded text-xs font-medium">
+                      {selectedEvent.tipo}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Fecha y Hora */}
@@ -935,8 +937,8 @@ const Agenda = () => {
                     <Clock className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Fecha y Hora</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-900">
+                  <div className="space-y-1 w-full">
+                    <p className="text-sm font-medium text-gray-900 w-full break-words">
                       {new Date(selectedEvent.fecha).toLocaleDateString('es-ES', { 
                         weekday: 'long', 
                         year: 'numeric', 
@@ -944,7 +946,7 @@ const Agenda = () => {
                         day: 'numeric' 
                       })}
                     </p>
-                    <p className="text-primary font-semibold text-xs">{selectedEvent.hora}</p>
+                    <p className="text-primary font-semibold text-xs w-full">{selectedEvent.hora}</p>
                   </div>
                 </div>
 
@@ -955,7 +957,7 @@ const Agenda = () => {
                       <MapPin className="w-4 h-4 text-primary" />
                       <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Ubicación</span>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedEvent.ubicacion}</p>
+                    <p className="text-sm text-gray-900 w-full break-words">{selectedEvent.ubicacion}</p>
                   </div>
                 )}
 
@@ -966,7 +968,7 @@ const Agenda = () => {
                       <FileText className="w-4 h-4 text-primary" />
                       <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Descripción</span>
                     </div>
-                    <p className="text-sm text-gray-900 leading-relaxed">{selectedEvent.descripcion}</p>
+                    <p className="text-sm text-gray-900 leading-relaxed w-full break-words">{selectedEvent.descripcion}</p>
                   </div>
                 )}
 
@@ -982,16 +984,18 @@ const Agenda = () => {
                     }`}></div>
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Estado</span>
                   </div>
-                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                    selectedEvent.estado === 'confirmada' 
-                      ? 'bg-green-100 text-green-800' 
-                      : selectedEvent.estado === 'pendiente'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {selectedEvent.estado === 'confirmada' ? 'Confirmada' : 
-                     selectedEvent.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
-                  </span>
+                  <div className="w-full">
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      selectedEvent.estado === 'confirmada' 
+                        ? 'bg-green-100 text-green-800' 
+                        : selectedEvent.estado === 'pendiente'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedEvent.estado === 'confirmada' ? 'Confirmada' : 
+                       selectedEvent.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1017,12 +1021,10 @@ const Agenda = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Panel lateral de todos los eventos acumulados */}
-        {showAllEventsPanel && (
-          <div className="w-80 flex-shrink-0">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col">
+          
+          {/* Panel lateral de todos los eventos acumulados */}
+          {showAllEventsPanel && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col w-full max-w-96 min-w-96 flex-shrink-0" style={{ width: '380px', maxWidth: '380px', minWidth: '380px' }}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900">
                   Todos los Eventos - {selectedDayDate ? `${selectedDayDate.getDate()} de ${selectedDayDate.toLocaleDateString('es-ES', { month: 'long' })}` : 'Eventos'}
@@ -1039,7 +1041,7 @@ const Agenda = () => {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-3 overflow-y-auto">
+              <div className="flex-2 space-y-3 overflow-y-auto" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                 {selectedDayEvents && selectedDayEvents.length > 0 ? selectedDayEvents.map(event => {
                   const eventColors = getEventColor(event.tipo);
                   return (
@@ -1086,8 +1088,8 @@ const Agenda = () => {
                 )}
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Próximos eventos */}
