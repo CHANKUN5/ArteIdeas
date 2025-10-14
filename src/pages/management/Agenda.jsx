@@ -33,6 +33,9 @@ const Agenda = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAllEventsPanel, setShowAllEventsPanel] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState([]);
+  const [selectedDayDate, setSelectedDayDate] = useState(null);
 
   // Generar datos mock más extensos para todas las vistas
   const generateMockEvents = () => {
@@ -454,6 +457,16 @@ const Agenda = () => {
     });
   };
 
+  // Manejar clic en contador de eventos
+  const handleCounterClick = (dayEvents, dayDate) => {
+    setSelectedDayEvents(dayEvents);
+    setSelectedDayDate(dayDate);
+    setShowAllEventsPanel(true);
+    // Cerrar el panel de detalles del evento si está abierto
+    setShowEventPanel(false);
+    setSelectedEvent(null);
+  };
+
   // Navegación del calendario
   const navigateCalendar = (direction) => {
     const newDate = new Date(currentDate);
@@ -546,6 +559,10 @@ const Agenda = () => {
                 onClick={() => {
                   setSelectedEvent(event);
                   setShowEventPanel(true);
+                  // Cerrar el panel de todos los eventos si está abierto
+                  setShowAllEventsPanel(false);
+                  setSelectedDayEvents([]);
+                  setSelectedDayDate(null);
                 }}
                 className="p-3 bg-primary/10 text-primary rounded-lg cursor-pointer hover:bg-primary/20 transition-colors"
               >
@@ -594,6 +611,10 @@ const Agenda = () => {
                       onClick={() => {
                         setSelectedEvent(event);
                         setShowEventPanel(true);
+                        // Cerrar el panel de todos los eventos si está abierto
+                        setShowAllEventsPanel(false);
+                        setSelectedDayEvents([]);
+                        setSelectedDayDate(null);
                       }}
                       className="text-xs p-1 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20 transition-colors"
                     >
@@ -647,6 +668,10 @@ const Agenda = () => {
                       onClick={() => {
                         setSelectedEvent(event);
                         setShowEventPanel(true);
+                        // Cerrar el panel de todos los eventos si está abierto
+                        setShowAllEventsPanel(false);
+                        setSelectedDayEvents([]);
+                        setSelectedDayDate(null);
                       }}
                       className="text-xs p-2 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20 transition-colors"
                     >
@@ -711,7 +736,13 @@ const Agenda = () => {
                   {day.date.getDate()}
                 </span>
                 {day.dayEvents.length > 0 && (
-                  <span className="text-xs bg-primary text-white rounded-full px-1">
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCounterClick(day.dayEvents, day.date);
+                    }}
+                    className="text-xs bg-primary text-white rounded-full px-1 cursor-pointer hover:bg-primary/80 transition-colors"
+                  >
                     {day.dayEvents.length}
                   </span>
                 )}
@@ -728,6 +759,10 @@ const Agenda = () => {
                         e.stopPropagation();
                         setSelectedEvent(event);
                         setShowEventPanel(true);
+                        // Cerrar el panel de todos los eventos si está abierto
+                        setShowAllEventsPanel(false);
+                        setSelectedDayEvents([]);
+                        setSelectedDayDate(null);
                       }}
                       className={`text-xs p-1 rounded truncate transition-colors cursor-pointer border ${eventColors.bg} ${eventColors.text} ${eventColors.border} hover:opacity-80`}
                     >
@@ -736,7 +771,13 @@ const Agenda = () => {
                   );
                 })}
                 {day.dayEvents.length > 2 && (
-                  <div className="text-xs text-gray-500">
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCounterClick(day.dayEvents, day.date);
+                    }}
+                    className="text-xs text-gray-500 cursor-pointer hover:text-primary transition-colors"
+                  >
                     +{day.dayEvents.length - 2} más
                   </div>
                 )}
@@ -780,12 +821,12 @@ const Agenda = () => {
         </div>
       </div>
 
-      <div className={`grid gap-6 transition-all duration-300 ${
-        showEventPanel ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1'
+      <div className={`flex gap-6 transition-all duration-300 ${
+        showEventPanel || showAllEventsPanel ? 'flex-row' : 'flex-col'
       }`}>
         {/* Calendario principal */}
         <div className={`transition-all duration-300 ${
-          showEventPanel ? 'lg:col-span-3' : 'col-span-1'
+          showEventPanel || showAllEventsPanel ? 'flex-1' : 'w-full'
         }`}>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[700px] flex flex-col">
             {/* Header del calendario */}
@@ -977,6 +1018,76 @@ const Agenda = () => {
             </div>
           )}
         </div>
+
+        {/* Panel lateral de todos los eventos acumulados */}
+        {showAllEventsPanel && (
+          <div className="w-80 flex-shrink-0">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Todos los Eventos - {selectedDayDate ? `${selectedDayDate.getDate()} de ${selectedDayDate.toLocaleDateString('es-ES', { month: 'long' })}` : 'Eventos'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAllEventsPanel(false);
+                    setSelectedDayEvents([]);
+                    setSelectedDayDate(null);
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-1 space-y-3 overflow-y-auto">
+                {selectedDayEvents && selectedDayEvents.length > 0 ? selectedDayEvents.map(event => {
+                  const eventColors = getEventColor(event.tipo);
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setShowEventPanel(true);
+                        setShowAllEventsPanel(false);
+                      }}
+                      className={`p-3 rounded-lg border cursor-pointer hover:shadow-md transition-all duration-200 ${eventColors.bg} ${eventColors.border} ${eventColors.text}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-sm truncate">{event.cliente}</h4>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${eventColors.bg} ${eventColors.text}`}>
+                          {event.tipo}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs opacity-75">
+                        <span>{event.hora}</span>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          event.estado === 'confirmada' 
+                            ? 'bg-green-100 text-green-800' 
+                            : event.estado === 'pendiente'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {event.estado === 'confirmada' ? 'Confirmada' : 
+                           event.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
+                        </span>
+                      </div>
+                      {event.ubicacion && (
+                        <div className="text-xs opacity-75 mt-1 flex items-center">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {event.ubicacion}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No hay eventos para este día
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Próximos eventos */}
