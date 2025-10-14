@@ -16,7 +16,7 @@ import {
   Bell
 } from 'lucide-react';
 import Button from '../../components/common/Button';
-import FilterButtons from '../../components/agenda/FilterButtons';
+import FilterSelect from '../../components/agenda/FilterSelect';
 import EventCard from '../../components/agenda/EventCard';
 import Pagination from '../../components/agenda/Pagination';
 
@@ -763,21 +763,21 @@ const Agenda = () => {
             </div>
           </div>
           
-          <Button
-            onClick={() => setShowNewEventForm(true)}
-            className="bg-primary hover:bg-primary/90"
-            icon={<Plus className="w-4 h-4" />}
-          >
-            Nuevo Evento
-          </Button>
+          <div className="flex items-center space-x-3">
+            <FilterSelect
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              categories={categories}
+            />
+            <Button
+              onClick={() => setShowNewEventForm(true)}
+              className="bg-primary hover:bg-primary/90"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Nuevo Evento
+            </Button>
+          </div>
         </div>
-
-        {/* Filtros por categoría */}
-        <FilterButtons
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          categories={categories}
-        />
       </div>
 
       <div className={`grid gap-6 transition-all duration-300 ${
