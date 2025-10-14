@@ -16,6 +16,8 @@ import {
   DollarSign,
 } from "lucide-react";
 import { useApp } from "../../context/AppContext";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Pedidos = () => {
   const { notifySuccess, notifyError } = useApp();
@@ -219,7 +221,7 @@ const Pedidos = () => {
       )
     );
 
-    notifySuccess(`Pedido ${pedidoToEdit.numero} actualizado correctamente`);
+    toast.success(`Pedido ${pedidoToEdit.numero} actualizado correctamente`);
     
     setFormData({
       nombreCompleto: "",
@@ -797,8 +799,9 @@ const Pedidos = () => {
   return (
     <>
       <div className="responsive-mobile">
+        {/* --- CABECERA Y TABS --- */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between">
             <button
               onClick={() => {
                 setVistaActual("lista");
@@ -808,751 +811,247 @@ const Pedidos = () => {
             >
               ← Volver a Pedidos
             </button>
-            <h1 className="text-2xl font-bold text-gray-800">
+            <h1 className="text-2xl font-bold text-gray-800 text-center">
               {pedidoSeleccionado ? `Editar Pedido ${pedidoSeleccionado.numero}` : "Nuevo Pedido"}
             </h1>
             <div className="w-32"></div>
           </div>
         </div>
 
-      <div className="flex gap-2 border-b border-gray-200 mb-6">
-        <button
-          onClick={() => setVistaActual("nuevoParticular")}
-          className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
-            vistaActual === "nuevoParticular"
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-600"
-          }`}
-        >
-          <User className="w-4 h-4" />
-          Particular
-        </button>
-        <button
-          onClick={() => setVistaActual("nuevoColegio")}
-          className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
-            vistaActual === "nuevoColegio"
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-600"
-          }`}
-        >
-          <School className="w-4 h-4" />
-          Colegio
-        </button>
-        <button
-          onClick={() => setVistaActual("nuevoEmpresa")}
-          className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
-            vistaActual === "nuevoEmpresa"
-              ? "border-primary text-primary"
-              : "border-transparent text-gray-600"
-          }`}
-        >
-          <Building2 className="w-4 h-4" />
-          Empresa
-        </button>
-      </div>
-
-            {vistaActual === "nuevoParticular" && (
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="font-semibold text-gray-800 mb-4">Datos del Cliente</h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Documento
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="proforma"
-                      checked={tipoDocumento === "proforma"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Proforma</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="nota_venta"
-                      checked={tipoDocumento === "nota_venta"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Nota de Venta</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="contrato"
-                      checked={tipoDocumento === "contrato"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Contrato</span>
-                  </label>
-                </div>
-              </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nombre Completo *
-                  </label>
-                    <input
-                      type="text"
-                      name="nombreCompleto"
-                      placeholder="Nombre completo"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label>
-                    <input
-                      type="text"
-                      name="dni"
-                      placeholder="12345678"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                    />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Teléfono *
-                  </label>
-                    <input
-                      type="text"
-                      name="telefono"
-                      placeholder="999888777"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                    />
-                </div>
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      placeholder="correo@ejemplo.com"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                    />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Dirección
-                  </label>
-                    <input
-                      type="text"
-                      name="direccion"
-                      placeholder="Dirección completa"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                    />
-                </div>
-                </div>
-              </div>
-            )}
-
-          {vistaActual === "nuevoColegio" && (
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Datos del Colegio</h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Documento
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="proforma"
-                      checked={tipoDocumento === "proforma"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Proforma</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="nota_venta"
-                      checked={tipoDocumento === "nota_venta"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Nota de Venta</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="contrato"
-                      checked={tipoDocumento === "contrato"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Contrato</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre de I.E. *
-                </label>
-                  <input
-                    type="text"
-                    name="nombreColegio"
-                    value=""
-                    placeholder="Nombre del colegio"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Contacto (Encargado) *
-                </label>
-                  <input
-                    type="text"
-                    name="contactoColegio"
-                    value=""
-                    placeholder="Persona de contacto"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono *
-                </label>
-                  <input
-                    type="text"
-                    name="telefonoColegio"
-                    value=""
-                    placeholder="999888777"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-              </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    name="emailColegio"
-                    value=""
-                    placeholder="correo@colegio.edu.pe"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Dirección
-              </label>
-              <input
-                type="text"
-                    name="direccionColegio"
-                    value=""
-                    placeholder="Dirección del colegio"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-              />
-            </div>
-            <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
-                   <select
-                    name="nivelEducativo"
-                    value=""
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  >
-                    <option>Inicial</option>
-                    <option>Primaria</option>
-                    <option>Secundaria</option>
-                   </select>
-                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Grado</label>
-                  <input
-                    type="text"
-                    name="grado"
-                    value=""
-                    placeholder="5to"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
-                  <input
-                    type="text"
-                    name="seccion"
-                    value=""
-                    placeholder="A"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-              </div>
-                </div>
-            </div>
-          )}
-
-          {vistaActual === "nuevoEmpresa" && (
-            <div className="bg-gray-50 rounded-lg p-6">
-              <h3 className="font-semibold text-gray-800 mb-4">Datos de la Empresa</h3>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Tipo de Documento
-                </label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="proforma"
-                      checked={tipoDocumento === "proforma"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Proforma</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="nota_venta"
-                      checked={tipoDocumento === "nota_venta"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Nota de Venta</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="tipoDocumento"
-                      value="contrato"
-                      checked={tipoDocumento === "contrato"}
-                      onChange={(e) => setTipoDocumento(e.target.value)}
-                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
-                    />
-                    <span className="text-sm font-medium text-gray-700">Contrato</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-            <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Razón Social *
-                  </label>
-                  <input
-                    type="text"
-                    name="razonSocial"
-                    value=""
-                    placeholder="Empresa S.A.C."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-            </div>
-            <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">RUC *</label>
-                  <input
-                    type="text"
-                    name="ruc"
-                    value=""
-                    placeholder="20123456789"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-            </div>
-              <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Representante *
-                  </label>
-              <input
-                    type="text"
-                    name="representante"
-                    value=""
-                    placeholder="Nombre del representante"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-              />
-            </div>
-            <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono *
-                  </label>
-              <input
-                    type="text"
-                    name="telefonoEmpresa"
-                    value=""
-                    placeholder="999888777"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-              />
-            </div>
-            <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                    type="email"
-                    name="emailEmpresa"
-                    value=""
-                    placeholder="email@empresa.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-              />
-            </div>
-            <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Dirección
-                  </label>
-              <input
-                    type="text"
-                    name="direccionEmpresa"
-                    value=""
-                    placeholder="Dirección de la empresa"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-              />
-            </div>
-              </div>
-            </div>
-          )}
-
-          <div className="bg-gray-50 rounded-lg p-6">
-            <h3 className="font-semibold text-gray-800 mb-4">Detalle del Pedido</h3>
-
-
-            <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
-              <p className="text-xs text-gray-600 mb-2">Productos disponibles:</p>
-              <div className="flex gap-2 flex-wrap">
-                {productosDisponibles.map((prod, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => agregarProducto(prod)}
-                    className="px-3 py-1 bg-white border border-gray-300 rounded-lg text-sm hover:bg-primary/10 hover:border-primary transition-colors"
-                  >
-                    {prod.nombre} - S/ {prod.precio.toFixed(2)}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {productos.length > 0 && (
-              <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-                <table className="w-full text-sm">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-2 text-left">Producto</th>
-                      <th className="px-4 py-2 text-center w-24">Cantidad</th>
-                      <th className="px-4 py-2 text-right">P. Unit.</th>
-                      <th className="px-4 py-2 text-right">Subtotal</th>
-                      <th className="px-4 py-2 text-center w-16">Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y">
-                    {productos.map((prod, idx) => (
-                      <tr key={idx}>
-                        <td className="px-4 py-2">{prod.nombre}</td>
-                        <td className="px-4 py-2">
-              <input
-                type="number"
-                            value={prod.cantidad}
-                            onChange={(e) => {
-                              const newProds = [...productos];
-                              newProds[idx].cantidad = parseInt(e.target.value) || 1;
-                              newProds[idx].subtotal =
-                                newProds[idx].cantidad * newProds[idx].precio;
-                              setProductos(newProds);
-                            }}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-center"
-                            min="1"
-                          />
-                        </td>
-                        <td className="px-4 py-2 text-right">S/ {prod.precio.toFixed(2)}</td>
-                        <td className="px-4 py-2 text-right font-semibold">
-                          S/ {prod.subtotal.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 text-center">
-                          <button
-                            onClick={() => setProductos(productos.filter((_, i) => i !== idx))}
-                            className="p-1 text-red-600 hover:bg-red-50 rounded"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-            </div>
-            )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Detalles Adicionales / Servicios Extras
-              </label>
-              <textarea
-                name="detallesAdicionales"
-                value={formData.detallesAdicionales}
-                onChange={handleFormChange}
-                placeholder="Servicios adicionales, notas especiales..."
-                rows="3"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-              ></textarea>
-            </div>
-          </div>
+        <div className="flex gap-2 border-b border-gray-200 mb-6">
+          <button
+            onClick={() => setVistaActual("nuevoParticular")}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+              vistaActual === "nuevoParticular"
+                ? "border-primary text-primary"
+                : "border-transparent text-gray-600"
+            }`}
+          >
+            <User className="w-4 h-4" />
+            Particular
+          </button>
+          <button
+            onClick={() => setVistaActual("nuevoColegio")}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+              vistaActual === "nuevoColegio"
+                ? "border-primary text-primary"
+                : "border-transparent text-gray-600"
+            }`}
+          >
+            <School className="w-4 h-4" />
+            Colegio
+          </button>
+          <button
+            onClick={() => setVistaActual("nuevoEmpresa")}
+            className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+              vistaActual === "nuevoEmpresa"
+                ? "border-primary text-primary"
+                : "border-transparent text-gray-600"
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            Empresa
+          </button>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          <div className="col-span-2 space-y-6">
-            {(vistaActual === "nuevoColegio" || vistaActual === "nuevoEmpresa") &&
-            tipoDocumento === "contrato" && (
+        {/* --- CONTENEDOR PRINCIPAL CON LAYOUT DE COLUMNAS --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* COLUMNA IZQUIERDA (2/3 del ancho) */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* --- FORMULARIOS DE CLIENTE --- */}
+            {vistaActual === "nuevoParticular" && (
               <div className="bg-white rounded-lg shadow-sm p-6">
-                <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                  <Calendar className="w-5 h-5 text-primary" />
-                  Fechas Programadas
-                </h3>
-
+                <h3 className="font-semibold text-gray-800 mb-4">Datos del Cliente</h3>
                 <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Fecha Compromiso
-                  </label>
-                  <input
-                    type="date"
-                    name="fechaCompromiso"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                  />
-                </div>
-
-                <div className="mb-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">
-                      Sesiones Fotográficas
-                    </label>
-                    <button
-                      onClick={() =>
-                        setFechasSesiones([...fechasSesiones, { fecha: "", hora: "" }])
-                      }
-                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Agregar
-                    </button>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="proforma" checked={tipoDocumento === "proforma"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Proforma</span></label>
+                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="nota_venta" checked={tipoDocumento === "nota_venta"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Nota de Venta</span></label>
+                    <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="contrato" checked={tipoDocumento === "contrato"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Contrato</span></label>
                   </div>
-                  {fechasSesiones.map((sesion, idx) => (
-                    <div key={idx} className="flex gap-2 mb-2">
-                      <input
-                        type="date"
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
-                      />
-                      <input
-                        type="time"
-                        className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"
-                      />
-                      {idx > 0 && (
-                        <button
-                          onClick={() =>
-                            setFechasSesiones(fechasSesiones.filter((_, i) => i !== idx))
-                          }
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
                 </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-sm font-medium text-gray-700">Entregas</label>
-                    <button
-                      onClick={() =>
-                        setFechasEntregas([...fechasEntregas, { fecha: "", hora: "" }])
-                      }
-                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
-                    >
-                      <Plus className="w-3 h-3" />
-                      Agregar
-                    </button>
-                  </div>
-                  {fechasEntregas.map((entrega, idx) => (
-                    <div key={idx} className="flex gap-2 mb-2">
-                      <input
-                        type="date"
-                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
-                      />
-                      <input
-                        type="time"
-                        className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"
-                      />
-                      {idx > 0 && (
-                        <button
-                          onClick={() =>
-                            setFechasEntregas(fechasEntregas.filter((_, i) => i !== idx))
-                          }
-                          className="p-1 text-red-600 hover:bg-red-50 rounded"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label><input type="text" name="nombreCompleto" placeholder="Nombre completo" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label><input type="text" name="dni" placeholder="12345678" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefono" placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="email" placeholder="correo@ejemplo.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccion" placeholder="Dirección completa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
                 </div>
               </div>
             )}
+            {vistaActual === "nuevoColegio" && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="font-semibold text-gray-800 mb-4">Datos del Colegio</h3>
+                 <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                    <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="proforma" checked={tipoDocumento === "proforma"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Proforma</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="nota_venta" checked={tipoDocumento === "nota_venta"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Nota de Venta</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="contrato" checked={tipoDocumento === "contrato"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Contrato</span></label>
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Nombre de I.E. *</label><input type="text" name="nombreColegio" value="" placeholder="Nombre del colegio" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Contacto (Encargado) *</label><input type="text" name="contactoColegio" value="" placeholder="Persona de contacto" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefonoColegio" value="" placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="emailColegio" value="" placeholder="correo@colegio.edu.pe" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccionColegio" value="" placeholder="Dirección del colegio" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label><select name="nivelEducativo" value="" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"><option>Inicial</option><option>Primaria</option><option>Secundaria</option></select></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Grado</label><input type="text" name="grado" value="" placeholder="5to" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Sección</label><input type="text" name="seccion" value="" placeholder="A" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                 </div>
+              </div>
+            )}
+            {vistaActual === "nuevoEmpresa" && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="font-semibold text-gray-800 mb-4">Datos de la Empresa</h3>
+                 <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Tipo de Documento</label>
+                    <div className="flex gap-4">
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="proforma" checked={tipoDocumento === "proforma"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Proforma</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="nota_venta" checked={tipoDocumento === "nota_venta"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Nota de Venta</span></label>
+                        <label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="tipoDocumento" value="contrato" checked={tipoDocumento === "contrato"} onChange={(e) => setTipoDocumento(e.target.value)} className="w-4 h-4 text-primary focus:ring-primary border-gray-300"/><span className="text-sm font-medium text-gray-700">Contrato</span></label>
+                    </div>
+                 </div>
+                 <div className="grid grid-cols-2 gap-4">
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Razón Social *</label><input type="text" name="razonSocial" value="" placeholder="Empresa S.A.C." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">RUC *</label><input type="text" name="ruc" value="" placeholder="20123456789" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Representante *</label><input type="text" name="representante" value="" placeholder="Nombre del representante" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefonoEmpresa" value="" placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="emailEmpresa" value="" placeholder="email@empresa.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccionEmpresa" value="" placeholder="Dirección de la empresa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                 </div>
+              </div>
+            )}
+
+            {/* --- DETALLE DEL PEDIDO --- */}
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="font-semibold text-gray-800 mb-4">Detalle del Pedido</h3>
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <p className="text-xs text-gray-600 mb-2">Productos disponibles:</p>
+                    <div className="flex gap-2 flex-wrap">
+                        {productosDisponibles.map((prod, idx) => (<button key={idx} onClick={() => agregarProducto(prod)} className="px-3 py-1 bg-white border border-gray-300 rounded-lg text-sm hover:bg-primary/10 hover:border-primary transition-colors">{prod.nombre} - S/ {prod.precio.toFixed(2)}</button>))}
+                    </div>
+                </div>
+                {productos.length > 0 && (
+                <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+                    <table className="w-full text-sm">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th className="px-4 py-2 text-left">Producto</th>
+                                <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                <th className="px-4 py-2 text-right">P. Unit.</th>
+                                <th className="px-4 py-2 text-right">Subtotal</th>
+                                <th className="px-4 py-2 text-center w-16">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                            {productos.map((prod, idx) => (<tr key={idx}>
+                                <td className="px-4 py-2">{prod.nombre}</td>
+                                <td className="px-4 py-2"><input type="number" value={prod.cantidad} onChange={(e) => { const newProds = [...productos]; newProds[idx].cantidad = parseInt(e.target.value) || 1; newProds[idx].subtotal = newProds[idx].cantidad * newProds[idx].precio; setProductos(newProds);}} className="w-full px-2 py-1 border border-gray-300 rounded text-center" min="1"/></td>
+                                <td className="px-4 py-2 text-right">S/ {prod.precio.toFixed(2)}</td>
+                                <td className="px-4 py-2 text-right font-semibold">S/ {prod.subtotal.toFixed(2)}</td>
+                                <td className="px-4 py-2 text-center"><button onClick={() => setProductos(productos.filter((_, i) => i !== idx))} className="p-1 text-red-600 hover:bg-red-50 rounded"><X className="w-4 h-4" /></button></td>
+                            </tr>))}
+                        </tbody>
+                    </table>
+                </div>
+                )}
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Detalles Adicionales / Servicios Extras</label>
+                    <textarea name="detallesAdicionales" value={formData.detallesAdicionales} onChange={handleFormChange} placeholder="Servicios adicionales, notas especiales..." rows="3" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"></textarea>
+                </div>
+            </div>
           </div>
 
+          {/* COLUMNA DERECHA (1/3 del ancho) */}
           <div className="space-y-6">
+            {/* --- RESUMEN DE PAGO --- */}
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-green-500" />
-                Resumen de Pago
-              </h3>
-
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><DollarSign className="w-5 h-5 text-green-500" /> Resumen de Pago</h3>
               <div className="space-y-4">
-                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
-                  <span className="text-gray-600">Total</span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    S/ {calcularTotal().toFixed(2)}
-                  </span>
-                </div>
-
-                {tipoDocumento !== "proforma" && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      A Cuenta
-                      {tipoDocumento === "nota_venta" && (
-                        <span className="text-xs text-gray-500 ml-2">
-                          (Debe ser igual al total)
-                        </span>
-                      )}
-                    </label>
-                    <input
-                      type="number"
-                      name="aCuenta"
-                      value={formData.aCuenta}
-                      onChange={handleFormChange}
-                      placeholder="0.00"
-                      step="0.01"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
-                    />
+                  <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                      <span className="text-gray-600">Total</span>
+                      <span className="text-2xl font-bold text-gray-900">S/ {calcularTotal().toFixed(2)}</span>
                   </div>
-                )}
-
-                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
-                  <span className="font-semibold text-gray-700">Saldo</span>
-                  <span className="text-xl font-bold text-red-600">
-                    S/{" "}
-                    {tipoDocumento === "nota_venta"
-                      ? "0.00"
-                      : (calcularTotal() - parseFloat(formData.aCuenta || 0)).toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="pt-4">
-                  {pedidoSeleccionado ? (
-                    <button
-                      onClick={handleSaveEdit}
-                      className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                    >
-                      <FileText className="w-5 h-5" />
-                      Guardar Cambios
-                    </button>
-                  ) : (
-                    <>
-                      {tipoDocumento === "proforma" && (
-                        <button 
-                          onClick={() => {
-                            const nuevoPedido = {
-                              numero: `P${String(pedidos.length + 1).padStart(3, '0')}-24`,
-                              fecha: new Date().toLocaleDateString('es-PE'),
-                              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente',
-                              tipo: "P",
-                              estado: "Pendiente",
-                              fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'),
-                              total: calcularTotal(),
-                              aCuenta: 0,
-                              saldo: calcularTotal(),
-                            };
-                            setPedidos(prev => [...prev, nuevoPedido]);
-                            notifySuccess(`Proforma ${nuevoPedido.numero} creada correctamente`);
-                            setVistaActual("lista");
-                          }}
-                          className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                        >
-                          <FileText className="w-5 h-5" />
-                          Guardar Proforma
-                        </button>
-                      )}
-                      {tipoDocumento === "nota_venta" && (
-                        <button 
-                          onClick={() => {
-                            const nuevoPedido = {
-                              numero: `V${String(pedidos.length + 1).padStart(3, '0')}-24`,
-                              fecha: new Date().toLocaleDateString('es-PE'),
-                              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente',
-                              tipo: "V",
-                              estado: "Completado",
-                              fechaEntrega: new Date().toLocaleDateString('es-PE'),
-                              total: calcularTotal(),
-                              aCuenta: calcularTotal(),
-                              saldo: 0,
-                            };
-                            setPedidos(prev => [...prev, nuevoPedido]);
-                            notifySuccess(`Venta ${nuevoPedido.numero} procesada correctamente`);
-                            setVistaActual("lista");
-                          }}
-                          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                        >
-                          <ShoppingCart className="w-5 h-5" />
-                          Procesar Venta
-                        </button>
-                      )}
-                      {tipoDocumento === "contrato" && (
-                        <button 
-                          onClick={() => {
-                            const nuevoPedido = {
-                              numero: `C${String(pedidos.length + 1).padStart(3, '0')}-24`,
-                              fecha: new Date().toLocaleDateString('es-PE'),
-                              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente',
-                              tipo: "C",
-                              estado: "Pendiente",
-                              fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'),
-                              total: calcularTotal(),
-                              aCuenta: parseFloat(formData.aCuenta || 0),
-                              saldo: calcularTotal() - parseFloat(formData.aCuenta || 0),
-                            };
-                            setPedidos(prev => [...prev, nuevoPedido]);
-                            notifySuccess(`Contrato ${nuevoPedido.numero} creado correctamente`);
-                            setVistaActual("lista");
-                          }}
-                          className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
-                        >
-                          <FileText className="w-5 h-5" />
-                          Crear Contrato
-                        </button>
-                      )}
-                    </>
+                  {tipoDocumento !== "proforma" && (
+                  <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">A Cuenta{tipoDocumento === "nota_venta" && (<span className="text-xs text-gray-500 ml-2">(Debe ser igual al total)</span>)}</label>
+                      <input type="number" name="aCuenta" value={formData.aCuenta} onChange={handleFormChange} placeholder="0.00" step="0.01" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/>
+                  </div>
                   )}
-                </div>
+                  <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                      <span className="font-semibold text-gray-700">Saldo</span>
+                      <span className="text-xl font-bold text-red-600">S/ {tipoDocumento === "nota_venta" ? "0.00" : (calcularTotal() - parseFloat(formData.aCuenta || 0)).toFixed(2)}</span>
+                  </div>
+                  
+                  <div className="pt-4">
+                    {pedidoSeleccionado ? (
+                      <button onClick={handleSaveEdit} className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><FileText className="w-5 h-5" /> Guardar Cambios</button>
+                    ) : (
+                      <>
+                        {tipoDocumento === "proforma" && (
+                          <button onClick={() => { const nuevoPedido = { numero: `P${String(pedidos.length + 1).padStart(3, '0')}-24`, fecha: new Date().toLocaleDateString('es-PE'), cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente', tipo: "P", estado: "Pendiente", fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'), total: calcularTotal(), aCuenta: 0, saldo: calcularTotal() }; setPedidos(prev => [...prev, nuevoPedido]); notifySuccess(`Proforma ${nuevoPedido.numero} creada correctamente`); setVistaActual("lista"); }} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><FileText className="w-5 h-5" /> Guardar Proforma</button>
+                        )}
+                        {tipoDocumento === "nota_venta" && (
+                          <button onClick={() => { const nuevoPedido = { numero: `V${String(pedidos.length + 1).padStart(3, '0')}-24`, fecha: new Date().toLocaleDateString('es-PE'), cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente', tipo: "V", estado: "Completado", fechaEntrega: new Date().toLocaleDateString('es-PE'), total: calcularTotal(), aCuenta: calcularTotal(), saldo: 0, }; setPedidos(prev => [...prev, nuevoPedido]); notifySuccess(`Venta ${nuevoPedido.numero} procesada correctamente`); setVistaActual("lista"); }} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Procesar Venta</button>
+                        )}
+                        {tipoDocumento === "contrato" && (
+                          <button onClick={() => { const nuevoPedido = { numero: `C${String(pedidos.length + 1).padStart(3, '0')}-24`, fecha: new Date().toLocaleDateString('es-PE'), cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente', tipo: "C", estado: "Pendiente", fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'), total: calcularTotal(), aCuenta: parseFloat(formData.aCuenta || 0), saldo: calcularTotal() - parseFloat(formData.aCuenta || 0), }; setPedidos(prev => [...prev, nuevoPedido]); notifySuccess(`Contrato ${nuevoPedido.numero} creado correctamente`); setVistaActual("lista"); }} className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><FileText className="w-5 h-5" /> Crear Contrato</button>
+                        )}
+                      </>
+                    )}
+                  </div>
 
-              <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
-                {pedidoSeleccionado ? (
-                  <p>Estás editando el pedido {pedidoSeleccionado.numero}. Los cambios se guardarán al hacer clic en "Guardar Cambios".</p>
-                ) : (
-                  <>
-                    {tipoDocumento === "proforma" && (
-                      <p>
-                        Esta proforma solo calculará el costo. Podrás convertirla en pedido real
-                        después.
-                      </p>
+                  <div className="text-xs text-center text-gray-500 bg-gray-50 p-3 rounded-lg">
+                    {pedidoSeleccionado ? (
+                      <p>Estás editando el pedido {pedidoSeleccionado.numero}. Los cambios se guardarán al hacer clic en "Guardar Cambios".</p>
+                    ) : (
+                      <>
+                        {tipoDocumento === "proforma" && (<p>Esta proforma solo calculará el costo. Podrás convertirla en pedido real después.</p>)}
+                        {tipoDocumento === "nota_venta" && (<p>Se generará comprobante inmediato y se actualizará el inventario.</p>)}
+                        {tipoDocumento === "contrato" && (<p>Se creará un contrato con el saldo pendiente. Se programarán eventos en agenda.</p>)}
+                      </>
                     )}
-                    {tipoDocumento === "nota_venta" && (
-                      <p>Se generará comprobante inmediato y se actualizará el inventario.</p>
-                    )}
-                    {tipoDocumento === "contrato" && (
-                      <p>
-                        Se creará un contrato con el saldo pendiente. Se programarán eventos en
-                        agenda.
-                      </p>
-                    )}
-                  </>
-                )}
+                  </div>
               </div>
             </div>
+
+            {/* --- FECHAS PROGRAMADAS --- */}
+            {(vistaActual === "nuevoColegio" || vistaActual === "nuevoEmpresa") && tipoDocumento === "contrato" && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2"><Calendar className="w-5 h-5 text-primary" /> Fechas Programadas</h3>
+                <div className="mb-4"><label className="block text-sm font-medium text-gray-700 mb-1">Fecha Compromiso</label><input type="date" name="fechaCompromiso" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Sesiones Fotográficas</label>
+                        <button onClick={() => setFechasSesiones([...fechasSesiones, { fecha: "", hora: "" }])} className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"><Plus className="w-3 h-3" /> Agregar</button>
+                    </div>
+                    {fechasSesiones.map((sesion, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                        <input type="date" className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"/>
+                        <input type="time" className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"/>
+                        {idx > 0 && (<button onClick={() => setFechasSesiones(fechasSesiones.filter((_, i) => i !== idx))} className="p-1 text-red-600 hover:bg-red-50 rounded"><X className="w-4 h-4" /></button>)}
+                    </div>
+                    ))}
+                </div>
+                <div>
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">Entregas</label>
+                        <button onClick={() => setFechasEntregas([...fechasEntregas, { fecha: "", hora: "" }])} className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"><Plus className="w-3 h-3" /> Agregar</button>
+                    </div>
+                    {fechasEntregas.map((entrega, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                        <input type="date" className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"/>
+                        <input type="time" className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"/>
+                        {idx > 0 && (<button onClick={() => setFechasEntregas(fechasEntregas.filter((_, i) => i !== idx))} className="p-1 text-red-600 hover:bg-red-50 rounded"><X className="w-4 h-4" /></button>)}
+                    </div>
+                    ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1562,6 +1061,3 @@ const Pedidos = () => {
 
 export default Pedidos;
 
-};
-
-export default Pedidos;
