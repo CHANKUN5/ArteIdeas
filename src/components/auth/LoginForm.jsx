@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom"; // 👈 Importamos Link
-import logoImage from '../../assets/icono.png'; // Importar la imagen
+import { Link } from "react-router-dom";
+import logoImage from "../../assets/icono.png";
 import styles from "./Login.module.css";
 
 const LoginForm = ({ onLogin, error, loading }) => {
@@ -47,9 +47,7 @@ const LoginForm = ({ onLogin, error, loading }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!validateForm()) return;
-
     onLogin(formData);
   };
 
@@ -62,15 +60,9 @@ const LoginForm = ({ onLogin, error, loading }) => {
           <img 
             src={logoImage} 
             alt="Logo FOT" 
-            className={styles.formLogo} />
+            className={styles.formLogo} 
+          />
         </div>
-
-        <div className={styles.brandText}>
-          <span className={styles.brandArte}>ARTE</span>
-          <span className={styles.brandIdeas}>IDEAS</span>
-        </div>
-
-        <p className={styles.subtitle}>DISEÑO CREATIVO</p>
       </div>
 
       {error && (

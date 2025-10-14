@@ -1,24 +1,17 @@
-import React from 'react';
-import styles from './Login.module.css';
+import React from "react";
+import "../../styles/animations.css";
+import styles from "./Login.module.css";
 
 const AnimatedBackground = () => {
   return (
-    <div className={styles.animatedBackground}>
-      <div className={styles.camera}>
-        <img 
-          src="/camara.png" 
-          alt="Cámara profesional" 
-          className={styles.cameraImg}
-        />
-      </div>
-      
-      <div className={styles.support}>
-        <img 
-          src="/soporte.png" 
-          alt="Soporte de cámara" 
-          className={styles.supportImg}
-        />
-      </div>
+    <div className={styles.bubblesContainer}>
+      {[...Array(20)].map((_, i) => (
+        <div
+          key={i}
+          className={styles.bubble}
+          style={{ animationDelay: `${i * 0.7}s` }}
+        ></div>
+      ))}
     </div>
   );
 };

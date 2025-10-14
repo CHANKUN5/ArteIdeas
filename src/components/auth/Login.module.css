@@ -1,145 +1,30 @@
-.loginContainer {
-  min-height: 100vh;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, #E0F2FE 0%, #FEF3C7 100%);
-  overflow: hidden;
-}
-
-.header {
-  position: relative;
-  z-index: 20;
-  background-color: white;
-  height: 72px;
-  display: flex;
-  align-items: center;
-  padding: 0 3rem;
-}
-
-.headerLogo {
-  height: 3.5rem;
-  width: auto;
-}
-
-@media (min-width: 768px) {
-  .header {
-    padding: 0 4rem;
-    height: 80px;
-  }
-  
-  .headerLogo {
-    height: 4rem;
-  }
-}
-
-.mainContent {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  z-index: 10;
-}
-
-.leftSection {
-  width: 50%;
-  height: 100%;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.rightSection {
-  width: 50%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  z-index: 15;
-  padding: 2rem;
-}
-
+/* ======== FORMULARIO ======== */
 .formWrapper {
   width: 100%;
-  max-width: 32rem;
-  z-index: 10;
-  padding: 1rem;
-}
-
-.footer {
-  position: relative;
-  z-index: 20;
-  background-color: #FB923C;
-  height: 57px;
-}
-
-.animatedBackground {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-}
-
-.support {
-  position: absolute;
-  width: 700px;
-  height: 500px;
-  top: 20%;
-  left: 65%;
-  transform: translate(-50%, -50%);
-  z-index: 7;
-}
-
-.supportImg {
-  width: 400%;
-  height: 180%;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.1));
-}
-
-.camera {
-  position: absolute;
-  width: 480px;
-  height: 320px;
-  top: 45%;
-  left: 89%;
-  transform: translate(-50%, -50%);
-  z-index: 30;
-}
-
-.cameraImg {
-  width: 250%;
-  height: 200%;
-  object-fit: contain;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.15));
-  animation: cameraFloat 4s ease-in-out infinite;
+  max-width: 31.5rem; /* 35 * 0.9 */
+  padding: 1.8rem 2.7rem; /* 2 * 0.9 / 3 * 0.9 */
 }
 
 .formCard {
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  padding: 3rem;
+  border-radius: 0.9rem; /* 1 * 0.9 */
+  box-shadow: 0 22.5px 45px -10.8px rgba(0, 0, 0, 0.25);
+  padding: 2.7rem 3.15rem; /* 3 * 0.9 / 3.5 * 0.9 */
   border: 1px solid rgba(255, 255, 255, 0.2);
   position: relative;
   animation: slideInRight 0.6s ease-out;
-  min-height: 600px;
+  min-height: 540px; /* 600 * 0.9 */
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .formCard::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  border-radius: 1rem;
-  padding: 3px;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 0.9rem;
+  padding: 2.7px; /* 3px * 0.9 */
   background: linear-gradient(135deg, #1DD1E3, #FF9912);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: exclude;
@@ -151,141 +36,124 @@
 .formCard::after {
   content: '';
   position: absolute;
-  top: -2px;
-  left: -2px;
-  right: -2px;
-  bottom: -2px;
-  border-radius: 1rem;
-  box-shadow: 0 0 40px rgba(29, 209, 227, 0.6), -10px 0 30px rgba(29, 209, 227, 0.4);
+  top: -1.8px; left: -1.8px; right: -1.8px; bottom: -1.8px;
+  border-radius: 0.9rem;
+  box-shadow: 0 0 27px rgba(29, 209, 227, 0.4),
+              -9px 0 22.5px rgba(29, 209, 227, 0.2);
   z-index: -2;
 }
 
+/* ======== HEADER DEL FORM ======== */
 .formHeader {
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.62rem; /* 1.8 * 0.9 */
   animation: fadeInUp 0.6s ease-out;
 }
 
 .welcomeTitle {
   color: #28afca;
-  font-family: 'Montserrat', sans-serif;
+  font-family: 'Be Vietnam Pro', sans-serif;
   font-weight: 600;
-  font-size: 1.7rem;
-  margin-bottom: 1rem;
+  font-size: 1.35rem; /* 1.5 * 0.9 */
+  margin-bottom: 0.45rem; /* 0.5 * 0.9 */
 }
 
 .logoContainer {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem; /* 0.5 * 0.9 */
 }
 
 .formLogo {
-  height: 7rem;
-  width: auto;
+  width: 405px; /* 450 * 0.9 */
+  height: auto;
 }
 
 .brandText {
-  margin-bottom: 0.2rem;
-  letter-spacing: 0.05rem;
+  margin-bottom: 0.18rem; /* 0.2 * 0.9 */
+  letter-spacing: 0.045rem; /* 0.05 * 0.9 */
 }
 
-.brandArte {
-  color: #FF9912;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  font-size: 2rem;
+.brandArte, .brandIdeas {
+  font-family: 'Be Vietnam Pro', sans-serif;
+  font-weight: 400;
+  font-size: 1.44rem; /* 1.6 * 0.9 */
 }
 
-.brandIdeas {
-  color: #49BDD4;
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 300;
-  font-size: 2rem;
-  margin-left: 0.1rem;
-}
+.brandArte { color: #FF9912; }
+.brandIdeas { color: #49BDD4; margin-left: 0.09rem; /* 0.1 * 0.9 */ }
 
 .subtitle {
   color: #9CA3AF;
-  font-family: 'Be Vietnam Pro', sans-serif;
   font-weight: 400;
-  font-size: 1.1rem;
-  margin-top: 0.1rem;
+  font-size: 0.855rem; /* 0.95 * 0.9 */
+  margin-top: 0.09rem; /* 0.1 * 0.9 */
 }
 
+/* ======== ERRORES ======== */
 .errorMessage {
-  margin-bottom: 1rem;
-  padding: 0.75rem;
+  margin-bottom: 0.9rem; /* 1 * 0.9 */
+  padding: 0.675rem; /* 0.75 * 0.9 */
   background-color: #FEF2F2;
   border: 1px solid #FECACA;
-  border-radius: 0.5rem;
+  border-radius: 0.45rem; /* 0.5 * 0.9 */
   animation: fadeInUp 0.3s ease-out;
 }
 
-.errorText {
-  font-size: 0.875rem;
+.errorText, .errorMessageField {
+  font-size: 0.788rem; /* 0.875 * 0.9 */
   color: #DC2626;
 }
 
+.errorMessageField { margin-top: 0.225rem; /* 0.25 * 0.9 */ }
+
+/* ======== CAMPOS ======== */
 .form {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  justify-content: space-between;
+  height: 100%;
+  gap: 1.26rem; /* 1.4 * 0.9 */
 }
 
 .inputGroup {
   animation: fadeInUp 0.6s ease-out;
 }
 
-.inputGroup:nth-child(1) {
-  animation-delay: 0.1s;
-}
-
-.inputGroup:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
 .label {
-  display: block;
-  font-size: 0.875rem;
+  font-size: 0.788rem; /* 0.875 * 0.9 */
   font-weight: 500;
   color: #374151;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.36rem; /* 0.4 * 0.9 */
 }
 
 .input {
   width: 100%;
-  padding: 0.75rem 1rem;
-  border-radius: 0.5rem;
+  padding: 0.585rem 0.81rem; /* 0.65 / 0.9 *0.9 */
+  border-radius: 0.45rem; /* 0.5 * 0.9 */
   border: none;
   outline: none;
   background-color: #E0F2FE;
   transition: all 0.2s;
+  font-size: 0.81rem; /* 0.9 *0.9 */
 }
 
-.input:focus {
-  ring: 2;
-  ring-color: #DBEAFE;
-  background-color: #DBEAFE;
-}
+.input:focus { background-color: #DBEAFE; }
 
 .inputError {
   background-color: #FEF2F2;
   border: 1px solid #FECACA;
 }
 
-.passwordContainer {
-  position: relative;
-}
+/* ======== CONTRASEÑA ======== */
+.passwordContainer { position: relative; }
 
-.passwordInput {
-  padding-right: 3rem;
-}
+.passwordInput { padding-right: 2.52rem; /* 2.8 * 0.9 */ }
 
 .passwordToggle {
   position: absolute;
-  right: 0.75rem;
+  right: 0.675rem; /* 0.75 * 0.9 */
   top: 50%;
   transform: translateY(-50%);
   color: #9CA3AF;
@@ -295,131 +163,140 @@
   transition: color 0.2s;
 }
 
-.passwordToggle:hover {
-  color: #6B7280;
-}
+.passwordToggle:hover { color: #6B7280; }
 
-.errorMessageField {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: #DC2626;
-}
-
+/* ======== BOTÓN ======== */
 .submitButton {
   width: 100%;
-  padding: 1.25rem 1.5rem;
-  border-radius: 0.5rem;
+  padding: 20.7px 0; /* 23 * 0.9 */
+  border-radius: 0.45rem; /* 0.5 * 0.9 */
   color: white;
   font-weight: 500;
   background: linear-gradient(90deg, #FF9912 0%, #FF6B35 100%);
-  font-family: 'Montserrat', sans-serif;
-  font-weight: 400;
+  font-family: 'Be Vietnam Pro', sans-serif;
   border: none;
   cursor: pointer;
   transition: all 0.2s;
-  animation: fadeInUp 0.6s ease-out;
-  animation-delay: 0.3s;
-  font-size: 1.25rem;
+  font-size: 1.26rem; /* 1.4 * 0.9 */
+  margin-top: 0.09rem; /* 0.1 * 0.9 */
 }
 
-.submitButton:hover:not(:disabled) {
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  transform: scale(1.05);
-}
+.submitButton:hover:not(:disabled) { transform: scale(1.04); }
+.submitButton:active { transform: scale(0.95); }
+.submitButton:disabled { opacity: 0.7; cursor: not-allowed; }
 
-.submitButton:active {
-  transform: scale(0.95);
-}
-
-.submitButton:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-@keyframes cameraFloat {
-  0%, 100% {
-    transform: translate(-50%, -50%) translateY(0px) rotate(0deg);
-  }
-  33% {
-    transform: translate(-50%, -50%) translateY(-15px) rotate(2deg);
-  }
-  66% {
-    transform: translate(-50%, -50%) translateY(-5px) rotate(-1deg);
-  }
-}
-
+/* ======== ANIMACIONES ======== */
 @keyframes slideInRight {
-  0% {
-    opacity: 0;
-    transform: translateX(50px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  0% { opacity: 0; transform: translateX(45px); } /* 50 *0.9 */
+  100% { opacity: 1; transform: translateX(0); }
 }
 
 @keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(27px); } /* 30 *0.9 */
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+
+/* ======== BURBUJAS ======== */
+/* 🌅 Fondo con degradado más intenso y luminoso */
+/* 🌈 Fondo degradado animado entre azul y naranja */
+.bubblesContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #1DD1E3, #FF9912);
+  background-size: 200% 200%;
+  animation: gradientFlow 12s ease infinite;
+  z-index: 0;
+}
+
+/* 🎨 Movimiento suave del degradado */
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 💧 Burbujas realistas con brillo y profundidad */
+.bubble {
+  position: absolute;
+  bottom: -150px;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.25) 40%, rgba(255, 255, 255, 0.05) 80%);
+  border-radius: 50%;
+  box-shadow: inset -10px -10px 25px rgba(0, 0, 0, 0.1),
+              inset 10px 10px 25px rgba(255, 255, 255, 0.6),
+              0 5px 20px rgba(0, 0, 0, 0.2);
+  animation: floatUp var(--speed, 2.5s) linear infinite;
+  opacity: 0.85;
+  filter: blur(0.3px);
+}
+
+/* 🌬️ Movimiento flotante orgánico */
+@keyframes floatUp {
   0% {
-    opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0.85;
+  }
+  25% {
+    transform: translateY(-25vh) translateX(15px) scale(1.05);
+  }
+  50% {
+    transform: translateY(-50vh) translateX(-10px) scale(0.95);
+  }
+  75% {
+    transform: translateY(-80vh) translateX(20px) scale(1.1);
   }
   100% {
-    opacity: 1;
-    transform: translateY(0);
+    transform: translateY(-110vh) translateX(-15px) scale(1);
+    opacity: 0;
   }
 }
 
-@media (max-width: 768px) {
-  .mainContent {
-    flex-direction: column;
-    padding: 1rem;
-  }
-  
-  .leftSection,
-  .rightSection {
-    width: 100%;
-  }
-  
-  .camera {
-    width: 200px;
-    height: 200px;
-    top: 20%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-   
-  .support {
-    width: 400px;
-    height: 300px;
-    top: 70%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-  }
-  
-  .formCard {
-    padding: 2rem;
-    min-height: auto;
-  }
-  
-  .formLogo {
-    height: 4rem;
-  }
-  
-  .welcomeTitle {
-    font-size: 1.25rem;
-  }
-  
-  .brandArte,
-  .brandIdeas {
-    font-size: 1.5rem;
-  }
-  
-  .header {
-    padding: 0 1.5rem;
-  }
+/* 🌈 Tonos suaves inspirados en el fondo */
+.bubble:nth-child(3n) {
+  background: radial-gradient(circle at 40% 40%, rgba(255,255,255,0.9), rgba(29,209,227,0.35), rgba(255,153,18,0.25));
+}
+.bubble:nth-child(5n) {
+  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.9), rgba(255,153,18,0.4), rgba(29,209,227,0.25));
 }
 
+/* 💨 Burbujas con velocidad muy rápida (2–3 s) */
+.bubble:nth-child(1)  { left: 5%;  width: 40px;  height: 40px;  --speed: 2.2s; }
+.bubble:nth-child(2)  { left: 15%; width: 80px;  height: 80px;  --speed: 2.5s; }
+.bubble:nth-child(3)  { left: 25%; width: 60px;  height: 60px;  --speed: 2.8s; }
+.bubble:nth-child(4)  { left: 35%; width: 100px; height: 100px; --speed: 3s; }
+.bubble:nth-child(5)  { left: 45%; width: 70px;  height: 70px;  --speed: 2.3s; }
+.bubble:nth-child(6)  { left: 55%; width: 120px; height: 120px; --speed: 2.9s; }
+.bubble:nth-child(7)  { left: 65%; width: 50px;  height: 50px;  --speed: 2s; }
+.bubble:nth-child(8)  { left: 75%; width: 110px; height: 110px; --speed: 2.6s; }
+.bubble:nth-child(9)  { left: 85%; width: 90px;  height: 90px;  --speed: 2.4s; }
+.bubble:nth-child(10) { left: 92%; width: 60px;  height: 60px;  --speed: 2.7s; }
+.bubble:nth-child(11) { left: 12%; width: 130px; height: 130px; --speed: 2.9s; }
+.bubble:nth-child(12) { left: 58%; width: 140px; height: 140px; --speed: 3s; }
+.bubble:nth-child(13) { left: 33%; width: 90px;  height: 90px;  --speed: 2.8s; }
+.bubble:nth-child(14) { left: 78%; width: 120px; height: 120px; --speed: 2.7s; }
+.bubble:nth-child(15) { left: 50%; width: 100px; height: 100px; --speed: 2.4s; }
+.bubble:nth-child(16) { left: 20%; width: 150px; height: 150px; --speed: 3s; }
+.bubble:nth-child(17) { left: 68%; width: 80px;  height: 80px;  --speed: 2.3s; }
+.bubble:nth-child(18) { left: 40%; width: 130px; height: 130px; --speed: 2.8s; }
+.bubble:nth-child(19) { left: 82%; width: 70px;  height: 70px;  --speed: 2.5s; }
+.bubble:nth-child(20) { left: 10%; width: 110px; height: 110px; --speed: 2.6s; }
+
+
+
+
+/* ======== FOOTER ======== */
+.footer {
+  position: relative;
+  z-index: 20;
+  background-color: #FB923C;
+  height: 57px;
+}
+
+/* ======== LINKS ======== */
 .forgotPasswordLink {
   color: #1DD1E3;
   text-decoration: none;
@@ -434,4 +311,27 @@
 .forgotPasswordContainer {
   margin-top: 0.25rem;
   margin-bottom: 0.125rem;
+}
+
+/* ======== ANIMACIONES ======== */
+@keyframes slideInRight {
+  0% { opacity: 0; transform: translateX(50px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInUp {
+  0% { opacity: 0; transform: translateY(30px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+
+/* 👇 centramos el contenido principal */
+.centerWrapper {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
 }
