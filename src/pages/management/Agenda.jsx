@@ -303,7 +303,7 @@ const Agenda = () => {
     }
 
     // Agregar días del mes siguiente para completar la grilla de 6 filas (42 celdas)
-    const remainingCells = 42 - days.length;
+    const remainingCells = 35 - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       const current = new Date(year, month + 1, day);
       const dateStr = current.toISOString().split('T')[0];
@@ -686,7 +686,7 @@ const Agenda = () => {
           className="grid gap-1 flex-1 min-h-0" 
           style={{ 
             gridTemplateColumns: 'repeat(7, 1fr)',
-            gridTemplateRows: 'repeat(6, minmax(0, 1fr))' 
+            gridTemplateRows: 'repeat(5, minmax(0, 1fr))' 
           }}
         >
           {calendarDays.map((day, index) => (
