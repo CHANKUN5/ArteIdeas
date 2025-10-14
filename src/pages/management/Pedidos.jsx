@@ -1,658 +1,461 @@
-import { useEffect, useState } from "react";
-
+import { useState } from "react";
 import {
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Edit,
-  Eye,
-  Filter,
-  Plus,
   Search,
+  Filter,
+  Eye,
+  Edit2,
+  Trash2,
+  X,
+  Plus,
   ShoppingCart,
-  Trash2
+  Calendar,
+  User,
+  Building2,
+  School,
+  FileText,
+  DollarSign,
 } from "lucide-react";
-import Button from "../../components/common/Button";
-import Card from "../../components/common/Card";
-import Modal from "../../components/common/Modal";
 import { useApp } from "../../context/AppContext";
 
 const Pedidos = () => {
-  const { notifyNewOrder, notifyOrderAction } = useApp();
-  
-  // Datos de prueba para mostrar en la tabla
-  const datosPrueba = [
-    {
-      id: "P001",
-      cliente: "Colegio San Agustín",
-      productoTipo: "Recordatorio Escolar",
-      estado: "En producción",
-      subestado: "Corte láser",
-      fechaPedido: "2024-01-15",
-      fechaCompromiso: "2024-01-25",
-      costoEstimado: 1200,
-      precioVenta: 1800,
-      utilidad: 600,
-      avance: 65,
-      notas: "Recordatorios para promoción 2024"
-    },
-    {
-      id: "P002",
-      cliente: "María Rodríguez",
-      productoTipo: "Impresión Minilab",
-      estado: "Pendiente de confirmación",
-      subestado: "Esperando confirmación",
-      fechaPedido: "2024-01-16",
-      fechaCompromiso: "2024-01-22",
-      costoEstimado: 350,
-      precioVenta: 500,
-      utilidad: 150,
-      avance: 0,
-      notas: "Fotos familiares"
-    },
-    {
-      id: "P003",
-      cliente: "Empresa Constructora XYZ",
-      productoTipo: "Enmarcado",
-      estado: "Listo para entrega",
-      subestado: "Embalaje",
-      fechaPedido: "2024-01-10",
-      fechaCompromiso: "2024-01-20",
-      costoEstimado: 2500,
-      precioVenta: 3800,
-      utilidad: 1300,
-      avance: 100,
-      notas: "Catálogo de proyectos"
-    },
-    {
-      id: "P004",
-      cliente: "Colegio Santa María",
-      productoTipo: "Recordatorio Escolar",
-      estado: "Entregado",
-      subestado: "Completado",
-      fechaPedido: "2024-01-05",
-      fechaCompromiso: "2024-01-15",
-      costoEstimado: 1800,
-      precioVenta: 2700,
-      utilidad: 900,
-      avance: 100,
-      notas: "Anuario escolar 2023"
-    },
-    {
-      id: "P005",
-      cliente: "Juan Pérez",
-      productoTipo: "Retoque Fotográfico",
-      estado: "En producción",
-      subestado: "Impresión",
-      fechaPedido: "2024-01-17",
-      fechaCompromiso: "2024-01-24",
-      costoEstimado: 420,
-      precioVenta: 650,
-      utilidad: 230,
-      avance: 40,
-      notas: "Fotos de boda"
-    }
-  ];
-  
-  // Cargar pedidos desde localStorage o usar datos de prueba si no hay datos guardados
-  const [orders, setOrders] = useState(() => {
-    try {
-      const savedOrders = localStorage.getItem("orders");
-      if (savedOrders) {
-        return JSON.parse(savedOrders);
-      }
-    } catch (error) {
-      console.error("Error al cargar pedidos desde localStorage:", error);
-    }
-    return datosPrueba;
-  });
-
-  const [showOrderModal, setShowOrderModal] = useState(false);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [showOrderForm, setShowOrderForm] = useState(false);
+  const { notifySuccess, notifyError } = useApp();
+  const [vistaActual, setVistaActual] = useState("lista");
+  const [tipoDocumento, setTipoDocumento] = useState("nota_venta");
+  const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [modalObservar, setModalObservar] = useState(false);
+  const [pedidoSeleccionado, setPedidoSeleccionado] = useState(null);
+  const [productos, setProductos] = useState([]);
+  const [fechasSesiones, setFechasSesiones] = useState([{ fecha: "", hora: "" }]);
+  const [fechasEntregas, setFechasEntregas] = useState([{ fecha: "", hora: "" }]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [serviceFilter, setServiceFilter] = useState("todos");
-  const [statusFilter, setStatusFilter] = useState("todos");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [showFilters, setShowFilters] = useState(false);
-  const itemsPerPage = 5;
+  const [tipoDocumentoFilter, setTipoDocumentoFilter] = useState("");
+  const [estadoFilter, setEstadoFilter] = useState("");
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [pedidoToDelete, setPedidoToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [pedidoToEdit, setPedidoToEdit] = useState(null);
 
-  // Estado del formulario controlado para crear/editar pedidos
-  const todayISO = new Date().toISOString().split("T")[0];
   const [formData, setFormData] = useState({
-    cliente: "",
-    contrato: "",
-    contratoId: "",
-    productoTipo: "Impresión Minilab",
-    fechaPedido: todayISO,
+    nombreCompleto: "",
+    dni: "",
+    telefono: "",
+    email: "",
+    direccion: "",
+    nombreColegio: "",
+    contactoColegio: "",
+    telefonoColegio: "",
+    emailColegio: "",
+    direccionColegio: "",
+    nivelEducativo: "Inicial",
+    grado: "",
+    seccion: "",
+    razonSocial: "",
+    ruc: "",
+    representante: "",
+    telefonoEmpresa: "",
+    emailEmpresa: "",
+    direccionEmpresa: "",
+    detallesAdicionales: "",
+    aCuenta: 0,
     fechaCompromiso: "",
-    costoEstimado: 0,
-    precioVenta: 0,
-    utilidad: 0,
-    avance: 0,
-    notas: "",
-    estado: "Pendiente de confirmación",
-    subestado: "",
+    total: 0,
+    estado: "",
   });
 
-  // Estado para almacenar la lista de contratos disponibles
-  const [availableContracts, setAvailableContracts] = useState([]);
+  const [pedidos, setPedidos] = useState([
+    {
+      numero: "V001-24",
+      fecha: "14/03/24",
+      cliente: "María González",
+      tipo: "V",
+      estado: "Completado",
+      fechaEntrega: "19/03/24",
+      total: 450.0,
+      aCuenta: 450.0,
+      saldo: 0.0,
+    },
+    {
+      numero: "C005-24",
+      fecha: "15/03/24",
+      cliente: "I.E. San Martín",
+      tipo: "C",
+      estado: "En Proceso",
+      fechaEntrega: "20/03/24",
+      total: 1200.0,
+      aCuenta: 600.0,
+      saldo: 600.0,
+    },
+    {
+      numero: "P012-24",
+      fecha: "16/03/24",
+      cliente: "Carlos Ruiz",
+      tipo: "P",
+      estado: "Pendiente",
+      fechaEntrega: "21/03/24",
+      total: 800.0,
+      aCuenta: 0.0,
+      saldo: 800.0,
+    },
+    {
+      numero: "V002-24",
+      fecha: "17/03/24",
+      cliente: "Ana López",
+      tipo: "V",
+      estado: "Completado",
+      fechaEntrega: "22/03/24",
+      total: 320.0,
+      aCuenta: 320.0,
+      saldo: 0.0,
+    },
+    {
+      numero: "C006-24",
+      fecha: "18/03/24",
+      cliente: "Colegio San José",
+      tipo: "C",
+      estado: "En Proceso",
+      fechaEntrega: "23/03/24",
+      total: 1500.0,
+      aCuenta: 750.0,
+      saldo: 750.0,
+    },
+  ]);
 
-  // Cargar contratos disponibles desde localStorage
-  useEffect(() => {
-    const loadContracts = () => {
-      try {
-        // Usar la misma clave que usa el componente Contratos.jsx
-        const savedContracts = localStorage.getItem('arteIdeas_contracts');
-        if (savedContracts) {
-          const contracts = JSON.parse(savedContracts);
-          setAvailableContracts(contracts);
-          console.log('Contratos cargados:', contracts);
-        } else {
-          console.log('No se encontraron contratos en localStorage');
-        }
-      } catch (error) {
-        console.error('Error al cargar contratos:', error);
-      }
-    };
+  const productosDisponibles = [
+    { codigo: "MARCO-20X30", nombre: "Marco 20x30", precio: 25.0 },
+    { codigo: "VIDRIO-30X40", nombre: "Vidrio 30x40", precio: 15.0 },
+    { codigo: "CUADRO-GRAD", nombre: "Cuadro Graduación", precio: 80.0 },
+  ];
 
-    loadContracts();
-    
-    // Escuchar cambios en localStorage para actualizar contratos
-    const handleStorageChange = (e) => {
-      if (e.key === 'arteIdeas_contracts') {
-        loadContracts();
-      }
-    };
-
-    // También verificar localStorage cada segundo para asegurar sincronización
-    const intervalId = setInterval(loadContracts, 1000);
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      clearInterval(intervalId);
-    };
-  }, []);
-
-  // Modales de confirmación
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [orderToDelete, setOrderToDelete] = useState(null);
-  const [confirmEditOpen, setConfirmEditOpen] = useState(false);
-  const [orderToEdit, setOrderToEdit] = useState(null);
-  
-  // Sincronizar pedidos con localStorage cuando cambien
-  // Nota: Ya no es necesario este useEffect porque guardamos inmediatamente en handleSubmitOrder
-  // Lo mantenemos como respaldo por si hay otros lugares donde se modifiquen los pedidos
-  useEffect(() => {
-    try {
-      localStorage.setItem("orders", JSON.stringify(orders));
-      console.log("Pedidos sincronizados en localStorage (respaldo):", orders);
-      
-      // Disparar un evento personalizado para notificar a otros componentes
-      const event = new Event('ordersUpdated');
-      window.dispatchEvent(event);
-    } catch (e) {
-      console.error("Error guardando pedidos en localStorage", e);
-    }
-  }, [orders]);
-
-  const statusColors = {
-    "Pendiente de confirmación": "bg-blue-100 text-blue-800",
-    "En producción": "bg-yellow-100 text-yellow-800",
-    "Listo para entrega": "bg-emerald-100 text-emerald-800",
-    Entregado: "bg-green-100 text-green-800",
-    "edición digital": "bg-indigo-100 text-indigo-800",
-    "impresión": "bg-orange-100 text-orange-800",
-    "enmarcado": "bg-purple-100 text-purple-800",
+  const calcularTotal = () => {
+    return productos.reduce((sum, p) => sum + p.cantidad * p.precio, 0);
   };
 
-  const computeUtilidad = (precio, costo) => {
-    const p = parseFloat(precio) || 0;
-    const c = parseFloat(costo) || 0;
-    return +(p - c).toFixed(2);
-  };
-
-  const calcularCostoMateriales = (productoTipo) => {
-    const tabla = {
-      "Impresión Minilab": 25,
-      "Enmarcado": 40,
-      "Recordatorio Escolar": 15,
-      "Retoque Fotográfico": 20,
-    };
-    return tabla[productoTipo] ?? 0;
-  };
-
-  const resetForm = () => {
-    setFormData({
-      cliente: "",
-      contrato: "",
-      contratoId: "",
-      productoTipo: "Impresión Minilab",
-      fechaPedido: todayISO,
-      fechaCompromiso: "",
-      costoEstimado: 0,
-      precioVenta: 0,
-      utilidad: 0,
-      avance: 0,
-      notas: "",
-      estado: "Pendiente de confirmación",
-      subestado: "",
-    });
-  };
-
-  const openCreateOrder = () => {
-    setSelectedOrder(null);
-    resetForm();
-    setShowOrderForm(true);
-  };
-
-  const openEditOrder = (order) => {
-    setSelectedOrder(order);
-    setFormData({
-      cliente: order.cliente || "",
-      contrato: order.contrato || "",
-      contratoId: order.contratoId || "",
-      productoTipo: order.productoTipo || order.servicio || "Impresión Minilab",
-      fechaPedido: order.fechaPedido || todayISO,
-      fechaCompromiso: order.fechaCompromiso || "",
-      costoEstimado: order.costoEstimado ?? calcularCostoMateriales(order.productoTipo || order.servicio || "Impresión Minilab"),
-      precioVenta: order.precioVenta ?? 0,
-      utilidad: computeUtilidad(order.precioVenta, order.costoEstimado),
-      avance: order.avance ?? 0,
-      notas: order.notas || order.detalles || "",
-      estado: order.estado || "Pendiente de confirmación",
-      subestado: order.subestado || "",
-    });
-    setShowOrderForm(true);
+  const agregarProducto = (prod) => {
+    setProductos([...productos, { ...prod, cantidad: 1, subtotal: prod.precio }]);
   };
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => {
-      const next = { ...prev, [name]: value };
-      if (name === "productoTipo") {
-        next.costoEstimado = calcularCostoMateriales(value);
-      }
-      if (name === "precioVenta" || name === "costoEstimado") {
-        next.utilidad = computeUtilidad(
-          name === "precioVenta" ? value : next.precioVenta,
-          name === "costoEstimado" ? value : next.costoEstimado
-        );
-      }
-      return next;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const limpiarFiltros = () => {
+    setSearchTerm("");
+    setTipoDocumentoFilter("");
+    setEstadoFilter("");
+  };
+
+  const handleEdit = (pedido) => {
+    setPedidoToEdit(pedido);
+    setFormData({
+      nombreCompleto: pedido.tipo === 'P' ? pedido.cliente : '',
+      nombreColegio: pedido.tipo === 'C' ? pedido.cliente : '',
+      razonSocial: pedido.tipo === 'V' ? pedido.cliente : '',
+      dni: formData.dni,
+      telefono: formData.telefono,
+      email: formData.email,
+      direccion: formData.direccion,
+      contactoColegio: formData.contactoColegio,
+      telefonoColegio: formData.telefonoColegio,
+      emailColegio: formData.emailColegio,
+      direccionColegio: formData.direccionColegio,
+      nivelEducativo: formData.nivelEducativo,
+      grado: formData.grado,
+      seccion: formData.seccion,
+      ruc: formData.ruc,
+      representante: formData.representante,
+      telefonoEmpresa: formData.telefonoEmpresa,
+      emailEmpresa: formData.emailEmpresa,
+      direccionEmpresa: formData.direccionEmpresa,
+      detallesAdicionales: '',
+      aCuenta: pedido.aCuenta,
+      fechaCompromiso: pedido.fechaEntrega,
+      total: pedido.total,
+      estado: pedido.estado,
     });
+    setShowEditModal(true);
   };
 
-  const generateNextOrderId = () => {
-    // Encuentra el mayor número en los IDs existentes tipo P### y suma 1
-    const maxNum = orders.reduce((max, o) => {
-      const match = /P(\d+)/.exec(o.id);
-      const num = match ? parseInt(match[1], 10) : 0;
-      return Math.max(max, num);
-    }, 0);
-    const next = maxNum + 1;
-    return `P${String(next).padStart(3, "0")}`;
+  const handleDelete = (pedido) => {
+    setPedidoToDelete(pedido);
+    setShowDeleteDialog(true);
   };
 
-  const handleSubmitOrder = () => {
-    if (!formData.cliente.trim()) {
-      alert("El cliente es requerido");
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!pedidoToDelete) return;
 
-    const utilidadCalc = computeUtilidad(formData.precioVenta, formData.costoEstimado);
-    const payload = { 
-      ...formData, 
-      utilidad: utilidadCalc,
-      contratoId: formData.contratoId,
-      contrato: formData.contrato
-    };
-
-    let updatedOrders;
-    
-    if (selectedOrder) {
-      // Editar existente
-      updatedOrders = orders.map((o) => (o.id === selectedOrder.id ? { ...o, ...payload } : o));
-      setOrders(updatedOrders);
-      
-      // Notificación persistente para edición
-      notifyOrderAction('edit', { ...selectedOrder, ...payload });
-      console.log('Pedido editado:', { ...selectedOrder, ...payload });
-    } else {
-      // Crear nuevo
-      const newOrder = {
-        id: generateNextOrderId(),
-        ...payload,
-      };
-      updatedOrders = [newOrder, ...orders];
-      setOrders(updatedOrders);
-      
-      // Notificación persistente para nuevo pedido
-      notifyNewOrder(newOrder, formData.cliente);
-      console.log('Nuevo pedido creado:', newOrder);
-    }
-    
-    // Guardar inmediatamente en localStorage
     try {
-      localStorage.setItem("orders", JSON.stringify(updatedOrders));
-      console.log('Pedidos guardados en localStorage:', updatedOrders);
-      
-      // Disparar evento para notificar a otros componentes
-      const event = new Event('ordersUpdated');
-      window.dispatchEvent(event);
-      
-      // Mostrar confirmación visual
-      alert(selectedOrder ? "Pedido actualizado correctamente" : "Nuevo pedido creado correctamente");
+      setPedidos((prev) => prev.filter((p) => p.numero !== pedidoToDelete.numero));
+      notifySuccess(`Pedido ${pedidoToDelete.numero} eliminado correctamente`);
+      setShowDeleteDialog(false);
+      setPedidoToDelete(null);
     } catch (error) {
-      console.error("Error al guardar pedidos en localStorage:", error);
-      alert("Error al guardar el pedido. Por favor, inténtalo de nuevo.");
+      console.error("Error al eliminar:", error);
+      notifyError("Error al eliminar el pedido");
     }
-
-    setShowOrderForm(false);
-    setSelectedOrder(null);
-    resetForm();
   };
 
-  const handleDeleteOrder = (orderId) => {
-    // Eliminar sin window.confirm; el control se hace vía Modal
-    const orderToRemove = orders.find(order => order.id === orderId);
-    const updatedOrders = orders.filter((order) => order.id !== orderId);
-    setOrders(updatedOrders);
+  const handleSaveEdit = () => {
+    if (!pedidoToEdit) return;
+
+    const nuevoTotal = parseFloat(formData.total) || pedidoToEdit.total;
+    const nuevoACuenta = parseFloat(formData.aCuenta) >= 0 ? parseFloat(formData.aCuenta) : pedidoToEdit.aCuenta;
+    const nuevoSaldo = nuevoTotal - nuevoACuenta;
+
+    setPedidos((prev) =>
+      prev.map((p) =>
+        p.numero === pedidoToEdit.numero
+          ? {
+              ...p,
+              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || p.cliente,
+              total: nuevoTotal,
+              aCuenta: nuevoACuenta,
+              saldo: nuevoSaldo,
+              fechaEntrega: formData.fechaCompromiso || p.fechaEntrega,
+              estado: formData.estado || p.estado,
+            }
+          : p
+      )
+    );
+
+    notifySuccess(`Pedido ${pedidoToEdit.numero} actualizado correctamente`);
     
-    // Guardar inmediatamente en localStorage
-    try {
-      localStorage.setItem("orders", JSON.stringify(updatedOrders));
-      console.log('Pedidos actualizados después de eliminar:', updatedOrders);
-      
-      // Disparar evento para notificar a otros componentes
-      const event = new Event('ordersUpdated');
-      window.dispatchEvent(event);
-      
-      // Notificación persistente para eliminación de pedido
-      if (orderToRemove) {
-        notifyOrderAction('delete', orderToRemove);
-      }
-      
-      // Mostrar confirmación visual
-      alert("Pedido eliminado correctamente");
-    } catch (error) {
-      console.error("Error al guardar pedidos en localStorage:", error);
-    }
+    setFormData({
+      nombreCompleto: "",
+      dni: "",
+      telefono: "",
+      email: "",
+      direccion: "",
+      nombreColegio: "",
+      contactoColegio: "",
+      telefonoColegio: "",
+      emailColegio: "",
+      direccionColegio: "",
+      nivelEducativo: "Inicial",
+      grado: "",
+      seccion: "",
+      razonSocial: "",
+      ruc: "",
+      representante: "",
+      telefonoEmpresa: "",
+      emailEmpresa: "",
+      direccionEmpresa: "",
+      detallesAdicionales: "",
+      aCuenta: 0,
+      fechaCompromiso: "",
+      total: 0,
+      estado: "",
+    });
     
-    setConfirmDeleteOpen(false);
-    setOrderToDelete(null);
+    setPedidoToEdit(null);
+    setShowEditModal(false);
   };
 
-  const filteredOrders = orders.filter((order) => {
-    const matchesSearch = (order.cliente || "")
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const tipo = order.productoTipo || order.servicio;
-    const matchesService = serviceFilter === "todos" || tipo === serviceFilter;
-    const matchesStatus =
-      statusFilter === "todos" || order.estado === statusFilter || order.subestado === statusFilter;
-    return matchesSearch && matchesService && matchesStatus;
+  const filteredPedidos = pedidos.filter((pedido) => {
+    const matchesSearch =
+      searchTerm === "" ||
+      pedido.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      pedido.numero.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesTipo = tipoDocumentoFilter === "" || pedido.tipo === tipoDocumentoFilter;
+    const matchesEstado = estadoFilter === "" || pedido.estado === estadoFilter;
+
+    return matchesSearch && matchesTipo && matchesEstado;
   });
 
-  // Ordenar por ID ascendente (P001, P002, ...)
-  const sortedOrders = [...filteredOrders].sort((a, b) => {
-    const na = parseInt((a.id || "").replace(/\D+/g, ""), 10) || 0;
-    const nb = parseInt((b.id || "").replace(/\D+/g, ""), 10) || 0;
-    return na - nb;
-  });
-
-  const totalPages = Math.ceil(sortedOrders.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedOrders = sortedOrders.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-
+  if (vistaActual === "lista") {
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="-mb-8">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-            <ShoppingCart className="w-6 h-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Pedidos</h1>
-            <p className="text-sm text-gray-500">
-              Gestiona las órdenes de trabajo
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end items-center mb-6">
-        <Button
-          icon={<Plus className="w-4 h-4" />}
-          onClick={openCreateOrder}
-          className="bg-primary hover:bg-primary/90 text-white"
-        >
-          Nuevo Pedido
-        </Button>
-      </div>
-
-      {/* Barra de búsqueda y botón de filtros */}
-      <div className="mb-6 flex items-center space-x-2">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            placeholder="Buscar por cliente, número de pedido o detalles..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-          />
-          <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center space-x-1"
-        >
-          <Filter className="w-4 h-4" />
-          <span>Filtros</span>
-          <ChevronDown className={`w-4 h-4 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
-        </Button>
-      </div>
-
-      {/* Panel de filtros desplegable */}
-      {showFilters && (
-        <Card className="mb-6 border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tipo de Producto
-              </label>
-              <select
-                value={serviceFilter}
-                onChange={(e) => setServiceFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="todos">Todos</option>
-                <option value="Impresión Minilab">Impresión Minilab</option>
-                <option value="Enmarcado">Enmarcado</option>
-                <option value="Recordatorio Escolar">Recordatorio Escolar</option>
-                <option value="Retoque Fotográfico">Retoque Fotográfico</option>
-              </select>
+      <div className="responsive-mobile">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+              <ShoppingCart className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Estado
-              </label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent outline-none"
-              >
-                <option value="todos">Todos</option>
-                <option value="Pendiente de confirmación">Pendiente de confirmación</option>
-                <option value="En producción">En producción</option>
-                <option value="edición digital">Subestado: edición digital</option>
-                <option value="impresión">Subestado: impresión</option>
-                <option value="enmarcado">Subestado: enmarcado</option>
-                <option value="Listo para entrega">Listo para entrega</option>
-                <option value="Entregado">Entregado</option>
-              </select>
+              <h1 className="text-2xl font-bold text-gray-900">Pedidos</h1>
+              <p className="text-sm text-gray-500">Gestiona las órdenes de trabajo</p>
             </div>
-            <div className="flex items-end">
+          </div>
+          <button
+            onClick={() => setVistaActual("nuevoParticular")}
+            className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Nuevo Pedido</span>
+          </button>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <div className="flex gap-3">
+            <div className="flex-1 relative">
+              <Search className="w-5 h-5 absolute left-3 top-3 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar por cliente, número de pedido o teléfono..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+            </div>
+            <button
+              onClick={() => setMostrarFiltros(!mostrarFiltros)}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg flex items-center gap-2 transition-colors"
+            >
+              <Filter className="w-5 h-5" />
+              Filtros
+            </button>
+          </div>
+          {mostrarFiltros && (
+            <div className="mt-4 pt-4 border-t border-gray-200 flex gap-4 items-end">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Tipo de Documento
+                </label>
+                <select
+                  value={tipoDocumentoFilter}
+                  onChange={(e) => setTipoDocumentoFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Todos</option>
+                  <option value="P">Proforma</option>
+                  <option value="V">Nota de Venta</option>
+                  <option value="C">Contrato</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                <select
+                  value={estadoFilter}
+                  onChange={(e) => setEstadoFilter(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Todos</option>
+                  <option value="Completado">Completado</option>
+                  <option value="En Proceso">En Proceso</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Cancelado">Cancelado</option>
+                </select>
+              </div>
               <button
-                onClick={() => {
-                  setSearchTerm("");
-                  setServiceFilter("todos");
-                  setStatusFilter("todos");
-                }}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-2 rounded-lg font-medium transition-all"
+                onClick={limpiarFiltros}
+                className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors"
               >
-                Limpiar filtros
+                Limpiar Filtros
               </button>
             </div>
-          </div>
-        </Card>
-      )}
+          )}
+        </div>
 
-      {/* Listado de Pedidos */}
-      <Card className="border border-primary/10">
-        <h3 className="font-semibold text-gray-900 mb-4">
-          Listado de Pedidos
-        </h3>
-        <div className="overflow-x-auto overflow-y-auto max-h-[400px]">
-          <table className="min-w-[12px] w-full border-collapse">
-            <thead>
-              <tr className="border-b border-gray-200 bg-primary/10">
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  ID
+
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Número
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Cliente/Colegio
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Fecha Inicio
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Tipo de Producto
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    Cliente
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                    Tipo
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   Estado
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Subestado
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                    F. Entrega
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Fecha Pedido
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Total
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Fecha Compromiso
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    A Cuenta
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Costo Estimado
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">
+                    Saldo
                 </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Precio Venta
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Utilidad
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
-                  Avance (%)
-                </th>
-                <th className="text-left py-3 px-4 font-medium text-gray-800">
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                   Acciones
                 </th>
               </tr>
             </thead>
-            <tbody>
-              {paginatedOrders.map((order, idx) => (
-                <tr
-                  key={order.id}
-                  className={`border-b border-gray-100 ${
-                    idx % 2 === 0 ? "bg-white" : "bg-primary/5"
-                  } hover:bg-primary/10`}
-                >
-                  <td className="py-3 px-4 text-sm font-medium">
-                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                      {order.id}
+              <tbody className="divide-y divide-gray-200">
+                {filteredPedidos.map((pedido, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <span className="text-primary font-semibold">{pedido.numero}</span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{pedido.fecha}</td>
+                    <td className="px-6 py-4 text-sm text-gray-900">{pedido.cliente}</td>
+                    <td className="px-6 py-4 text-center">
+                      <span
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-white text-xs font-bold ${
+                          pedido.tipo === "V"
+                            ? "bg-green-500"
+                            : pedido.tipo === "C"
+                            ? "bg-purple-500"
+                            : "bg-blue-500"
+                        }`}
+                      >
+                        {pedido.tipo}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    <div>
-                      {order.cliente}
-                      {order.contratoId && (
-                        <div className="text-xs text-primary-600 mt-1">
-                          📋 Contrato: {order.contratoId}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    {order.productoTipo || order.servicio}
-                  </td>
-                  <td className="py-3 px-4">
+                    <td className="px-6 py-4">
                     <span
-                      className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                        statusColors[order.estado]
-                      }`}
-                    >
-                      {order.estado}
+                        className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                          pedido.estado === "Completado"
+                            ? "bg-green-100 text-green-800"
+                            : pedido.estado === "En Proceso"
+                            ? "bg-yellow-100 text-yellow-800"
+                            : pedido.estado === "Pendiente"
+                            ? "bg-gray-100 text-gray-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {pedido.estado}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    {order.subestado || '-'}
+                    <td className="px-6 py-4 text-sm text-gray-600">{pedido.fechaEntrega}</td>
+                    <td className="px-6 py-4 text-sm text-right font-semibold text-gray-900">
+                      S/ {pedido.total.toFixed(2)}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    {order.fechaPedido || '-'}
+                    <td className="px-6 py-4 text-sm text-right font-semibold text-green-600">
+                      S/ {pedido.aCuenta.toFixed(2)}
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    {order.fechaCompromiso || '-'}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    S/ {(parseFloat(order.costoEstimado ?? 0)).toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    S/ {(parseFloat(order.precioVenta ?? 0)).toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    <span className={(order.utilidad ?? 0) >= 0 ? 'text-green-700' : 'text-red-600'}>
-                      S/ {(parseFloat(order.utilidad ?? (parseFloat(order.precioVenta ?? 0) - parseFloat(order.costoEstimado ?? 0)))).toFixed(2)}
+                    <td className="px-6 py-4 text-sm text-right font-semibold">
+                      <span className={pedido.saldo === 0 ? "text-green-600" : "text-red-600"}>
+                        S/ {pedido.saldo.toFixed(2)}
                     </span>
                   </td>
-                  <td className="py-3 px-4 text-sm text-gray-700">
-                    <div className="w-full max-w-[120px]">
-                      <div className="w-full h-2 bg-gray-200 rounded">
-                        <div
-                          className="h-2 bg-primary rounded"
-                          style={{ width: `${Math.max(0, Math.min(100, Number(order.avance ?? 0)))}%` }}
-                        />
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1">{Math.max(0, Math.min(100, Number(order.avance ?? 0)))}%</div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex space-x-2">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
                       <button
                         onClick={() => {
-                          setSelectedOrder(order);
-                          setShowOrderModal(true);
+                            setPedidoSeleccionado(pedido);
+                            setModalObservar(true);
                         }}
-                        className="p-1 hover:bg-primary/10 rounded text-primary hover:text-primary"
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="Observar"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => {
-                          setOrderToEdit(order);
-                          setConfirmEditOpen(true);
-                        }}
-                        className="p-1 hover:bg-secondary/10 rounded text-secondary hover:text-secondary"
-                      >
-                        <Edit className="w-4 h-4" />
+                          onClick={() => handleEdit(pedido)}
+                          className="p-2 text-secondary hover:bg-secondary/10 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => {
-                          setOrderToDelete(order);
-                          setConfirmDeleteOpen(true);
-                        }}
-                        className="p-1 hover:bg-red-100 rounded text-red-500 hover:text-red-600"
+                          onClick={() => handleDelete(pedido)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -664,520 +467,1101 @@ const Pedidos = () => {
           </table>
         </div>
 
-        {/* Paginación */}
-        <div className="flex justify-between items-center mt-6">
-          <div className="text-sm text-gray-700">
-            Mostrando {sortedOrders.length === 0 ? 0 : startIndex + 1} a{" "}
-            {Math.min(startIndex + itemsPerPage, sortedOrders.length)} de{" "}
-            {sortedOrders.length} resultados
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <button
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`px-3 py-1 border rounded text-sm ${
-                  page === currentPage
-                    ? "bg-primary text-white border-primary"
-                    : "border-gray-300 hover:bg-gray-50"
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-            <button
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
-              }
-              disabled={currentPage === totalPages}
-              className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Order Detail Modal */}
-      <Modal
-        isOpen={showOrderModal}
-        onClose={() => {
-          setShowOrderModal(false);
-          setSelectedOrder(null);
-        }}
-        title={`Pedido ${selectedOrder?.id}`}
-        size="lg"
-      >
-        {selectedOrder && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  ID
-                </label>
-                <p className="text-gray-900">{selectedOrder.id}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Cliente
-                </label>
-                <p className="text-gray-900">{selectedOrder.cliente}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo de Producto
-                </label>
-                <p className="text-gray-900">{selectedOrder.productoTipo || selectedOrder.servicio}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Estado
-                </label>
-                <span
-                  className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                    statusColors[selectedOrder.estado]
-                  }`}
-                >
-                  {selectedOrder.estado}
+          {filteredPedidos.length > 0 && (
+            <div className="px-6 py-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-gray-500">
+                  Mostrando {filteredPedidos.length} {filteredPedidos.length === 1 ? "pedido" : "pedidos"}
                 </span>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Subestado
-                </label>
-                <p className="text-gray-900">{selectedOrder.subestado || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Contrato
-                </label>
-                <p className="text-gray-900">
-                  {selectedOrder.contrato || '-'}
-                  {selectedOrder.contratoId && (
-                    <span className="ml-2 text-xs text-primary-600 bg-primary-100 px-2 py-1 rounded-full">
-                      ID: {selectedOrder.contratoId}
-                    </span>
-                  )}
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha Pedido
-                </label>
-                <p className="text-gray-900">{selectedOrder.fechaPedido || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha Compromiso
-                </label>
-                <p className="text-gray-900">{selectedOrder.fechaCompromiso || '-'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Costo Estimado
-                </label>
-                <p className="text-gray-900">S/ {(parseFloat(selectedOrder.costoEstimado ?? 0)).toFixed(2)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Precio Venta
-                </label>
-                <p className="text-gray-900">S/ {(parseFloat(selectedOrder.precioVenta ?? 0)).toFixed(2)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Utilidad
-                </label>
-                <p className="text-gray-900">S/ {(parseFloat(selectedOrder.utilidad ?? (parseFloat(selectedOrder.precioVenta ?? 0) - parseFloat(selectedOrder.costoEstimado ?? 0)))).toFixed(2)}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Avance
-                </label>
-                <p className="text-gray-900">{Math.max(0, Math.min(100, Number(selectedOrder.avance ?? 0)))}%</p>
+                <div className="flex items-center gap-4">
+                  <div className="text-sm">
+                    <span className="text-gray-600">Total: </span>
+                    <span className="font-semibold text-gray-900">S/ 7900.00</span>
+          </div>
+                  <div className="text-sm">
+                    <span className="text-gray-600">Saldo: </span>
+                    <span className="font-semibold text-red-600">S/ 5050.00</span>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notas Internas
-              </label>
-              <p className="text-gray-900">{selectedOrder.notas || '-'}</p>
-            </div>
+          )}
 
-            <Modal.Footer>
-              <Button
-                variant="outline"
-                onClick={() => setShowOrderModal(false)}
-              >
-                Cerrar
-              </Button>
-              <Button
-                variant="secondary"
-                icon={<Edit className="w-4 h-4" />}
-                onClick={() => {
-                  // Abrir confirmación antes de editar desde el modal de detalle
-                  setOrderToEdit(selectedOrder);
-                  setConfirmEditOpen(true);
-                  setShowOrderModal(false);
-                }}
-              >
-                Editar
-              </Button>
-            </Modal.Footer>
+          {filteredPedidos.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-gray-500">
+                {searchTerm || tipoDocumentoFilter || estadoFilter
+                  ? "No se encontraron resultados"
+                  : "No hay pedidos registrados"}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {modalObservar && pedidoSeleccionado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+              <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-800">Detalles del Pedido - {pedidoSeleccionado.numero}</h2>
+                <button onClick={() => setModalObservar(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-6">
+                <div className="grid grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-3">Información del Cliente</h3>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="text-gray-600">Nombre:</span> <span className="font-medium">{pedidoSeleccionado.cliente}</span></div>
+                      <div><span className="text-gray-600">DNI:</span> <span className="font-medium">12345678</span></div>
+                      <div><span className="text-gray-600">Teléfono:</span> <span className="font-medium">999888777</span></div>
+                      <div><span className="text-gray-600">Email:</span> <span className="font-medium">cliente@email.com</span></div>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-700 mb-3">Información del Pedido</h3>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="text-gray-600">Tipo Documento:</span> <span className="font-medium">Nota de Venta</span></div>
+                      <div><span className="text-gray-600">Fecha Registro:</span> <span className="font-medium">{pedidoSeleccionado.fecha}</span></div>
+                      <div><span className="text-gray-600">Estado:</span> <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
+                        pedidoSeleccionado.estado === 'Completado' ? 'bg-green-100 text-green-800' :
+                        pedidoSeleccionado.estado === 'En Proceso' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>{pedidoSeleccionado.estado}</span></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-3">Productos</h3>
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left">Producto</th>
+                        <th className="px-4 py-2 text-center">Cantidad</th>
+                        <th className="px-4 py-2 text-right">P. Unitario</th>
+                        <th className="px-4 py-2 text-right">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      <tr>
+                        <td className="px-4 py-2">Marco 20x30</td>
+                        <td className="px-4 py-2 text-center">5</td>
+                        <td className="px-4 py-2 text-right">S/ 25.00</td>
+                        <td className="px-4 py-2 text-right font-semibold">S/ 125.00</td>
+                      </tr>
+                      <tr>
+                        <td className="px-4 py-2">Vidrio 30x40</td>
+                        <td className="px-4 py-2 text-center">3</td>
+                        <td className="px-4 py-2 text-right">S/ 15.00</td>
+                        <td className="px-4 py-2 text-right font-semibold">S/ 45.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-700 mb-3">Resumen de Pago</h3>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Total:</span>
+                      <span className="font-semibold text-gray-900">S/ {pedidoSeleccionado.total.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">A Cuenta:</span>
+                      <span className="font-semibold text-green-600">S/ {pedidoSeleccionado.aCuenta.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-lg border-t pt-2">
+                      <span className="font-semibold text-gray-700">Saldo:</span>
+                      <span className={`font-bold ${pedidoSeleccionado.saldo === 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        S/ {pedidoSeleccionado.saldo.toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3">
+                <button 
+                  onClick={() => setModalObservar(false)} 
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg"
+                >
+                  Cerrar
+                </button>
+                <button 
+                  onClick={() => {
+                    setModalObservar(false);
+                    handleEdit(pedidoSeleccionado);
+                  }}
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg"
+                >
+                  Editar
+                </button>
+              </div>
+            </div>
           </div>
         )}
-      </Modal>
 
-      {/* Order Form Modal */}
-      <Modal
-        isOpen={showOrderForm}
-        onClose={() => {
-          setShowOrderForm(false);
-          setSelectedOrder(null);
-          resetForm();
-        }}
-        title={selectedOrder ? "Editar Pedido" : "Nuevo Pedido"}
-        size="lg"
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            {/* Cliente y contrato */}
-            <div>
-              <label className="form-label">Cliente/Colegio</label>
-              <input
-                type="text"
-                name="cliente"
-                value={formData.cliente}
-                onChange={handleFormChange}
-                className="form-input"
-                placeholder="Nombre del cliente"
-              />
-            </div>
-            <div>
-              <label className="form-label">Contrato vinculado</label>
-              <div className="space-y-2">
-                <div>
-                   <select
-                     name="contratoId"
-                     value={formData.contratoId}
-                     onChange={(e) => {
-                       const selectedContractId = e.target.value;
-                       const selectedContract = availableContracts.find(c => c.id === selectedContractId);
-                       
-                       if (selectedContract) {
-                         // Solo guardar la referencia al contrato, sin modificar el cliente
-                         setFormData(prev => ({
-                           ...prev,
-                           contratoId: selectedContractId,
-                           contrato: `${selectedContract.id} - ${selectedContract.cliente} - ${selectedContract.servicio}`,
-                           // Ya no sobreescribimos el cliente automáticamente
-                           // cliente: selectedContract.cliente || prev.cliente,
-                         }));
-                       } else {
-                         setFormData(prev => ({
-                           ...prev,
-                           contratoId: selectedContractId,
-                           contrato: ""
-                         }));
-                       }
-                     }}
-                     className="form-select w-full"
-                   >
-                     <option value="">Seleccionar contrato...</option>
-                     {availableContracts.map(contract => (
-                       <option key={contract.id} value={contract.id}>
-                         {contract.id} - {contract.cliente} - {contract.servicio}
-                       </option>
-                     ))}
-                   </select>
-                 </div>
+        {showDeleteDialog && pedidoToDelete && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center justify-center w-12 h-12 mx-auto mb-4 bg-red-100 rounded-full">
+                  <Trash2 className="w-6 h-6 text-red-600" />
+                </div>
                 
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="autocompletarCliente"
-                    className="mr-2"
-                    onChange={(e) => {
-                      if (e.target.checked && formData.contratoId) {
-                        const selectedContract = availableContracts.find(c => c.id === formData.contratoId);
-                        if (selectedContract) {
-                          setFormData(prev => ({
-                            ...prev,
-                            cliente: selectedContract.cliente
-                          }));
-                        }
-                      }
-                    }}
+                <h3 className="text-lg font-bold text-gray-900 text-center mb-2">
+                  ¿Eliminar Pedido?
+                </h3>
+                
+                <p className="text-sm text-gray-600 text-center mb-4">
+                  Estás a punto de eliminar el pedido <span className="font-semibold text-gray-900">{pedidoToDelete.numero}</span> de <span className="font-semibold">{pedidoToDelete.cliente}</span>. Esta acción no se puede deshacer.
+                </p>
+
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-4">
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="text-gray-700">Total del pedido:</span>
+                    <span className="font-semibold text-gray-900">S/ {pedidoToDelete.total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-700">Saldo pendiente:</span>
+                    <span className="font-semibold text-red-600">S/ {pedidoToDelete.saldo.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+                <button 
+                  onClick={() => {
+                    setShowDeleteDialog(false);
+                    setPedidoToDelete(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+                >
+                  Sí, Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showEditModal && pedidoToEdit && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-lg max-w-2xl w-full">
+              <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between rounded-t-lg">
+                <h2 className="text-xl font-bold text-gray-800">Editar Pedido - {pedidoToEdit.numero}</h2>
+                <button onClick={() => {
+                  setShowEditModal(false);
+                  setPedidoToEdit(null);
+                  setFormData({
+                    nombreCompleto: "",
+                    dni: "",
+                    telefono: "",
+                    email: "",
+                    direccion: "",
+                    nombreColegio: "",
+                    contactoColegio: "",
+                    telefonoColegio: "",
+                    emailColegio: "",
+                    direccionColegio: "",
+                    nivelEducativo: "Inicial",
+                    grado: "",
+                    seccion: "",
+                    razonSocial: "",
+                    ruc: "",
+                    representante: "",
+                    telefonoEmpresa: "",
+                    emailEmpresa: "",
+                    direccionEmpresa: "",
+                    detallesAdicionales: "",
+                    aCuenta: 0,
+                    fechaCompromiso: "",
+                    total: 0,
+                    estado: "",
+                  });
+                }} className="p-2 hover:bg-gray-100 rounded-lg">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Estado del Pedido</label>
+                  <select 
+                    value={formData.estado || pedidoToEdit.estado}
+                    onChange={(e) => setFormData(prev => ({ ...prev, estado: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En Proceso">En Proceso</option>
+                    <option value="Completado">Completado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Entrega</label>
+                  <input 
+                    type="date"
+                    value={formData.fechaCompromiso || pedidoToEdit.fechaEntrega}
+                    onChange={(e) => setFormData(prev => ({ ...prev, fechaCompromiso: e.target.value }))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                   />
-                  <label htmlFor="autocompletarCliente" className="text-xs text-gray-600">
-                    Autocompletar datos del cliente desde el contrato
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Monto A Cuenta</label>
+                  <input 
+                    type="number"
+                    value={formData.aCuenta || pedidoToEdit.aCuenta}
+                    onChange={(e) => setFormData(prev => ({ ...prev, aCuenta: parseFloat(e.target.value) || 0 }))}
+                    step="0.01"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                  />
+                  <p className="mt-1 text-sm text-gray-500">
+                    Total: S/ {pedidoToEdit.total.toFixed(2)} | 
+                    Saldo restante: S/ {((formData.total || pedidoToEdit.total) - (formData.aCuenta || pedidoToEdit.aCuenta)).toFixed(2)}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones</label>
+                  <textarea 
+                    value={formData.detallesAdicionales || "Pedido de fotografía"}
+                    onChange={(e) => setFormData(prev => ({ ...prev, detallesAdicionales: e.target.value }))}
+                    rows="3"
+                    placeholder="Notas adicionales sobre el pedido..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                  ></textarea>
+                </div>
+              </div>
+
+              <div className="bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end gap-3 rounded-b-lg">
+                <button 
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setPedidoToEdit(null);
+                    setFormData({
+                      nombreCompleto: "",
+                      dni: "",
+                      telefono: "",
+                      email: "",
+                      direccion: "",
+                      nombreColegio: "",
+                      contactoColegio: "",
+                      telefonoColegio: "",
+                      emailColegio: "",
+                      direccionColegio: "",
+                      nivelEducativo: "Inicial",
+                      grado: "",
+                      seccion: "",
+                      razonSocial: "",
+                      ruc: "",
+                      representante: "",
+                      telefonoEmpresa: "",
+                      emailEmpresa: "",
+                      direccionEmpresa: "",
+                      detallesAdicionales: "",
+                      aCuenta: 0,
+                      fechaCompromiso: "",
+                      total: 0,
+                      estado: "",
+                    });
+                  }}
+                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={handleSaveEdit}
+                  className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors"
+                >
+                  Guardar Cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+
+  return (
+    <>
+      <div className="responsive-mobile">
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => {
+                setVistaActual("lista");
+                setPedidoSeleccionado(null);
+              }}
+              className="text-gray-600 hover:text-gray-800 flex items-center gap-2"
+            >
+              ← Volver a Pedidos
+            </button>
+            <h1 className="text-2xl font-bold text-gray-800">
+              {pedidoSeleccionado ? `Editar Pedido ${pedidoSeleccionado.numero}` : "Nuevo Pedido"}
+            </h1>
+            <div className="w-32"></div>
+          </div>
+        </div>
+
+      <div className="flex gap-2 border-b border-gray-200 mb-6">
+        <button
+          onClick={() => setVistaActual("nuevoParticular")}
+          className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+            vistaActual === "nuevoParticular"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-600"
+          }`}
+        >
+          <User className="w-4 h-4" />
+          Particular
+        </button>
+        <button
+          onClick={() => setVistaActual("nuevoColegio")}
+          className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+            vistaActual === "nuevoColegio"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-600"
+          }`}
+        >
+          <School className="w-4 h-4" />
+          Colegio
+        </button>
+        <button
+          onClick={() => setVistaActual("nuevoEmpresa")}
+          className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+            vistaActual === "nuevoEmpresa"
+              ? "border-primary text-primary"
+              : "border-transparent text-gray-600"
+          }`}
+        >
+          <Building2 className="w-4 h-4" />
+          Empresa
+        </button>
+      </div>
+
+            {vistaActual === "nuevoParticular" && (
+              <div className="bg-gray-50 rounded-lg p-6">
+                <h3 className="font-semibold text-gray-800 mb-4">Datos del Cliente</h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Documento
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="proforma"
+                      checked={tipoDocumento === "proforma"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Proforma</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="nota_venta"
+                      checked={tipoDocumento === "nota_venta"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Nota de Venta</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="contrato"
+                      checked={tipoDocumento === "contrato"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Contrato</span>
                   </label>
                 </div>
               </div>
-              {formData.contratoId && (
-                <div className="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-md">
-                  <p className="text-xs text-blue-700">
-                    <strong>Contrato seleccionado:</strong> {formData.contrato}
-                  </p>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nombre Completo *
+                  </label>
+                    <input
+                      type="text"
+                      name="nombreCompleto"
+                      placeholder="Nombre completo"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                    />
                 </div>
-              )}
-            </div>
-
-            {/* Producto y estado */}
-            <div>
-              <label className="form-label">Tipo de producto</label>
-              <select
-                name="productoTipo"
-                value={formData.productoTipo}
-                onChange={handleFormChange}
-                className="form-select"
-              >
-                <option value="Impresión Minilab">Impresión Minilab</option>
-                <option value="Enmarcado">Enmarcado</option>
-                <option value="Recordatorio Escolar">Recordatorio Escolar</option>
-                <option value="Retoque Fotográfico">Retoque Fotográfico</option>
-              </select>
-            </div>
-            <div>
-              <label className="form-label">Estado</label>
-              <select
-                name="estado"
-                value={formData.estado}
-                onChange={handleFormChange}
-                className="form-select"
-              >
-                <option value="Pendiente de confirmación">Pendiente de confirmación</option>
-                <option value="En producción">En producción</option>
-                <option value="Listo para entrega">Listo para entrega</option>
-                <option value="Entregado">Entregado</option>
-              </select>
-            </div>
-
-            {/* Subestado visible solo si En producción */}
-            {formData.estado === 'En producción' && (
-              <div>
-                <label className="form-label">Subestado</label>
-                <select
-                  name="subestado"
-                  value={formData.subestado}
-                  onChange={handleFormChange}
-                  className="form-select"
-                >
-                  <option value="">Seleccione...</option>
-                  <option value="edición digital">Edición digital</option>
-                  <option value="impresión">Impresión</option>
-                  <option value="enmarcado">Enmarcado</option>
-                </select>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label>
+                    <input
+                      type="text"
+                      name="dni"
+                      placeholder="12345678"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                    />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Teléfono *
+                  </label>
+                    <input
+                      type="text"
+                      name="telefono"
+                      placeholder="999888777"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      placeholder="correo@ejemplo.com"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                    />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Dirección
+                  </label>
+                    <input
+                      type="text"
+                      name="direccion"
+                      placeholder="Dirección completa"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                    />
+                </div>
+                </div>
               </div>
             )}
 
-            {/* Fechas */}
-            <div>
-              <label className="form-label">Fecha del pedido</label>
-              <input
-                type="date"
-                name="fechaPedido"
-                value={formData.fechaPedido}
-                onChange={handleFormChange}
-                className="form-input"
-              />
-            </div>
-            <div>
-              <label className="form-label">Fecha compromiso entrega</label>
-              <input
-                type="date"
-                name="fechaCompromiso"
-                value={formData.fechaCompromiso}
-                onChange={handleFormChange}
-                className="form-input"
-              />
-            </div>
+          {vistaActual === "nuevoColegio" && (
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="font-semibold text-gray-800 mb-4">Datos del Colegio</h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Documento
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="proforma"
+                      checked={tipoDocumento === "proforma"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Proforma</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="nota_venta"
+                      checked={tipoDocumento === "nota_venta"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Nota de Venta</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="contrato"
+                      checked={tipoDocumento === "contrato"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Contrato</span>
+                  </label>
+                </div>
+              </div>
 
-            {/* Costo/Precio/Utilidad */}
-            <div>
-              <label className="form-label">Costo calculado automático (materiales)</label>
-              <input
-                type="number"
-                step="0.01"
-                name="costoEstimado"
-                value={formData.costoEstimado}
-                onChange={handleFormChange}
-                className="form-input"
-                placeholder="S/ 0.00"
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nombre de I.E. *
+                </label>
+                  <input
+                    type="text"
+                    name="nombreColegio"
+                    value=""
+                    placeholder="Nombre del colegio"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contacto (Encargado) *
+                </label>
+                  <input
+                    type="text"
+                    name="contactoColegio"
+                    value=""
+                    placeholder="Persona de contacto"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono *
+                </label>
+                  <input
+                    type="text"
+                    name="telefonoColegio"
+                    value=""
+                    placeholder="999888777"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+              </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="emailColegio"
+                    value=""
+                    placeholder="correo@colegio.edu.pe"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
             </div>
             <div>
-              <label className="form-label">Precio final al cliente</label>
-              <input
-                type="number"
-                step="0.01"
-                name="precioVenta"
-                value={formData.precioVenta}
-                onChange={handleFormChange}
-                className="form-input"
-                placeholder="S/ 0.00"
-              />
-            </div>
-            <div>
-              <label className="form-label">Utilidad (automática)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Dirección
+              </label>
               <input
                 type="text"
-                value={`S/ ${computeUtilidad(formData.precioVenta, formData.costoEstimado).toFixed(2)}`}
-                readOnly
-                className="form-input bg-gray-50"
+                    name="direccionColegio"
+                    value=""
+                    placeholder="Dirección del colegio"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
               />
             </div>
-
-            {/* Avance y notas */}
             <div>
-              <label className="form-label">Avance de producción (%)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label>
+                   <select
+                    name="nivelEducativo"
+                    value=""
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  >
+                    <option>Inicial</option>
+                    <option>Primaria</option>
+                    <option>Secundaria</option>
+                   </select>
+                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Grado</label>
+                  <input
+                    type="text"
+                    name="grado"
+                    value=""
+                    placeholder="5to"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Sección</label>
+                  <input
+                    type="text"
+                    name="seccion"
+                    value=""
+                    placeholder="A"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+              </div>
+                </div>
+            </div>
+          )}
+
+          {vistaActual === "nuevoEmpresa" && (
+            <div className="bg-gray-50 rounded-lg p-6">
+              <h3 className="font-semibold text-gray-800 mb-4">Datos de la Empresa</h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Documento
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="proforma"
+                      checked={tipoDocumento === "proforma"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Proforma</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="nota_venta"
+                      checked={tipoDocumento === "nota_venta"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Nota de Venta</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="tipoDocumento"
+                      value="contrato"
+                      checked={tipoDocumento === "contrato"}
+                      onChange={(e) => setTipoDocumento(e.target.value)}
+                      className="w-4 h-4 text-primary focus:ring-primary border-gray-300"
+                    />
+                    <span className="text-sm font-medium text-gray-700">Contrato</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+            <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Razón Social *
+                  </label>
+                  <input
+                    type="text"
+                    name="razonSocial"
+                    value=""
+                    placeholder="Empresa S.A.C."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+            </div>
+            <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">RUC *</label>
+                  <input
+                    type="text"
+                    name="ruc"
+                    value=""
+                    placeholder="20123456789"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+            </div>
+              <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Representante *
+                  </label>
+              <input
+                    type="text"
+                    name="representante"
+                    value=""
+                    placeholder="Nombre del representante"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              />
+            </div>
+            <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Teléfono *
+                  </label>
+              <input
+                    type="text"
+                    name="telefonoEmpresa"
+                    value=""
+                    placeholder="999888777"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              />
+            </div>
+            <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input
+                    type="email"
+                    name="emailEmpresa"
+                    value=""
+                    placeholder="email@empresa.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              />
+            </div>
+            <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Dirección
+                  </label>
+              <input
+                    type="text"
+                    name="direccionEmpresa"
+                    value=""
+                    placeholder="Dirección de la empresa"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              />
+            </div>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-gray-50 rounded-lg p-6">
+            <h3 className="font-semibold text-gray-800 mb-4">Detalle del Pedido</h3>
+
+
+            <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200">
+              <p className="text-xs text-gray-600 mb-2">Productos disponibles:</p>
+              <div className="flex gap-2 flex-wrap">
+                {productosDisponibles.map((prod, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => agregarProducto(prod)}
+                    className="px-3 py-1 bg-white border border-gray-300 rounded-lg text-sm hover:bg-primary/10 hover:border-primary transition-colors"
+                  >
+                    {prod.nombre} - S/ {prod.precio.toFixed(2)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {productos.length > 0 && (
+              <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left">Producto</th>
+                      <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                      <th className="px-4 py-2 text-right">P. Unit.</th>
+                      <th className="px-4 py-2 text-right">Subtotal</th>
+                      <th className="px-4 py-2 text-center w-16">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {productos.map((prod, idx) => (
+                      <tr key={idx}>
+                        <td className="px-4 py-2">{prod.nombre}</td>
+                        <td className="px-4 py-2">
               <input
                 type="number"
-                min={0}
-                max={100}
-                name="avance"
-                value={formData.avance}
-                onChange={handleFormChange}
-                className="form-input"
-                placeholder="0 - 100"
-              />
+                            value={prod.cantidad}
+                            onChange={(e) => {
+                              const newProds = [...productos];
+                              newProds[idx].cantidad = parseInt(e.target.value) || 1;
+                              newProds[idx].subtotal =
+                                newProds[idx].cantidad * newProds[idx].precio;
+                              setProductos(newProds);
+                            }}
+                            className="w-full px-2 py-1 border border-gray-300 rounded text-center"
+                            min="1"
+                          />
+                        </td>
+                        <td className="px-4 py-2 text-right">S/ {prod.precio.toFixed(2)}</td>
+                        <td className="px-4 py-2 text-right font-semibold">
+                          S/ {prod.subtotal.toFixed(2)}
+                        </td>
+                        <td className="px-4 py-2 text-center">
+                          <button
+                            onClick={() => setProductos(productos.filter((_, i) => i !== idx))}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
             </div>
-            <div className="col-span-2">
-              <label className="form-label">Notas internas</label>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Detalles Adicionales / Servicios Extras
+              </label>
               <textarea
-                name="notas"
-                value={formData.notas}
+                name="detallesAdicionales"
+                value={formData.detallesAdicionales}
                 onChange={handleFormChange}
-                className="form-textarea"
-                rows={3}
-                placeholder="Notas internas del pedido"
-              />
+                placeholder="Servicios adicionales, notas especiales..."
+                rows="3"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+              ></textarea>
             </div>
           </div>
-
-          <Modal.Footer>
-            <Button variant="outline" onClick={() => setShowOrderForm(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleSubmitOrder}>
-              {selectedOrder ? "Actualizar" : "Crear"} Pedido
-            </Button>
-          </Modal.Footer>
         </div>
-      </Modal>
 
-      {/* Confirmación Eliminar Pedido */}
-      <Modal
-        isOpen={confirmDeleteOpen}
-        onClose={() => {
-          setConfirmDeleteOpen(false);
-          setOrderToDelete(null);
-        }}
-        title="Eliminar Pedido"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            ¿Estás seguro de que deseas eliminar el pedido
-            {orderToDelete ? (
-              <>
-                {" "}
-                <span className="font-semibold">{orderToDelete.id}</span> del
-                cliente{" "}
-                <span className="font-semibold">{orderToDelete.cliente}</span>?
-              </>
-            ) : (
-              " seleccionado?"
+        <div className="grid grid-cols-3 gap-6">
+          <div className="col-span-2 space-y-6">
+            {(vistaActual === "nuevoColegio" || vistaActual === "nuevoEmpresa") &&
+            tipoDocumento === "contrato" && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Fechas Programadas
+                </h3>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Fecha Compromiso
+                  </label>
+                  <input
+                    type="date"
+                    name="fechaCompromiso"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Sesiones Fotográficas
+                    </label>
+                    <button
+                      onClick={() =>
+                        setFechasSesiones([...fechasSesiones, { fecha: "", hora: "" }])
+                      }
+                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Agregar
+                    </button>
+                  </div>
+                  {fechasSesiones.map((sesion, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <input
+                        type="date"
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                      <input
+                        type="time"
+                        className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                      {idx > 0 && (
+                        <button
+                          onClick={() =>
+                            setFechasSesiones(fechasSesiones.filter((_, i) => i !== idx))
+                          }
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-medium text-gray-700">Entregas</label>
+                    <button
+                      onClick={() =>
+                        setFechasEntregas([...fechasEntregas, { fecha: "", hora: "" }])
+                      }
+                      className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                    >
+                      <Plus className="w-3 h-3" />
+                      Agregar
+                    </button>
+                  </div>
+                  {fechasEntregas.map((entrega, idx) => (
+                    <div key={idx} className="flex gap-2 mb-2">
+                      <input
+                        type="date"
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                      <input
+                        type="time"
+                        className="w-24 px-2 py-1 text-sm border border-gray-300 rounded"
+                      />
+                      {idx > 0 && (
+                        <button
+                          onClick={() =>
+                            setFechasEntregas(fechasEntregas.filter((_, i) => i !== idx))
+                          }
+                          className="p-1 text-red-600 hover:bg-red-50 rounded"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
-            <br />
-            <span className="text-red-500">
-              Esta acción no se puede deshacer.
-            </span>
-          </p>
+          </div>
 
-          <Modal.Footer>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setConfirmDeleteOpen(false);
-                setOrderToDelete(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="danger"
-              icon={<Trash2 className="w-4 h-4" />}
-              onClick={() =>
-                orderToDelete && handleDeleteOrder(orderToDelete.id)
-              }
-            >
-              Eliminar
-            </Button>
-          </Modal.Footer>
+          <div className="space-y-6">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-500" />
+                Resumen de Pago
+              </h3>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center pb-3 border-b border-gray-200">
+                  <span className="text-gray-600">Total</span>
+                  <span className="text-2xl font-bold text-gray-900">
+                    S/ {calcularTotal().toFixed(2)}
+                  </span>
+                </div>
+
+                {tipoDocumento !== "proforma" && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      A Cuenta
+                      {tipoDocumento === "nota_venta" && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          (Debe ser igual al total)
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="number"
+                      name="aCuenta"
+                      value={formData.aCuenta}
+                      onChange={handleFormChange}
+                      placeholder="0.00"
+                      step="0.01"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                    />
+                  </div>
+                )}
+
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                  <span className="font-semibold text-gray-700">Saldo</span>
+                  <span className="text-xl font-bold text-red-600">
+                    S/{" "}
+                    {tipoDocumento === "nota_venta"
+                      ? "0.00"
+                      : (calcularTotal() - parseFloat(formData.aCuenta || 0)).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="pt-4">
+                  {pedidoSeleccionado ? (
+                    <button
+                      onClick={handleSaveEdit}
+                      className="w-full bg-primary hover:bg-primary/90 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                    >
+                      <FileText className="w-5 h-5" />
+                      Guardar Cambios
+                    </button>
+                  ) : (
+                    <>
+                      {tipoDocumento === "proforma" && (
+                        <button 
+                          onClick={() => {
+                            const nuevoPedido = {
+                              numero: `P${String(pedidos.length + 1).padStart(3, '0')}-24`,
+                              fecha: new Date().toLocaleDateString('es-PE'),
+                              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente',
+                              tipo: "P",
+                              estado: "Pendiente",
+                              fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'),
+                              total: calcularTotal(),
+                              aCuenta: 0,
+                              saldo: calcularTotal(),
+                            };
+                            setPedidos(prev => [...prev, nuevoPedido]);
+                            notifySuccess(`Proforma ${nuevoPedido.numero} creada correctamente`);
+                            setVistaActual("lista");
+                          }}
+                          className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                        >
+                          <FileText className="w-5 h-5" />
+                          Guardar Proforma
+                        </button>
+                      )}
+                      {tipoDocumento === "nota_venta" && (
+                        <button 
+                          onClick={() => {
+                            const nuevoPedido = {
+                              numero: `V${String(pedidos.length + 1).padStart(3, '0')}-24`,
+                              fecha: new Date().toLocaleDateString('es-PE'),
+                              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente',
+                              tipo: "V",
+                              estado: "Completado",
+                              fechaEntrega: new Date().toLocaleDateString('es-PE'),
+                              total: calcularTotal(),
+                              aCuenta: calcularTotal(),
+                              saldo: 0,
+                            };
+                            setPedidos(prev => [...prev, nuevoPedido]);
+                            notifySuccess(`Venta ${nuevoPedido.numero} procesada correctamente`);
+                            setVistaActual("lista");
+                          }}
+                          className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                        >
+                          <ShoppingCart className="w-5 h-5" />
+                          Procesar Venta
+                        </button>
+                      )}
+                      {tipoDocumento === "contrato" && (
+                        <button 
+                          onClick={() => {
+                            const nuevoPedido = {
+                              numero: `C${String(pedidos.length + 1).padStart(3, '0')}-24`,
+                              fecha: new Date().toLocaleDateString('es-PE'),
+                              cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente',
+                              tipo: "C",
+                              estado: "Pendiente",
+                              fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'),
+                              total: calcularTotal(),
+                              aCuenta: parseFloat(formData.aCuenta || 0),
+                              saldo: calcularTotal() - parseFloat(formData.aCuenta || 0),
+                            };
+                            setPedidos(prev => [...prev, nuevoPedido]);
+                            notifySuccess(`Contrato ${nuevoPedido.numero} creado correctamente`);
+                            setVistaActual("lista");
+                          }}
+                          className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
+                        >
+                          <FileText className="w-5 h-5" />
+                          Crear Contrato
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+
+              <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
+                {pedidoSeleccionado ? (
+                  <p>Estás editando el pedido {pedidoSeleccionado.numero}. Los cambios se guardarán al hacer clic en "Guardar Cambios".</p>
+                ) : (
+                  <>
+                    {tipoDocumento === "proforma" && (
+                      <p>
+                        Esta proforma solo calculará el costo. Podrás convertirla en pedido real
+                        después.
+                      </p>
+                    )}
+                    {tipoDocumento === "nota_venta" && (
+                      <p>Se generará comprobante inmediato y se actualizará el inventario.</p>
+                    )}
+                    {tipoDocumento === "contrato" && (
+                      <p>
+                        Se creará un contrato con el saldo pendiente. Se programarán eventos en
+                        agenda.
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      </Modal>
-
-      {/* Confirmación Editar Pedido */}
-      <Modal
-        isOpen={confirmEditOpen}
-        onClose={() => {
-          setConfirmEditOpen(false);
-          setOrderToEdit(null);
-        }}
-        title="Editar Pedido"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-gray-700">
-            ¿Deseas editar el pedido
-            {orderToEdit ? (
-              <>
-                {" "}
-                <span className="font-semibold">{orderToEdit.id}</span> del
-                cliente{" "}
-                <span className="font-semibold">{orderToEdit.cliente}</span>?
-              </>
-            ) : (
-              " seleccionado?"
-            )}
-          </p>
-
-          <Modal.Footer>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setConfirmEditOpen(false);
-                setOrderToEdit(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="secondary"
-              icon={<Edit className="w-4 h-4" />}
-              onClick={() => {
-                if (orderToEdit) {
-                  openEditOrder(orderToEdit);
-                }
-                setConfirmEditOpen(false);
-                setOrderToEdit(null);
-              }}
-            >
-              Continuar
-            </Button>
-          </Modal.Footer>
-        </div>
-      </Modal>
-    </div>
+      </div>
+    </>
   );
+};
+
+export default Pedidos;
+
 };
 
 export default Pedidos;
