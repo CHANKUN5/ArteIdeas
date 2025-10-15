@@ -16,7 +16,7 @@ import {
   Bell
 } from 'lucide-react';
 import Button from '../../components/common/Button';
-import FilterButtons from '../../components/agenda/FilterButtons';
+import FilterSelect from '../../components/agenda/FilterSelect';
 import EventCard from '../../components/agenda/EventCard';
 import Pagination from '../../components/agenda/Pagination';
 
@@ -33,6 +33,9 @@ const Agenda = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [eventToDelete, setEventToDelete] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAllEventsPanel, setShowAllEventsPanel] = useState(false);
+  const [selectedDayEvents, setSelectedDayEvents] = useState([]);
+  const [selectedDayDate, setSelectedDayDate] = useState(null);
 
   // Generar datos mock más extensos para todas las vistas
   const generateMockEvents = () => {
@@ -303,7 +306,7 @@ const Agenda = () => {
     }
 
     // Agregar días del mes siguiente para completar la grilla de 6 filas (42 celdas)
-    const remainingCells = 42 - days.length;
+    const remainingCells = 35 - days.length;
     for (let day = 1; day <= remainingCells; day++) {
       const current = new Date(year, month + 1, day);
       const dateStr = current.toISOString().split('T')[0];
@@ -454,6 +457,16 @@ const Agenda = () => {
     });
   };
 
+  // Manejar clic en contador de eventos
+  const handleCounterClick = (dayEvents, dayDate) => {
+    setSelectedDayEvents(dayEvents);
+    setSelectedDayDate(dayDate);
+    setShowAllEventsPanel(true);
+    // Cerrar el panel de detalles del evento si está abierto
+    setShowEventPanel(false);
+    setSelectedEvent(null);
+  };
+
   // Navegación del calendario
   const navigateCalendar = (direction) => {
     const newDate = new Date(currentDate);
@@ -546,6 +559,10 @@ const Agenda = () => {
                 onClick={() => {
                   setSelectedEvent(event);
                   setShowEventPanel(true);
+                  // Cerrar el panel de todos los eventos si está abierto
+                  setShowAllEventsPanel(false);
+                  setSelectedDayEvents([]);
+                  setSelectedDayDate(null);
                 }}
                 className="p-3 bg-primary/10 text-primary rounded-lg cursor-pointer hover:bg-primary/20 transition-colors"
               >
@@ -594,6 +611,10 @@ const Agenda = () => {
                       onClick={() => {
                         setSelectedEvent(event);
                         setShowEventPanel(true);
+                        // Cerrar el panel de todos los eventos si está abierto
+                        setShowAllEventsPanel(false);
+                        setSelectedDayEvents([]);
+                        setSelectedDayDate(null);
                       }}
                       className="text-xs p-1 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20 transition-colors"
                     >
@@ -647,6 +668,10 @@ const Agenda = () => {
                       onClick={() => {
                         setSelectedEvent(event);
                         setShowEventPanel(true);
+                        // Cerrar el panel de todos los eventos si está abierto
+                        setShowAllEventsPanel(false);
+                        setSelectedDayEvents([]);
+                        setSelectedDayDate(null);
                       }}
                       className="text-xs p-2 bg-primary/10 text-primary rounded cursor-pointer hover:bg-primary/20 transition-colors"
                     >
@@ -683,11 +708,10 @@ const Agenda = () => {
     return (
       <div className="p-4 h-full flex flex-col">
         <div 
-          className="grid gap-1" 
+          className="grid gap-1 flex-1 min-h-0" 
           style={{ 
             gridTemplateColumns: 'repeat(7, 1fr)',
-            gridTemplateRows: `repeat(6, 1fr)`, // Siempre 6 filas para consistencia
-            height: '650px' // Aumentar altura para que se vean todas las filas completas y sea simétrica
+            gridTemplateRows: 'repeat(5, minmax(0, 1fr))' 
           }}
         >
           {calendarDays.map((day, index) => (
@@ -712,7 +736,13 @@ const Agenda = () => {
                   {day.date.getDate()}
                 </span>
                 {day.dayEvents.length > 0 && (
-                  <span className="text-xs bg-primary text-white rounded-full px-1">
+                  <span 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCounterClick(day.dayEvents, day.date);
+                    }}
+                    className="text-xs bg-primary text-white rounded-full px-1 cursor-pointer hover:bg-primary/80 transition-colors"
+                  >
                     {day.dayEvents.length}
                   </span>
                 )}
@@ -729,6 +759,10 @@ const Agenda = () => {
                         e.stopPropagation();
                         setSelectedEvent(event);
                         setShowEventPanel(true);
+                        // Cerrar el panel de todos los eventos si está abierto
+                        setShowAllEventsPanel(false);
+                        setSelectedDayEvents([]);
+                        setSelectedDayDate(null);
                       }}
                       className={`text-xs p-1 rounded truncate transition-colors cursor-pointer border ${eventColors.bg} ${eventColors.text} ${eventColors.border} hover:opacity-80`}
                     >
@@ -737,7 +771,13 @@ const Agenda = () => {
                   );
                 })}
                 {day.dayEvents.length > 2 && (
-                  <div className="text-xs text-gray-500">
+                  <div 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleCounterClick(day.dayEvents, day.date);
+                    }}
+                    className="text-xs text-gray-500 cursor-pointer hover:text-primary transition-colors"
+                  >
                     +{day.dayEvents.length - 2} más
                   </div>
                 )}
@@ -764,29 +804,29 @@ const Agenda = () => {
             </div>
           </div>
           
-          <Button
-            onClick={() => setShowNewEventForm(true)}
-            className="bg-primary hover:bg-primary/90"
-            icon={<Plus className="w-4 h-4" />}
-          >
-            Nuevo Evento
-          </Button>
+          <div className="flex items-center space-x-3">
+            <FilterSelect
+              activeFilter={activeFilter}
+              onFilterChange={setActiveFilter}
+              categories={categories}
+            />
+            <Button
+              onClick={() => setShowNewEventForm(true)}
+              className="bg-primary hover:bg-primary/90"
+              icon={<Plus className="w-4 h-4" />}
+            >
+              Nuevo Evento
+            </Button>
+          </div>
         </div>
-
-        {/* Filtros por categoría */}
-        <FilterButtons
-          activeFilter={activeFilter}
-          onFilterChange={setActiveFilter}
-          categories={categories}
-        />
       </div>
 
-      <div className={`grid gap-6 transition-all duration-300 ${
-        showEventPanel ? 'grid-cols-1 lg:grid-cols-4' : 'grid-cols-1'
+      <div className={`flex gap-6 ${
+        (showEventPanel || showAllEventsPanel) ? 'flex-row' : 'flex-col'
       }`}>
         {/* Calendario principal */}
-        <div className={`transition-all duration-300 ${
-          showEventPanel ? 'lg:col-span-3' : 'col-span-1'
+        <div className={`${
+          (showEventPanel || showAllEventsPanel) ? 'flex-1' : 'w-full'
         }`}>
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 h-[700px] flex flex-col">
             {/* Header del calendario */}
@@ -849,12 +889,12 @@ const Agenda = () => {
           </div>
         </div>
 
-        {/* Panel lateral de detalles del evento con animación */}
-        <div className={`transition-all duration-300 overflow-hidden ${
-          showEventPanel ? 'lg:col-span-1 opacity-100' : 'lg:col-span-0 opacity-0 lg:w-0'
-        }`}>
+        {/* Panel lateral de detalles del evento o todos los eventos */}
+        <div className={`overflow-hidden ${
+          (showEventPanel || showAllEventsPanel) ? 'w-96' : 'w-0'
+        }`} style={{ width: (showEventPanel || showAllEventsPanel) ? '380px' : '0px' }}>
           {showEventPanel && selectedEvent && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col w-full max-w-96 min-w-96 flex-shrink-0" style={{ width: '380px', maxWidth: '380px', minWidth: '380px' }}>
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-base font-semibold text-gray-900">Detalles del Evento</h3>
                 <button
@@ -868,14 +908,14 @@ const Agenda = () => {
                 </button>
               </div>
 
-              <div className="flex-1 space-y-4 overflow-y-auto">
+              <div className="flex-1 space-y-4 overflow-y-auto" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                 {/* Información del Cliente */}
                 <div className="bg-gray-50 rounded-lg p-3">
                   <div className="flex items-center gap-2 mb-2">
                     <User className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Cliente</span>
                   </div>
-                  <p className="text-sm font-medium text-gray-900">{selectedEvent.cliente}</p>
+                  <p className="text-sm font-medium text-gray-900 w-full break-words">{selectedEvent.cliente}</p>
                 </div>
 
                 {/* Tipo de Evento */}
@@ -884,9 +924,11 @@ const Agenda = () => {
                     <Calendar className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Tipo de Evento</span>
                   </div>
-                  <span className="inline-flex items-center px-2 py-1 bg-primary text-white rounded text-xs font-medium">
-                    {selectedEvent.tipo}
-                  </span>
+                  <div className="w-full">
+                    <span className="inline-flex items-center px-2 py-1 bg-primary text-white rounded text-xs font-medium">
+                      {selectedEvent.tipo}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Fecha y Hora */}
@@ -895,8 +937,8 @@ const Agenda = () => {
                     <Clock className="w-4 h-4 text-primary" />
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Fecha y Hora</span>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-gray-900">
+                  <div className="space-y-1 w-full">
+                    <p className="text-sm font-medium text-gray-900 w-full break-words">
                       {new Date(selectedEvent.fecha).toLocaleDateString('es-ES', { 
                         weekday: 'long', 
                         year: 'numeric', 
@@ -904,7 +946,7 @@ const Agenda = () => {
                         day: 'numeric' 
                       })}
                     </p>
-                    <p className="text-primary font-semibold text-xs">{selectedEvent.hora}</p>
+                    <p className="text-primary font-semibold text-xs w-full">{selectedEvent.hora}</p>
                   </div>
                 </div>
 
@@ -915,7 +957,7 @@ const Agenda = () => {
                       <MapPin className="w-4 h-4 text-primary" />
                       <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Ubicación</span>
                     </div>
-                    <p className="text-sm text-gray-900">{selectedEvent.ubicacion}</p>
+                    <p className="text-sm text-gray-900 w-full break-words">{selectedEvent.ubicacion}</p>
                   </div>
                 )}
 
@@ -926,7 +968,7 @@ const Agenda = () => {
                       <FileText className="w-4 h-4 text-primary" />
                       <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Descripción</span>
                     </div>
-                    <p className="text-sm text-gray-900 leading-relaxed">{selectedEvent.descripcion}</p>
+                    <p className="text-sm text-gray-900 leading-relaxed w-full break-words">{selectedEvent.descripcion}</p>
                   </div>
                 )}
 
@@ -942,16 +984,18 @@ const Agenda = () => {
                     }`}></div>
                     <span className="text-xs font-semibold text-gray-700 uppercase tracking-wide">Estado</span>
                   </div>
-                  <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                    selectedEvent.estado === 'confirmada' 
-                      ? 'bg-green-100 text-green-800' 
-                      : selectedEvent.estado === 'pendiente'
-                      ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {selectedEvent.estado === 'confirmada' ? 'Confirmada' : 
-                     selectedEvent.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
-                  </span>
+                  <div className="w-full">
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
+                      selectedEvent.estado === 'confirmada' 
+                        ? 'bg-green-100 text-green-800' 
+                        : selectedEvent.estado === 'pendiente'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {selectedEvent.estado === 'confirmada' ? 'Confirmada' : 
+                       selectedEvent.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -974,6 +1018,74 @@ const Agenda = () => {
                 >
                   Eliminar
                 </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Panel lateral de todos los eventos acumulados */}
+          {showAllEventsPanel && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 h-[700px] flex flex-col w-full max-w-96 min-w-96 flex-shrink-0" style={{ width: '380px', maxWidth: '380px', minWidth: '380px' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-base font-semibold text-gray-900">
+                  Todos los Eventos - {selectedDayDate ? `${selectedDayDate.getDate()} de ${selectedDayDate.toLocaleDateString('es-ES', { month: 'long' })}` : 'Eventos'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAllEventsPanel(false);
+                    setSelectedDayEvents([]);
+                    setSelectedDayDate(null);
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex-2 space-y-3 overflow-y-auto" style={{ maxWidth: '100%', overflow: 'hidden' }}>
+                {selectedDayEvents && selectedDayEvents.length > 0 ? selectedDayEvents.map(event => {
+                  const eventColors = getEventColor(event.tipo);
+                  return (
+                    <div
+                      key={event.id}
+                      onClick={() => {
+                        setSelectedEvent(event);
+                        setShowEventPanel(true);
+                        setShowAllEventsPanel(false);
+                      }}
+                      className={`p-3 rounded-lg border cursor-pointer hover:shadow-md transition-all duration-200 ${eventColors.bg} ${eventColors.border} ${eventColors.text}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-medium text-sm truncate">{event.cliente}</h4>
+                        <span className={`px-2 py-1 rounded text-xs font-medium ${eventColors.bg} ${eventColors.text}`}>
+                          {event.tipo}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between text-xs opacity-75">
+                        <span>{event.hora}</span>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          event.estado === 'confirmada' 
+                            ? 'bg-green-100 text-green-800' 
+                            : event.estado === 'pendiente'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {event.estado === 'confirmada' ? 'Confirmada' : 
+                           event.estado === 'pendiente' ? 'Pendiente' : 'Cancelada'}
+                        </span>
+                      </div>
+                      {event.ubicacion && (
+                        <div className="text-xs opacity-75 mt-1 flex items-center">
+                          <MapPin className="w-3 h-3 mr-1" />
+                          {event.ubicacion}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }) : (
+                  <div className="text-center py-8 text-gray-500">
+                    No hay eventos para este día
+                  </div>
+                )}
               </div>
             </div>
           )}
