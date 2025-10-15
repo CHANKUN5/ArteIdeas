@@ -103,11 +103,20 @@ const Inventario = () => {
     // Campos específicos para graduaciones
     format: "",
     // Campos específicos para minilab
-    paperType: "",
-    inkType: "",
+    tipoInsumo: "",
+    nombreTipo: "",
+    tamañoPresentacion: "",
+    cantidadStock: "",
+    fechaCompra: "",
+    costoUnit: "",
+    stockMin: "",
+    costoTotal: "",
     // Campos específicos para corte láser
-    laserType: "",
-    power: ""
+    producto: "",
+    tipo: "",
+    tamañoCm: "",
+    unidad: "",
+    proveedor: ""
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -164,28 +173,29 @@ const Inventario = () => {
       subcategories: {
         'papel-fotografico': { 
           name: "Papel Fotográfico", 
-          fields: ['brand', 'paperType', 'dimensions', 'quantity', 'price', 'minStock'],
+          fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
           options: {
-            brand: ['Canon', 'Epson'],
-            paperType: ['Brillante', 'Mate'],
-            dimensions: ['10x15cm', '13x18cm']
+            tipoInsumo: ['Papel'],
+            nombreTipo: ['Papel Lustre', 'Papel Mate'],
+            tamañoPresentacion: ['10x15 cm', '20x30 cm']
           }
         },
         'tintas': { 
           name: "Tintas", 
-          fields: ['brand', 'inkType', 'color', 'quantity', 'price', 'minStock'],
+          fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
           options: {
-            brand: ['Canon', 'Epson'],
-            inkType: ['Pigmentada', 'Dye'],
-            color: ['Negro', 'Cian']
+            tipoInsumo: ['Química'],
+            nombreTipo: ['Revelador RA-4', 'Blanqueador'],
+            tamañoPresentacion: ['Kit 5L', '1 Litro']
           }
         },
         'accesorios-impresion': { 
           name: "Accesorios de Impresión", 
-          fields: ['name', 'brand', 'type', 'price', 'stock', 'minStock'],
+          fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
           options: {
-            brand: ['Canon', 'Epson'],
-            type: ['Cabezal', 'Rodillo']
+            tipoInsumo: ['Químico'],
+            nombreTipo: ['Blanqueador'],
+            tamañoPresentacion: ['1 Litro']
           }
         }
       }
@@ -220,21 +230,26 @@ const Inventario = () => {
       subcategories: {
         'materiales-corte': { 
           name: "Material de Corte", 
-          fields: ['material', 'thickness', 'dimensions', 'color', 'quantity', 'price', 'minStock'],
+          fields: ['producto', 'tipo', 'tamañoCm', 'color', 'unidad', 'stock', 'stockMin', 'costoUnit', 'proveedor'],
           options: {
-            material: ['Acrílico', 'MDF'],
-            thickness: ['3mm', '5mm'],
-            color: ['Natural', 'Blanco']
+            producto: ['Plancha MDF Jeans', 'Plancha Acrílico 3mm', 'Cartón Microcorrugado', 'Lámina MDF Crillada'],
+            tipo: ['MDF', 'Acrílico', 'Cartón', 'Lámina Crillada'],
+            tamañoCm: ['60x40cm', '60x70cm', '60x40cm', '60x40cm'],
+            color: ['Natural', 'Transparente', 'Blanco', 'Natural'],
+            unidad: ['Plancha', 'Plancha', 'Plancha', 'Plancha'],
+            proveedor: ['AcriFlex Tama', 'Excelente Tama', 'MDF Perú']
           }
         },
         'herramientas': { 
           name: "Herramienta", 
-          fields: ['name', 'brand', 'type', 'laserType', 'power', 'price', 'stock'],
+          fields: ['producto', 'tipo', 'tamañoCm', 'color', 'unidad', 'stock', 'stockMin', 'costoUnit', 'proveedor'],
           options: {
-            brand: ['Epilog', 'Trotec'],
-            type: ['Lente', 'Espejo'],
-            laserType: ['CO2', 'Fibra'],
-            power: ['40W', '60W']
+            producto: ['Lente de Enfoque', 'Espejo Reflector'],
+            tipo: ['Lente', 'Espejo'],
+            tamañoCm: ['2.5"', '1"'],
+            color: ['Transparente', 'Plateado'],
+            unidad: ['Pieza', 'Pieza'],
+            proveedor: ['Epilog', 'Trotec']
           }
         }
       }
@@ -312,10 +327,21 @@ const Inventario = () => {
       totalCost: "",
       grosor: "",
       format: "",
-      paperType: "",
-      inkType: "",
-      laserType: "",
-      power: ""
+      // Campos específicos para minilab
+      tipoInsumo: "",
+      nombreTipo: "",
+      tamañoPresentacion: "",
+      cantidadStock: "",
+      fechaCompra: "",
+      costoUnit: "",
+      stockMin: "",
+      costoTotal: "",
+      // Campos específicos para corte láser
+      producto: "",
+      tipo: "",
+      tamañoCm: "",
+      unidad: "",
+      proveedor: ""
     });
     setIsEditing(false);
   };
@@ -586,7 +612,22 @@ const Inventario = () => {
                     power: 'POTENCIA',
                     pages: 'PÁGINAS',
                     cover: 'TIPO DE TAPA',
-                    dimensions: 'DIMENSIONES'
+                    dimensions: 'DIMENSIONES',
+                    // Campos específicos para minilab
+                    tipoInsumo: 'TIPO DE INSUMO',
+                    nombreTipo: 'NOMBRE / TIPO',
+                    tamañoPresentacion: 'TAMAÑO / PRESENTACIÓN',
+                    cantidadStock: 'CANTIDAD EN STOCK',
+                    fechaCompra: 'FECHA COMPRA',
+                    costoUnit: 'COSTO UNIT.',
+                    stockMin: 'STOCK MIN',
+                    costoTotal: 'COSTO TOTAL',
+                    // Campos específicos para corte láser
+                    producto: 'PRODUCTO',
+                    tipo: 'TIPO',
+                    tamañoCm: 'TAMAÑO (CM)',
+                    unidad: 'UNIDAD',
+                    proveedor: 'PROVEEDOR'
                   };
                   
                   return (
