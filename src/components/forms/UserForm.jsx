@@ -6,8 +6,7 @@ const UserForm = ({ user, onSubmit, onCancel }) => {
     name: user?.name || '',
     email: user?.email || '',
     role: user?.role || 'Empleado',
-    password: '',
-    confirmPassword: ''
+    status: user?.status || 'Activo'
   });
 
   const [errors, setErrors] = useState({});
@@ -25,17 +24,8 @@ const UserForm = ({ user, onSubmit, onCancel }) => {
       newErrors.email = 'El email no es válido';
     }
 
-    if (!user) { // Solo validar contraseñas para usuarios nuevos
-      if (!formData.password) {
-        newErrors.password = 'La contraseña es requerida';
-      } else if (formData.password.length < 6) {
-        newErrors.password = 'La contraseña debe tener al menos 6 caracteres';
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        newErrors.confirmPassword = 'Las contraseñas no coinciden';
-      }
-    }
+    // Para nuevos usuarios no se requieren campos de contraseña,
+    // se mostrará una nota informativa con la clave predeterminada.
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -106,40 +96,32 @@ const UserForm = ({ user, onSubmit, onCancel }) => {
         </select>
       </div>
 
-      {!user && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña *
-            </label>
-            <input
-              type="password"
-              value={formData.password}
-              onChange={(e) => handleInputChange('password', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.password ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Mínimo 6 caracteres"
-            />
-            {errors.password && <p className="text-red-500 text-sm mt-1">{errors.password}</p>}
-          </div>
+      {user && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Estado
+          </label>
+          <select
+            value={formData.status}
+            onChange={(e) => handleInputChange('status', e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
+            <option value="Activo">Activo</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="Inactivo">Inactivo</option>
+          </select>
+        </div>
+      )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar contraseña *
-            </label>
-            <input
-              type="password"
-              value={formData.confirmPassword}
-              onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent ${
-                errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-              }`}
-              placeholder="Repite la contraseña"
-            />
-            {errors.confirmPassword && <p className="text-red-500 text-sm mt-1">{errors.confirmPassword}</p>}
-          </div>
-        </>
+      {!user && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 text-blue-700 p-4">
+          <p className="text-sm">
+            <span className="font-semibold">Nota:</span>{' '}
+            El usuario recibirá la contraseña predeterminada
+            <span className="inline-block bg-blue-100 text-blue-800 px-2 py-0.5 rounded mx-1">12345678</span>
+            y deberá cambiarla en su primer inicio de sesión.
+          </p>
+        </div>
       )}
 
       <div className="flex justify-end space-x-4 pt-4">

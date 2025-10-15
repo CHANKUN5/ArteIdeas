@@ -184,12 +184,14 @@ const Header = ({ onToggleSidebar, onSectionChange }) => {
           )}
         </div>
           
-        <button 
-          onClick={() => onSectionChange("configuracion")}
-          className="p-2 text-gray-600 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
+        {user?.role === 'admin' && (
+          <button 
+            onClick={() => onSectionChange("configuracion")}
+            className="p-2 text-gray-600 hover:text-primary transition-colors rounded-lg hover:bg-gray-100"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
+        )}
 
         <div
           onClick={() => onSectionChange && onSectionChange('perfil')}
