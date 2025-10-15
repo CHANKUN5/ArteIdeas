@@ -449,7 +449,11 @@ const Pedidos = () => {
             </div>
           </div>
           <button
-            onClick={() => setVistaActual("nuevoParticular")}
+            onClick={() => {
+              setVistaActual("nuevoParticular");
+              setPedidoSeleccionado(null);
+              limpiarFormulario();
+            }}
             className="flex items-center space-x-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
@@ -989,7 +993,10 @@ const Pedidos = () => {
 
         <div className="flex gap-2 border-b border-gray-200 mb-6">
           <button
-            onClick={() => setVistaActual("nuevoParticular")}
+            onClick={() => {
+              setVistaActual("nuevoParticular");
+              setPedidoSeleccionado(null);
+            }}
             className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
               vistaActual === "nuevoParticular"
                 ? "border-primary text-primary"
@@ -1000,7 +1007,10 @@ const Pedidos = () => {
             Particular
           </button>
           <button
-            onClick={() => setVistaActual("nuevoColegio")}
+            onClick={() => {
+              setVistaActual("nuevoColegio");
+              setPedidoSeleccionado(null);
+            }}
             className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
               vistaActual === "nuevoColegio"
                 ? "border-primary text-primary"
@@ -1011,7 +1021,10 @@ const Pedidos = () => {
             Colegio
           </button>
           <button
-            onClick={() => setVistaActual("nuevoEmpresa")}
+            onClick={() => {
+              setVistaActual("nuevoEmpresa");
+              setPedidoSeleccionado(null);
+            }}
             className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
               vistaActual === "nuevoEmpresa"
                 ? "border-primary text-primary"
