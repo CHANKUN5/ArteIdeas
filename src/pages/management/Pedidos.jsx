@@ -20,7 +20,7 @@ import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const Pedidos = () => {
-  const { notifySuccess, notifyError } = useApp();
+  const { showSuccess, showError } = useApp();
   const [vistaActual, setVistaActual] = useState("lista");
   const [tipoDocumento, setTipoDocumento] = useState("nota_venta");
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
@@ -37,6 +37,7 @@ const Pedidos = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [pedidoToEdit, setPedidoToEdit] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const [formData, setFormData] = useState({
     nombreCompleto: "",
@@ -134,7 +135,19 @@ const Pedidos = () => {
   };
 
   const agregarProducto = (prod) => {
-    setProductos([...productos, { ...prod, cantidad: 1, subtotal: prod.precio }]);
+    const productoExistente = productos.find(p => p.nombre === prod.nombre);
+    
+    if (productoExistente) {
+      // Si el producto ya existe, incrementar la cantidad
+      setProductos(productos.map(p => 
+        p.nombre === prod.nombre 
+          ? { ...p, cantidad: p.cantidad + 1, subtotal: (p.cantidad + 1) * p.precio }
+          : p
+      ));
+    } else {
+      // Si es un producto nuevo, agregarlo
+      setProductos([...productos, { ...prod, cantidad: 1, subtotal: prod.precio }]);
+    }
   };
 
   const handleFormChange = (e) => {
@@ -148,8 +161,164 @@ const Pedidos = () => {
     setEstadoFilter("");
   };
 
+  // Función para generar número de pedido automáticamente
+  const generarNumeroPedido = (tipo) => {
+    const pedidosDelTipo = pedidos.filter(p => p.tipo === tipo);
+    const siguienteNumero = pedidosDelTipo.length + 1;
+    return `${tipo}${String(siguienteNumero).padStart(3, '0')}-24`;
+  };
+
+  // Función para limpiar formulario
+  const limpiarFormulario = () => {
+    setFormData({
+      nombreCompleto: "",
+      dni: "",
+      telefono: "",
+      email: "",
+      direccion: "",
+      nombreColegio: "",
+      contactoColegio: "",
+      telefonoColegio: "",
+      emailColegio: "",
+      direccionColegio: "",
+      nivelEducativo: "Inicial",
+      grado: "",
+      seccion: "",
+      razonSocial: "",
+      ruc: "",
+      representante: "",
+      telefonoEmpresa: "",
+      emailEmpresa: "",
+      direccionEmpresa: "",
+      detallesAdicionales: "",
+      aCuenta: 0,
+      fechaCompromiso: "",
+      total: 0,
+      estado: "",
+    });
+    setProductos([]);
+    setFechasSesiones([{ fecha: "", hora: "" }]);
+    setFechasEntregas([{ fecha: "", hora: "" }]);
+  };
+
+  // Función para validar formulario
+  const validarFormulario = () => {
+    const cliente = formData.nombreCompleto || formData.nombreColegio || formData.razonSocial;
+    if (!cliente) {
+      showError("Debe ingresar los datos del cliente");
+      return false;
+    }
+    if (productos.length === 0) {
+      showError("Debe agregar al menos un producto");
+      return false;
+    }
+    if (tipoDocumento === "nota_venta" && parseFloat(formData.aCuenta || 0) !== calcularTotal()) {
+      showError("En una nota de venta, el monto a cuenta debe ser igual al total");
+      return false;
+    }
+    return true;
+  };
+
+  // Función para crear proforma
+  const crearProforma = () => {
+    if (isProcessing || !validarFormulario()) return;
+    
+    setIsProcessing(true);
+
+    const nuevoPedido = {
+      numero: generarNumeroPedido("P"),
+      fecha: new Date().toLocaleDateString('es-PE'),
+      cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial,
+      tipo: "P",
+      tipoDocumento: tipoDocumento,
+      estado: "Pendiente",
+      fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'),
+      total: calcularTotal(),
+      aCuenta: 0,
+      saldo: calcularTotal(),
+      productos: [...productos],
+      datosCliente: { ...formData }
+    };
+
+    setPedidos(prev => [...prev, nuevoPedido]);
+    showSuccess(`Proforma ${nuevoPedido.numero} creada correctamente`);
+    limpiarFormulario();
+    setVistaActual("lista");
+    setIsProcessing(false);
+  };
+
+  // Función para procesar venta
+  const procesarVenta = () => {
+    if (isProcessing || !validarFormulario()) return;
+    
+    setIsProcessing(true);
+
+    const nuevoPedido = {
+      numero: generarNumeroPedido("V"),
+      fecha: new Date().toLocaleDateString('es-PE'),
+      cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial,
+      tipo: "V",
+      tipoDocumento: tipoDocumento,
+      estado: "Completado",
+      fechaEntrega: new Date().toLocaleDateString('es-PE'),
+      total: calcularTotal(),
+      aCuenta: calcularTotal(),
+      saldo: 0,
+      productos: [...productos],
+      datosCliente: { ...formData }
+    };
+
+    setPedidos(prev => [...prev, nuevoPedido]);
+    showSuccess(`Venta ${nuevoPedido.numero} procesada correctamente`);
+    limpiarFormulario();
+    setVistaActual("lista");
+    setIsProcessing(false);
+  };
+
+  // Función para crear contrato
+  const crearContrato = () => {
+    if (isProcessing || !validarFormulario()) return;
+    
+    setIsProcessing(true);
+
+    const aCuenta = parseFloat(formData.aCuenta || 0);
+    const total = calcularTotal();
+
+    const nuevoPedido = {
+      numero: generarNumeroPedido("C"),
+      fecha: new Date().toLocaleDateString('es-PE'),
+      cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial,
+      tipo: "C",
+      tipoDocumento: tipoDocumento,
+      estado: "Pendiente",
+      fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'),
+      total: total,
+      aCuenta: aCuenta,
+      saldo: total - aCuenta,
+      productos: [...productos],
+      datosCliente: { ...formData },
+      fechasSesiones: [...fechasSesiones],
+      fechasEntregas: [...fechasEntregas]
+    };
+
+    setPedidos(prev => [...prev, nuevoPedido]);
+    showSuccess(`Contrato ${nuevoPedido.numero} creado correctamente`);
+    limpiarFormulario();
+    setVistaActual("lista");
+    setIsProcessing(false);
+  };
+
   const handleEdit = (pedido) => {
     setPedidoToEdit(pedido);
+    
+    // Convertir la fecha de formato DD/MM/YY a YYYY-MM-DD para el input date
+    const convertirFecha = (fechaStr) => {
+      if (!fechaStr) return '';
+      const [dia, mes, año] = fechaStr.split('/');
+      const añoCompleto = año.length === 2 ? `20${año}` : año;
+      return `${añoCompleto}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+    };
+
     setFormData({
       nombreCompleto: pedido.tipo === 'P' ? pedido.cliente : '',
       nombreColegio: pedido.tipo === 'C' ? pedido.cliente : '',
@@ -172,7 +341,7 @@ const Pedidos = () => {
       direccionEmpresa: formData.direccionEmpresa,
       detallesAdicionales: '',
       aCuenta: pedido.aCuenta,
-      fechaCompromiso: pedido.fechaEntrega,
+      fechaCompromiso: convertirFecha(pedido.fechaEntrega), // Convertir y asignar la fecha de entrega
       total: pedido.total,
       estado: pedido.estado,
     });
@@ -189,12 +358,12 @@ const Pedidos = () => {
 
     try {
       setPedidos((prev) => prev.filter((p) => p.numero !== pedidoToDelete.numero));
-      notifySuccess(`Pedido ${pedidoToDelete.numero} eliminado correctamente`);
+      showSuccess(`Pedido ${pedidoToDelete.numero} eliminado correctamente`);
       setShowDeleteDialog(false);
       setPedidoToDelete(null);
     } catch (error) {
       console.error("Error al eliminar:", error);
-      notifyError("Error al eliminar el pedido");
+      showError("Error al eliminar el pedido");
     }
   };
 
@@ -712,7 +881,7 @@ const Pedidos = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Entrega</label>
                   <input 
                     type="date"
-                    value={formData.fechaCompromiso || pedidoToEdit.fechaEntrega}
+                    value={formData.fechaCompromiso}
                     onChange={(e) => setFormData(prev => ({ ...prev, fechaCompromiso: e.target.value }))}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
                   />
@@ -873,11 +1042,11 @@ const Pedidos = () => {
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label><input type="text" name="nombreCompleto" placeholder="Nombre completo" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label><input type="text" name="dni" placeholder="12345678" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefono" placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="email" placeholder="correo@ejemplo.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccion" placeholder="Dirección completa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Nombre Completo *</label><input type="text" name="nombreCompleto" value={formData.nombreCompleto} onChange={handleFormChange} placeholder="Nombre completo" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">DNI *</label><input type="text" name="dni" value={formData.dni} onChange={handleFormChange} placeholder="12345678" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefono" value={formData.telefono} onChange={handleFormChange} placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="email" value={formData.email} onChange={handleFormChange} placeholder="correo@ejemplo.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                  <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccion" value={formData.direccion} onChange={handleFormChange} placeholder="Dirección completa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
                 </div>
               </div>
             )}
@@ -893,14 +1062,14 @@ const Pedidos = () => {
                     </div>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Nombre de I.E. *</label><input type="text" name="nombreColegio" value="" placeholder="Nombre del colegio" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Contacto (Encargado) *</label><input type="text" name="contactoColegio" value="" placeholder="Persona de contacto" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefonoColegio" value="" placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="emailColegio" value="" placeholder="correo@colegio.edu.pe" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccionColegio" value="" placeholder="Dirección del colegio" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label><select name="nivelEducativo" value="" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"><option>Inicial</option><option>Primaria</option><option>Secundaria</option></select></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Grado</label><input type="text" name="grado" value="" placeholder="5to" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Sección</label><input type="text" name="seccion" value="" placeholder="A" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div className="col-span-2"><label className="block text-sm font-medium text-gray-700 mb-1">Nombre de I.E. *</label><input type="text" name="nombreColegio" value={formData.nombreColegio} onChange={handleFormChange} placeholder="Nombre del colegio" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Contacto (Encargado) *</label><input type="text" name="contactoColegio" value={formData.contactoColegio} onChange={handleFormChange} placeholder="Persona de contacto" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefonoColegio" value={formData.telefonoColegio} onChange={handleFormChange} placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="emailColegio" value={formData.emailColegio} onChange={handleFormChange} placeholder="correo@colegio.edu.pe" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccionColegio" value={formData.direccionColegio} onChange={handleFormChange} placeholder="Dirección del colegio" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Nivel</label><select name="nivelEducativo" value={formData.nivelEducativo} onChange={handleFormChange} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"><option>Inicial</option><option>Primaria</option><option>Secundaria</option></select></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Grado</label><input type="text" name="grado" value={formData.grado} onChange={handleFormChange} placeholder="5to" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Sección</label><input type="text" name="seccion" value={formData.seccion} onChange={handleFormChange} placeholder="A" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
                  </div>
               </div>
             )}
@@ -916,12 +1085,12 @@ const Pedidos = () => {
                     </div>
                  </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Razón Social *</label><input type="text" name="razonSocial" value="" placeholder="Empresa S.A.C." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">RUC *</label><input type="text" name="ruc" value="" placeholder="20123456789" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Representante *</label><input type="text" name="representante" value="" placeholder="Nombre del representante" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefonoEmpresa" value="" placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="emailEmpresa" value="" placeholder="email@empresa.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
-                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccionEmpresa" value="" placeholder="Dirección de la empresa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Razón Social *</label><input type="text" name="razonSocial" value={formData.razonSocial} onChange={handleFormChange} placeholder="Empresa S.A.C." className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">RUC *</label><input type="text" name="ruc" value={formData.ruc} onChange={handleFormChange} placeholder="20123456789" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Representante *</label><input type="text" name="representante" value={formData.representante} onChange={handleFormChange} placeholder="Nombre del representante" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Teléfono *</label><input type="text" name="telefonoEmpresa" value={formData.telefonoEmpresa} onChange={handleFormChange} placeholder="999888777" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Email</label><input type="email" name="emailEmpresa" value={formData.emailEmpresa} onChange={handleFormChange} placeholder="email@empresa.com" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
+                    <div><label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label><input type="text" name="direccionEmpresa" value={formData.direccionEmpresa} onChange={handleFormChange} placeholder="Dirección de la empresa" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary outline-none"/></div>
                  </div>
               </div>
             )}
@@ -993,13 +1162,46 @@ const Pedidos = () => {
                     ) : (
                       <>
                         {tipoDocumento === "proforma" && (
-                          <button onClick={() => { const nuevoPedido = { numero: `P${String(pedidos.length + 1).padStart(3, '0')}-24`, fecha: new Date().toLocaleDateString('es-PE'), cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente', tipo: "P", estado: "Pendiente", fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'), total: calcularTotal(), aCuenta: 0, saldo: calcularTotal() }; setPedidos(prev => [...prev, nuevoPedido]); notifySuccess(`Proforma ${nuevoPedido.numero} creada correctamente`); setVistaActual("lista"); }} className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><FileText className="w-5 h-5" /> Guardar Proforma</button>
+                          <button 
+                            onClick={crearProforma} 
+                            disabled={isProcessing}
+                            className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                              isProcessing 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-blue-500 hover:bg-blue-600 text-white'
+                            }`}
+                          >
+                            <FileText className="w-5 h-5" /> 
+                            {isProcessing ? 'Guardando...' : 'Guardar Proforma'}
+                          </button>
                         )}
                         {tipoDocumento === "nota_venta" && (
-                          <button onClick={() => { const nuevoPedido = { numero: `V${String(pedidos.length + 1).padStart(3, '0')}-24`, fecha: new Date().toLocaleDateString('es-PE'), cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente', tipo: "V", estado: "Completado", fechaEntrega: new Date().toLocaleDateString('es-PE'), total: calcularTotal(), aCuenta: calcularTotal(), saldo: 0, }; setPedidos(prev => [...prev, nuevoPedido]); notifySuccess(`Venta ${nuevoPedido.numero} procesada correctamente`); setVistaActual("lista"); }} className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><ShoppingCart className="w-5 h-5" /> Procesar Venta</button>
+                          <button 
+                            onClick={procesarVenta} 
+                            disabled={isProcessing}
+                            className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                              isProcessing 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-green-500 hover:bg-green-600 text-white'
+                            }`}
+                          >
+                            <ShoppingCart className="w-5 h-5" /> 
+                            {isProcessing ? 'Procesando...' : 'Procesar Venta'}
+                          </button>
                         )}
                         {tipoDocumento === "contrato" && (
-                          <button onClick={() => { const nuevoPedido = { numero: `C${String(pedidos.length + 1).padStart(3, '0')}-24`, fecha: new Date().toLocaleDateString('es-PE'), cliente: formData.nombreCompleto || formData.nombreColegio || formData.razonSocial || 'Cliente', tipo: "C", estado: "Pendiente", fechaEntrega: formData.fechaCompromiso || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('es-PE'), total: calcularTotal(), aCuenta: parseFloat(formData.aCuenta || 0), saldo: calcularTotal() - parseFloat(formData.aCuenta || 0), }; setPedidos(prev => [...prev, nuevoPedido]); notifySuccess(`Contrato ${nuevoPedido.numero} creado correctamente`); setVistaActual("lista"); }} className="w-full bg-purple-500 hover:bg-purple-600 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"><FileText className="w-5 h-5" /> Crear Contrato</button>
+                          <button 
+                            onClick={crearContrato} 
+                            disabled={isProcessing}
+                            className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                              isProcessing 
+                                ? 'bg-gray-400 cursor-not-allowed' 
+                                : 'bg-purple-500 hover:bg-purple-600 text-white'
+                            }`}
+                          >
+                            <FileText className="w-5 h-5" /> 
+                            {isProcessing ? 'Creando...' : 'Crear Contrato'}
+                          </button>
                         )}
                       </>
                     )}
