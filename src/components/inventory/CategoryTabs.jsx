@@ -10,7 +10,10 @@ const CategoryTabs = ({ categories, activeCategory, setActiveCategory, setActive
             key={key}
             onClick={() => {
               setActiveCategory(key);
-              setActiveSubcategory(Object.keys(category.subcategories)[0]);
+              // Solo establecer subcategoría si la categoría tiene subcategorías
+              if (category.subcategories && Object.keys(category.subcategories).length > 0) {
+                setActiveSubcategory(Object.keys(category.subcategories)[0]);
+              }
             }}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
               activeCategory === key
