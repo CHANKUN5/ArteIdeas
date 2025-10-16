@@ -170,34 +170,11 @@ const Inventario = () => {
     minilab: {
       name: "Minilab",
       icon: Settings,
-      subcategories: {
-        'papel-fotografico': { 
-          name: "Papel Fotográfico", 
-          fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
-          options: {
-            tipoInsumo: ['Papel'],
-            nombreTipo: ['Papel Lustre', 'Papel Mate'],
-            tamañoPresentacion: ['10x15 cm', '20x30 cm']
-          }
-        },
-        'tintas': { 
-          name: "Tintas", 
-          fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
-          options: {
-            tipoInsumo: ['Química'],
-            nombreTipo: ['Revelador RA-4', 'Blanqueador'],
-            tamañoPresentacion: ['Kit 5L', '1 Litro']
-          }
-        },
-        'accesorios-impresion': { 
-          name: "Accesorios de Impresión", 
-          fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
-          options: {
-            tipoInsumo: ['Químico'],
-            nombreTipo: ['Blanqueador'],
-            tamañoPresentacion: ['1 Litro']
-          }
-        }
+      fields: ['tipoInsumo', 'nombreTipo', 'tamañoPresentacion', 'cantidadStock', 'fechaCompra', 'costoUnit', 'stockMin', 'costoTotal'],
+      options: {
+        tipoInsumo: ['Papel', 'Química', 'Químico'],
+        nombreTipo: ['Papel Lustre', 'Papel Mate', 'Revelador RA-4', 'Blanqueador'],
+        tamañoPresentacion: ['10x15 cm', '20x30 cm', 'Kit 5L', '1 Litro']
       }
     },
     graduaciones: {
@@ -227,31 +204,14 @@ const Inventario = () => {
     'corte-laser': {
       name: "Corte Láser",
       icon: Zap,
-      subcategories: {
-        'materiales-corte': { 
-          name: "Material de Corte", 
-          fields: ['producto', 'tipo', 'tamañoCm', 'color', 'unidad', 'stock', 'stockMin', 'costoUnit', 'proveedor'],
-          options: {
-            producto: ['Plancha MDF Jeans', 'Plancha Acrílico 3mm', 'Cartón Microcorrugado', 'Lámina MDF Crillada'],
-            tipo: ['MDF', 'Acrílico', 'Cartón', 'Lámina Crillada'],
-            tamañoCm: ['60x40cm', '60x70cm', '60x40cm', '60x40cm'],
-            color: ['Natural', 'Transparente', 'Blanco', 'Natural'],
-            unidad: ['Plancha', 'Plancha', 'Plancha', 'Plancha'],
-            proveedor: ['AcriFlex Tama', 'Excelente Tama', 'MDF Perú']
-          }
-        },
-        'herramientas': { 
-          name: "Herramienta", 
-          fields: ['producto', 'tipo', 'tamañoCm', 'color', 'unidad', 'stock', 'stockMin', 'costoUnit', 'proveedor'],
-          options: {
-            producto: ['Lente de Enfoque', 'Espejo Reflector'],
-            tipo: ['Lente', 'Espejo'],
-            tamañoCm: ['2.5"', '1"'],
-            color: ['Transparente', 'Plateado'],
-            unidad: ['Pieza', 'Pieza'],
-            proveedor: ['Epilog', 'Trotec']
-          }
-        }
+      fields: ['producto', 'tipo', 'tamañoCm', 'color', 'unidad', 'stock', 'stockMin', 'costoUnit', 'proveedor'],
+      options: {
+        producto: ['Plancha MDF Jeans', 'Plancha Acrílico 3mm', 'Cartón Microcorrugado', 'Lámina MDF Crillada', 'Lente de Enfoque', 'Espejo Reflector'],
+        tipo: ['MDF', 'Acrílico', 'Cartón', 'Lámina Crillada', 'Lente', 'Espejo'],
+        tamañoCm: ['60x40cm', '60x70cm', '60x40cm', '60x40cm', '2.5"', '1"'],
+        color: ['Natural', 'Transparente', 'Blanco', 'Natural', 'Transparente', 'Plateado'],
+        unidad: ['Plancha', 'Plancha', 'Plancha', 'Plancha', 'Pieza', 'Pieza'],
+        proveedor: ['AcriFlex Tama', 'Excelente Tama', 'MDF Perú', 'Epilog', 'Trotec']
       }
     },
     accesorios: {
@@ -279,6 +239,27 @@ const Inventario = () => {
     }
   };
 
+  // Manejar categorías con y sin subcategorías - DECLARADO DESPUÉS DE categories
+  const currentCategory = categories[activeCategory];
+  const hasSubcategories = currentCategory?.subcategories && Object.keys(currentCategory.subcategories).length > 0;
+  
+  let currentSubcategories = {};
+  let currentSubcategory = null;
+  let currentFields = [];
+  let currentOptions = {};
+  
+  if (hasSubcategories) {
+    // Categoría con subcategorías
+    currentSubcategories = currentCategory.subcategories;
+    currentSubcategory = currentSubcategories[activeSubcategory];
+    currentFields = currentSubcategory?.fields || [];
+    currentOptions = currentSubcategory?.options || {};
+  } else {
+    // Categoría sin subcategorías (directa)
+    currentFields = currentCategory?.fields || [];
+    currentOptions = currentCategory?.options || {};
+  }
+
   // Cargar datos desde localStorage al montar el componente
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("inventory_categorized")) || {};
@@ -289,6 +270,21 @@ const Inventario = () => {
   useEffect(() => {
     localStorage.setItem("inventory_categorized", JSON.stringify(products));
   }, [products]);
+
+  // Manejar cambios de categoría activa y ajustar subcategoría
+  useEffect(() => {
+    const currentCategory = categories[activeCategory];
+    if (currentCategory && currentCategory.subcategories) {
+      // Si la categoría tiene subcategorías, establecer la primera como activa
+      const firstSubcategory = Object.keys(currentCategory.subcategories)[0];
+      if (firstSubcategory && activeSubcategory !== firstSubcategory) {
+        setActiveSubcategory(firstSubcategory);
+      }
+    } else {
+      // Si la categoría no tiene subcategorías, limpiar la subcategoría activa
+      setActiveSubcategory('');
+    }
+  }, [activeCategory]);
 
   // Funciones auxiliares
   const openModal = () => {
@@ -374,7 +370,7 @@ const Inventario = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    const categoryKey = `${activeCategory}_${activeSubcategory}`;
+    const categoryKey = hasSubcategories ? `${activeCategory}_${activeSubcategory}` : activeCategory;
     const currentProducts = products[categoryKey] || [];
 
     // Calcular costo total si es necesario
@@ -416,7 +412,7 @@ const Inventario = () => {
 
   // Manejar eliminación de producto
   const handleDelete = (productId) => {
-    const categoryKey = `${activeCategory}_${activeSubcategory}`;
+    const categoryKey = hasSubcategories ? `${activeCategory}_${activeSubcategory}` : activeCategory;
     const currentProducts = products[categoryKey] || [];
     const product = currentProducts.find(p => p.id === productId);
     
@@ -428,7 +424,7 @@ const Inventario = () => {
   };
 
   const confirmDelete = () => {
-    const categoryKey = `${activeCategory}_${activeSubcategory}`;
+    const categoryKey = hasSubcategories ? `${activeCategory}_${activeSubcategory}` : activeCategory;
     const currentProducts = products[categoryKey] || [];
     const updatedProducts = currentProducts.filter(product => product.id !== confirmDialog.productId);
     
@@ -448,7 +444,8 @@ const Inventario = () => {
 
   // Obtener productos filtrados
   const getFilteredProducts = () => {
-    const categoryKey = `${activeCategory}_${activeSubcategory}`;
+    // Para categorías sin subcategorías, usar solo el nombre de la categoría
+    const categoryKey = hasSubcategories ? `${activeCategory}_${activeSubcategory}` : activeCategory;
     const currentProducts = products[categoryKey] || [];
     
     if (!searchTerm) return currentProducts;
@@ -483,11 +480,7 @@ const Inventario = () => {
 
   const stats = getStats();
   const filteredProducts = getFilteredProducts();
-  const currentSubcategories = categories[activeCategory]?.subcategories || {};
-  const currentSubcategory = currentSubcategories[activeSubcategory];
-  const currentFields = currentSubcategory?.fields || [];
-  const currentOptions = currentSubcategory?.options || {};
-
+  
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
       {/* Header */}
@@ -545,12 +538,14 @@ const Inventario = () => {
           setActiveSubcategory={setActiveSubcategory} 
         />
 
-        {/* 4. Pestañas de subcategorías - CUARTO */}
-        <SubcategoryTabs 
-          subcategories={currentSubcategories} 
-          activeSubcategory={activeSubcategory} 
-          setActiveSubcategory={setActiveSubcategory} 
-        />
+        {/* 4. Pestañas de subcategorías - CUARTO (solo si hay subcategorías) */}
+        {hasSubcategories && (
+          <SubcategoryTabs 
+            subcategories={currentSubcategories} 
+            activeSubcategory={activeSubcategory} 
+            setActiveSubcategory={setActiveSubcategory} 
+          />
+        )}
       </div>
 
       {/* Contenido principal */}
@@ -559,14 +554,17 @@ const Inventario = () => {
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900">
-              {categories[activeCategory]?.name} - {currentSubcategory?.name}
+              {hasSubcategories 
+                ? `${categories[activeCategory]?.name} - ${currentSubcategory?.name}`
+                : categories[activeCategory]?.name
+              }
             </h2>
             <button
               onClick={openModal}
               className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
             >
               <Plus className="w-4 h-4" />
-              <span>Añadir {currentSubcategory?.name}</span>
+              <span>Añadir {hasSubcategories ? currentSubcategory?.name : categories[activeCategory]?.name}</span>
             </button>
           </div>
 
@@ -575,7 +573,7 @@ const Inventario = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder={`Buscar ${currentSubcategory?.name.toLowerCase()}...`}
+              placeholder={`Buscar ${hasSubcategories ? currentSubcategory?.name.toLowerCase() : categories[activeCategory]?.name.toLowerCase()}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
@@ -714,7 +712,7 @@ const Inventario = () => {
               </div>
 
               <p className="text-gray-600 mb-6">
-                Complete los campos para {isEditing ? 'actualizar' : 'agregar'} {currentSubcategory?.name.toLowerCase()} al inventario
+                Complete los campos para {isEditing ? 'actualizar' : 'agregar'} {hasSubcategories ? currentSubcategory?.name.toLowerCase() : categories[activeCategory]?.name.toLowerCase()} al inventario
               </p>
 
               <form onSubmit={handleAddOrUpdate} className="space-y-4">
