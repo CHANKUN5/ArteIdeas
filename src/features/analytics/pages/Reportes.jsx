@@ -5,8 +5,8 @@ import {
   UserCheck, PieChart, FileCheck
 } from 'lucide-react';
 import { useState } from 'react';
-import Button from '../../components/common/Button';
-import Card from '../../components/common/Card';
+import Button from '@components/ui/Button/Button.jsx';
+import Card from '@components/ui/Card/Card.jsx';
 
 const ReportesNuevos = () => {
   const [dateRange, setDateRange] = useState({

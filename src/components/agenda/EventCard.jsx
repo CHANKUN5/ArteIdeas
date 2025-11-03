@@ -15,7 +15,7 @@ import {
   Image, 
   GraduationCap 
 } from 'lucide-react';
-import Card from '../common/Card';
+import Card from '@components/ui/Card/Card.jsx';
 
 const EventCard = memo(({ event, onClick }) => {
   // Estado local individual para cada acordeón (como en ContractCard)

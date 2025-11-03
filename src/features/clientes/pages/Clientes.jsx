@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Users, Plus, Search, Filter, Eye, Edit, Trash2, Phone, MapPin, Package } from 'lucide-react';
-import Card from '@components/common/Card.jsx';
-import Button from '@components/common/Button.jsx';
-import Modal from '@components/common/Modal.jsx';
-import ClientForm from '@components/forms/ClientForm.jsx';
+import Card from '@components/ui/Card/Card.jsx';
+import Button from '@components/ui/Button/Button.jsx';
+import Modal from '@components/ui/Modal/Modal.jsx';
+import ClientForm from '@features/clients/components/ClientForm.jsx';
 import { useApp } from '@context/AppContext';
 
 const Clientes = () => {

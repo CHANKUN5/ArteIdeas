@@ -1,5 +1,5 @@
 import React from 'react';
-import Alert from './Alert';
+import Alert from '@components/ui/Alert/Alert.jsx';
 
 const AlertContainer = ({ alerts, onRemoveAlert }) => {
   if (!alerts || alerts.length === 0) return null;

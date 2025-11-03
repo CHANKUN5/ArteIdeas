@@ -1,5 +1,5 @@
 import React from 'react';
-import ToggleSwitch from '../common/ToggleSwitch';
+import ToggleSwitch from '@components/ui/ToggleSwitch/ToggleSwitch.jsx';
 import { 
   LayoutDashboard,
   Calendar,

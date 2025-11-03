@@ -1,6 +1,6 @@
 import { Building, Mail, MapPin, Phone, User } from 'lucide-react';
 import { useState } from 'react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 const ClientForm = ({ client = null, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({

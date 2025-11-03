@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 export default function ContratoForm({ initialData = {}, onSubmit, onCancel, submitLabel = "Guardar" }) {
   const [formData, setFormData] = useState({

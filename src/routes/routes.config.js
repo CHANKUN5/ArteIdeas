@@ -9,18 +9,18 @@ import ValidarCodigo from '@features/auth/pages/ValidarCodigo.jsx';
 import NuevaContrasena from '@features/auth/pages/NuevaContrasena.jsx';
 
 // Rutas protegidas (aplicación)
-import Dashboard from '@pages/dashboard/Dashboard.jsx';
-import Agenda from '@pages/management/Agenda.jsx';
-import Pedidos from '@pages/management/Pedidos.jsx';
+import Dashboard from '@features/analytics/pages/Dashboard.jsx';
+import Agenda from '@features/calendar/pages/Agenda.jsx';
+import Pedidos from '@features/orders/pages/Pedidos.jsx';
 import Clientes from '@features/clientes/pages/Clientes.jsx';
-import Inventario from '@pages/management/Inventario.jsx';
-import Activos from '@pages/management/Activos.jsx';
-import Gastos from '@pages/management/Gastos.jsx';
-import Produccion from '@pages/management/Produccion.jsx';
-import Contratos from '@pages/management/Contratos.jsx';
-import Reportes from '@pages/analytics/Reportes.jsx';
-import MiPerfil from '@pages/profile/MiPerfil.jsx';
-import Configuracion from '@pages/profile/Configuracion.jsx';
+import Inventario from '@features/inventory/pages/Inventario.jsx';
+import Activos from '@features/assets/pages/Activos.jsx';
+import Gastos from '@features/expenses/pages/Gastos.jsx';
+import Produccion from '@features/production/pages/Produccion.jsx';
+import Contratos from '@features/contracts/pages/Contratos.jsx';
+import Reportes from '@features/analytics/pages/Reportes.jsx';
+import MiPerfil from '@features/profile/pages/MiPerfil.jsx';
+import Configuracion from '@features/profile/pages/Configuracion.jsx';
 
 // Rutas de error
 import NotFound from '@pages/NotFound/NotFound.jsx';

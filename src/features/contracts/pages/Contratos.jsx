@@ -2,9 +2,9 @@ import jsPDF from 'jspdf';
 // CORRECTO ✅
 import { Calendar, ChevronDown, Clock, DollarSign, Download, Edit, Eye, FileText, Filter, Plus, Save, Search, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import Button from '../../components/common/Button';
-import Card from '../../components/common/Card';
-import Modal from '../../components/common/Modal';
+import Button from '@components/ui/Button/Button.jsx';
+import Card from '@components/ui/Card/Card.jsx';
+import Modal from '@components/ui/Modal/Modal.jsx';
 
 const Contratos = () => {
   // Datos iniciales por defecto

@@ -12,7 +12,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { useState } from 'react';
-import ConfirmationDialog from '../../components/common/ConfirmationDialog';
+import ConfirmationDialog from '@components/forms/ConfirmationDialog/ConfirmationDialog.jsx';
 
 const Produccion = () => {
   const [activeTab, setActiveTab] = useState('todos');

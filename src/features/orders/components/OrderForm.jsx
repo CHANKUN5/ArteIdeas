@@ -1,6 +1,6 @@
 import { Calendar, DollarSign, FileText, Package, ShoppingCart, User } from 'lucide-react';
 import { useState } from 'react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 const OrderForm = ({ order = null, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({

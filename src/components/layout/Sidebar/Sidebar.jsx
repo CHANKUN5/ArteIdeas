@@ -16,7 +16,7 @@ import { useState } from 'react';
 import logoImage from '@assets/icono.png';
 import { useApp } from '@context/AppContext';
 import { useAuth } from '@context/AuthContext';
-import ConfirmationDialog from '@components/common/ConfirmationDialog.jsx';
+import ConfirmationDialog from '@components/forms/ConfirmationDialog/ConfirmationDialog.jsx';
 
 const Sidebar = ({ isOpen, onClose, activeSection, onSectionChange }) => {
   const { logout } = useAuth();

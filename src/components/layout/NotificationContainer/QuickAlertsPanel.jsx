@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, Package, Wrench, Truck, X, ChevronDown, ChevronUp, Clock, AlertCircle } from 'lucide-react';
-import { useApp } from '../../context/AppContext';
+import { useApp } from '@context/AppContext';
 
 const QuickAlertsPanel = () => {
   const { data } = useApp();

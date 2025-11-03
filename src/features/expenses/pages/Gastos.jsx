@@ -10,10 +10,10 @@ import {
   Trash2,
   Plus
 } from 'lucide-react';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import Modal from '../../components/common/Modal';
-import GastosForm from '../../components/forms/GastosForm';
+import Card from '@components/ui/Card/Card.jsx';
+import Button from '@components/ui/Button/Button.jsx';
+import Modal from '@components/ui/Modal/Modal.jsx';
+import GastosForm from '@features/expenses/components/GastosForm.jsx';
 
 // Vista de Gastos Operativos
 const Gastos = () => {

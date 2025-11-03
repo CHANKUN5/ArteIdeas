@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Calendar, Building, CreditCard, Hash } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({

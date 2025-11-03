@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 const UserForm = ({ user, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({

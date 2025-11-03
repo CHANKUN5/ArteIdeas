@@ -6,7 +6,7 @@ import { publicRoutes, protectedRoutes, errorRoutes } from './routes.config.js';
 // Layout components (importando archivos directos, sin index.js)
 import Sidebar from '@components/layout/Sidebar/Sidebar.jsx';
 import Header from '@components/layout/Header/Header.jsx';
-import NotificationContainer from '@components/layout/Notifications/NotificationContainer.jsx';
+import NotificationContainer from '@components/layout/NotificationContainer/NotificationContainer.jsx';
 
 // Fallback NotFound global
 import NotFound from '@pages/NotFound/NotFound.jsx';

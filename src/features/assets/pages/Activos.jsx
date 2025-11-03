@@ -1,11 +1,11 @@
 import { DollarSign, Edit, Eye, HardDrive, Plus, Search, Trash2, Wrench, X } from 'lucide-react';
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
-import Card from '../../components/common/Card';
-import Modal from '../../components/common/Modal';
-import ActivoForm from '../../components/forms/ActivoForm';
-import FinanciamientoForm from '../../components/forms/FinanciamientoForm';
-import MantenimientoForm from '../../components/forms/MantenimientoForm';
+import Button from '@components/ui/Button/Button.jsx';
+import Card from '@components/ui/Card/Card.jsx';
+import Modal from '@components/ui/Modal/Modal.jsx';
+import ActivoForm from '@features/assets/components/ActivoForm.jsx';
+import FinanciamientoForm from '@features/assets/components/FinanciamientoForm.jsx';
+import MantenimientoForm from '@features/assets/components/MantenimientoForm.jsx';
 
 const Activos = () => {
   const [activeTab, setActiveTab] = useState('activos');

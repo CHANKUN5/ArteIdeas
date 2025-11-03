@@ -15,7 +15,7 @@ import {
   FileText,
   DollarSign,
 } from "lucide-react";
-import { useApp } from "../../context/AppContext";
+import { useApp } from "@context/AppContext.jsx";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 

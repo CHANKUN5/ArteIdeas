@@ -1,8 +1,8 @@
 import { Banknote, Calendar, Clock, Package, ShoppingCart, TrendingUp, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import QuickAlertsPanel from '../../components/common/QuickAlertsPanel';
-import StatsCard from '../../components/dashboard/StatsCard';
-import { dashboardService } from '../../services/dataService';
+import QuickAlertsPanel from '@components/layout/NotificationContainer/QuickAlertsPanel.jsx';
+import StatsCard from '@features/analytics/components/StatsCard.jsx';
+import { dashboardService } from '@services/dataService.js';
 
 
 const Dashboard = ({ onSectionChange }) => {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Briefcase, Calendar, DollarSign, Building2, FileText } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 // Formulario reutilizable para Personal y Servicios
 const GastosForm = ({ type = 'personal', data = null, onSubmit, onCancel }) => {

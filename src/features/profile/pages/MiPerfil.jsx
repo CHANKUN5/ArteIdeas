@@ -1,9 +1,9 @@
 import { AtSign, Camera, Edit, Key, Mail, MapPin, Phone, Save, Shield, User, X } from 'lucide-react';
 import React, { useState } from 'react';
-import Button from '../../components/common/Button';
-import Card from '../../components/common/Card';
-import Modal from '../../components/common/Modal';
-import { useAuth } from '../../context/AuthContext';
+import Button from '@components/ui/Button/Button.jsx';
+import Card from '@components/ui/Card/Card.jsx';
+import Modal from '@components/ui/Modal/Modal.jsx';
+import { useAuth } from '@context/AuthContext.jsx';
 
 const MiPerfil = () => {
   const { user, updateProfileImage, updateProfile } = useAuth();

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Package, DollarSign, Calendar, Building, Wrench, Box, Tag, Hash, MapPin, Plus, X } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit, onCancel }) => {
   const isRepuestoMode = mode === 'repuesto';

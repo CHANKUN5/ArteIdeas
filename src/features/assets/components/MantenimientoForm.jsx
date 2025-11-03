@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DollarSign, Calendar, Building, Wrench, FileText, Hash, AlertCircle } from 'lucide-react';
-import Button from '../common/Button';
+import Button from '@components/ui/Button/Button.jsx';
 
 const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [], onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({

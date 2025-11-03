@@ -15,10 +15,10 @@ import {
   Package,
   Bell
 } from 'lucide-react';
-import Button from '../../components/common/Button';
-import FilterSelect from '../../components/agenda/FilterSelect';
-import EventCard from '../../components/agenda/EventCard';
-import Pagination from '../../components/agenda/Pagination';
+import Button from '@components/ui/Button/Button.jsx';
+import FilterSelect from '@components/agenda/FilterSelect.jsx';
+import EventCard from '@components/agenda/EventCard.jsx';
+import Pagination from '@components/agenda/Pagination.jsx';
 
 const Agenda = () => {
   // Estados principales
