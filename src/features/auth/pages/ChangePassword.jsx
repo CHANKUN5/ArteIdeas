@@ -1,10 +1,10 @@
 import { Eye, EyeOff, Key, Lock, Shield } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import Button from '../../components/common/Button';
-import { useApp } from '../../context/AppContext';
-import { useAuth } from '../../context/AuthContext';
-import authService from '../../services/authService';
+import Button from '@components/common/Button.jsx';
+import { useApp } from '@context/AppContext';
+import { useAuth } from '@context/AuthContext';
+import authService from '@services/authService';
 
 const ChangePassword = () => {
   const navigate = useNavigate();

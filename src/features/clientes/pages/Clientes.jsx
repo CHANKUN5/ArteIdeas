@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Users, Plus, Search, Filter, Eye, Edit, Trash2, Phone, MapPin, Package } from 'lucide-react';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import Modal from '../../components/common/Modal';
-import ClientForm from '../../components/forms/ClientForm';
-import { useApp } from '../../context/AppContext';
+import Card from '@components/common/Card.jsx';
+import Button from '@components/common/Button.jsx';
+import Modal from '@components/common/Modal.jsx';
+import ClientForm from '@components/forms/ClientForm.jsx';
+import { useApp } from '@context/AppContext';
 
 const Clientes = () => {
   const { notifyNewClient, notifyClientAction } = useApp();

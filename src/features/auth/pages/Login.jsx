@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
-import AnimatedBackground from '../../components/auth/AnimatedBackground';
-import styles from '../../components/auth/Login.module.css';
-import LoginForm from '../../components/auth/LoginForm';
-import { useAuth } from '../../context/AuthContext';
+import AnimatedBackground from '@components/auth/AnimatedBackground.jsx';
+import styles from '@components/auth/Login.module.css';
+import LoginForm from '@components/auth/LoginForm.jsx';
+import { useAuth } from '@context/AuthContext';
 
 const Login = () => {
   const { login, error, loading, clearError } = useAuth();
@@ -17,7 +17,7 @@ const Login = () => {
         if (result.requiresPasswordChange) {
           navigate(result.redirectTo, { state: { user: result.user } });
         } else {
-          console.log('Login exitoso:', result.user);
+          navigate('/dashboard');
         }
       }
     } catch (err) {

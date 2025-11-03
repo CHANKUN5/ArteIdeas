@@ -11,7 +11,7 @@ const NuevaContrasena = () => {
       return alert("La contraseña debe tener entre 6 y 8 dígitos");
     }
     alert("Contraseña actualizada con éxito");
-    navigate("/"); // 🔥 redirige al login
+    navigate("/login"); // redirige al login
   };
 
   return (
