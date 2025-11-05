@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as RouterDom, Routes, Route, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { BrowserRouter as RouterDom, Routes, Route, Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute.jsx';
 import { publicRoutes, protectedRoutes, errorRoutes } from './routes.config.js';
 
@@ -14,26 +14,33 @@ import NotFound from '@pages/NotFound/NotFound.jsx';
 // Layout principal para rutas autenticadas
 const MainLayout = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleSectionChange = (section) => {
-    // Mapea la sección a una ruta
-    const map = {
-      dashboard: '/dashboard',
-      agenda: '/agenda',
-      pedidos: '/pedidos',
-      clientes: '/clientes',
-      inventario: '/inventario',
-      activos: '/activos',
-      gastos: '/gastos',
-      produccion: '/produccion',
-      contratos: '/contratos',
-      reportes: '/reportes',
-      perfil: '/perfil',
-      configuracion: '/configuracion',
-    };
+  // Mapa sección -> ruta y su inverso para determinar el activo
+  const sectionToPath = {
+    dashboard: '/dashboard',
+    agenda: '/agenda',
+    pedidos: '/pedidos',
+    clientes: '/clientes',
+    inventario: '/inventario',
+    activos: '/activos',
+    gastos: '/gastos',
+    produccion: '/produccion',
+    contratos: '/contratos',
+    reportes: '/reportes',
+    perfil: '/perfil',
+    configuracion: '/configuracion',
+  };
 
-    const path = map[section] || '/dashboard';
+  const pathToSection = Object.fromEntries(
+    Object.entries(sectionToPath).map(([section, path]) => [path, section])
+  );
+
+  const activeSection = pathToSection[location.pathname] || 'dashboard';
+
+  const handleSectionChange = (section) => {
+    const path = sectionToPath[section] || '/dashboard';
     navigate(path);
     setSidebarOpen(false);
   };
@@ -43,6 +50,7 @@ const MainLayout = () => {
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        activeSection={activeSection}
         onSectionChange={handleSectionChange}
       />
 

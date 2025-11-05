@@ -130,7 +130,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               value={formData.activoId}
               onChange={handleChange}
               disabled={!!mantenimiento}
-              className={`pl-10 w-full rounded-md border ${errors.activoId ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent ${mantenimiento ? 'bg-gray-100' : ''}`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.activoId ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent ${mantenimiento ? 'bg-gray-100' : ''}`}
             >
               <option value="">Seleccione un activo</option>
               {activos.map(activo => (
@@ -156,7 +156,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               name="tipo"
               value={formData.tipo}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.tipo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.tipo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             >
               <option value="Preventivo">Preventivo</option>
               <option value="Correctivo">Correctivo</option>
@@ -176,7 +176,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               name="fechaMantenimiento"
               value={formData.fechaMantenimiento}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.fechaMantenimiento ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.fechaMantenimiento ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             />
           </div>
           {errors.fechaMantenimiento && <p className="mt-1 text-sm text-red-600">{errors.fechaMantenimiento}</p>}
@@ -195,7 +195,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               step="0.01"
               value={formData.costo}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.costo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.costo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
               placeholder="0.00"
             />
           </div>
@@ -213,7 +213,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               name="proveedor"
               value={formData.proveedor}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.proveedor ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.proveedor ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
               placeholder="Ej: Servicio Técnico Especializado"
             />
           </div>
@@ -230,7 +230,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               name="estadoMantenimiento"
               value={formData.estadoMantenimiento}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.estadoMantenimiento ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.estadoMantenimiento ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             >
               <option value="Programado">Programado</option>
               <option value="Completado">Completado</option>
@@ -250,7 +250,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               name="estado"
               value={formData.estado}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             >
               <option value="Activo">Activo</option>
               <option value="Mantenimiento">En Mantenimiento</option>
@@ -271,7 +271,7 @@ const MantenimientoForm = ({ mantenimiento = null, activos = [], repuestos = [],
               name="proximoMantenimiento"
               value={formData.proximoMantenimiento}
               readOnly
-              className="pl-10 w-full rounded-md border border-gray-300 bg-gray-100 text-gray-700"
+              className="pl-10 w-full h-11 rounded-md border border-gray-300 bg-gray-100 text-gray-700"
             />
           </div>
           <p className="mt-1 text-xs text-gray-500">Calculado automáticamente (6 meses después)</p>

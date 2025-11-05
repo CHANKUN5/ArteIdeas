@@ -1,7 +1,7 @@
 import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import logoImage from "../../assets/icono.png";
+import logoImage from "@/assets/images/icono.png";
 import styles from "./Login.module.css";
 
 const LoginForm = ({ onLogin, error, loading }) => {

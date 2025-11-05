@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Package, Plus, Search, Edit, Trash2, X, AlertTriangle, Frame, Settings, GraduationCap, Zap } from 'lucide-react';
-import StatsCard from '@components/inventory/StatsCard.jsx';
-import AlertsSection from '@components/inventory/AlertsSection.jsx';
-import CategoryTabs from '@components/inventory/CategoryTabs.jsx';
-import SubcategoryTabs from '@components/inventory/SubcategoryTabs.jsx';
-import FormField from '@components/inventory/FormField.jsx';
+import StatsCard from '@/features/inventory/components/StatsCard.jsx';
+import AlertsSection from '@/features/inventory/components/AlertsSection.jsx';
+import CategoryTabs from '@/features/inventory/components/CategoryTabs.jsx';
+import SubcategoryTabs from '@/features/inventory/components/SubcategoryTabs.jsx';
+import FormField from '@/features/inventory/components/FormField.jsx';
 import AlertContainer from '@components/ui/AlertContainer/AlertContainer.jsx';
 import ConfirmDialog from '@components/forms/ConfirmDialog/ConfirmDialog.jsx';
 

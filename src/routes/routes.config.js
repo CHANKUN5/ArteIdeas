@@ -12,7 +12,7 @@ import NuevaContrasena from '@features/auth/pages/NuevaContrasena.jsx';
 import Dashboard from '@features/analytics/pages/Dashboard.jsx';
 import Agenda from '@features/calendar/pages/Agenda.jsx';
 import Pedidos from '@features/orders/pages/Pedidos.jsx';
-import Clientes from '@features/clientes/pages/Clientes.jsx';
+import Clientes from '@/features/clients/pages/Clientes.jsx';
 import Inventario from '@features/inventory/pages/Inventario.jsx';
 import Activos from '@features/assets/pages/Activos.jsx';
 import Gastos from '@features/expenses/pages/Gastos.jsx';

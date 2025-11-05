@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
-import AnimatedBackground from '@components/auth/AnimatedBackground.jsx';
-import styles from '@components/auth/Login.module.css';
-import LoginForm from '@components/auth/LoginForm.jsx';
+import AnimatedBackground from '@/features/auth/components/AnimatedBackground.jsx';
+import styles from '@/features/auth/components/Login.module.css';
+import LoginForm from '@/features/auth/components/LoginForm.jsx';
 import { useAuth } from '@context/AuthContext';
 
 const Login = () => {

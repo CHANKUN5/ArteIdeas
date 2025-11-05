@@ -139,7 +139,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               value={formData.activoId}
               onChange={handleChange}
               disabled={!!financiamiento}
-              className={`pl-10 w-full rounded-md border ${errors.activoId ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent ${financiamiento ? 'bg-gray-100' : ''}`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.activoId ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent ${financiamiento ? 'bg-gray-100' : ''}`}
             >
               <option value="">Seleccione un activo</option>
               {activosDisponibles.map(activo => (
@@ -165,7 +165,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               name="tipoPago"
               value={formData.tipoPago}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.tipoPago ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.tipoPago ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             >
               <option value="Financiado">Financiado</option>
               <option value="Leasing">Leasing</option>
@@ -185,7 +185,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               name="entidad"
               value={formData.entidad}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.entidad ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.entidad ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
               placeholder="Ej: Banco de Crédito del Perú"
             />
           </div>
@@ -205,7 +205,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               step="0.01"
               value={formData.montoFinanciado}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.montoFinanciado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.montoFinanciado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
               placeholder="0.00"
             />
           </div>
@@ -224,7 +224,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               min="1"
               value={formData.cuotasTotales}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.cuotasTotales ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.cuotasTotales ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
               placeholder="Ej: 24"
             />
           </div>
@@ -242,7 +242,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               name="cuotaMensual"
               value={formData.cuotaMensual || '0.00'}
               readOnly
-              className="pl-10 w-full rounded-md border border-gray-300 bg-gray-100 text-gray-700"
+              className="pl-10 w-full h-11 rounded-md border border-gray-300 bg-gray-100 text-gray-700"
             />
           </div>
           <p className="mt-1 text-xs text-gray-500">Calculado automáticamente</p>
@@ -259,7 +259,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               name="fechaInicio"
               value={formData.fechaInicio}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.fechaInicio ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.fechaInicio ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             />
           </div>
           {errors.fechaInicio && <p className="mt-1 text-sm text-red-600">{errors.fechaInicio}</p>}
@@ -276,7 +276,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               name="fechaFin"
               value={formData.fechaFin}
               readOnly
-              className="pl-10 w-full rounded-md border border-gray-300 bg-gray-100 text-gray-700"
+              className="pl-10 w-full h-11 rounded-md border border-gray-300 bg-gray-100 text-gray-700"
             />
           </div>
           <p className="mt-1 text-xs text-gray-500">Calculado automáticamente</p>
@@ -292,7 +292,7 @@ const FinanciamientoForm = ({ financiamiento = null, activos = [], onSubmit, onC
               name="estado"
               value={formData.estado}
               onChange={handleChange}
-              className={`pl-10 w-full rounded-md border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+              className={`pl-10 w-full h-11 rounded-md border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             >
               <option value="Activo">Activo</option>
               <option value="Pagado">Pagado</option>

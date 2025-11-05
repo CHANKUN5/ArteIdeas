@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Button from '@components/ui/Button/Button.jsx';
 import { useApp } from '@context/AppContext';
 import { useAuth } from '@context/AuthContext';
-import authService from '@services/authService';
+import authService from '@/features/auth/services/authService';
 
 const ChangePassword = () => {
   const navigate = useNavigate();

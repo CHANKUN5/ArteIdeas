@@ -1,6 +1,6 @@
 import { X, Clock, CheckCircle, Eye, Trash2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { notificationService } from '../../services/notificationService';
+import { notificationService } from '@services/notificationService';
 
 const NotificationModal = ({ notification, isOpen, onClose, onMarkAsRead, onDelete }) => {
   const [isMarking, setIsMarking] = useState(false);

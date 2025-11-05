@@ -13,7 +13,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { useState } from 'react';
-import logoImage from '@assets/icono.png';
+import logoImage from '@assets/images/icono.png';
 import { useApp } from '@context/AppContext';
 import { useAuth } from '@context/AuthContext';
 import ConfirmationDialog from '@components/forms/ConfirmationDialog/ConfirmationDialog.jsx';

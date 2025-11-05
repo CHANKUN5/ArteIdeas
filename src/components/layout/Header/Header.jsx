@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@context/AuthContext';
 import { useApp } from '@context/AppContext';
-import NotificationModal from './NotificationModal';
+import NotificationModal from '@/components/layout/NotificationContainer/NotificationModal';
 
 const Header = ({ onToggleSidebar, onSectionChange }) => {
   const [showNotifications, setShowNotifications] = useState(false);

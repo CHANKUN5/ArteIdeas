@@ -1,5 +1,5 @@
 import React from "react";
-import "../../styles/animations.css";
+import "@styles/animations.css";
 import styles from "./Login.module.css";
 
 const AnimatedBackground = () => {

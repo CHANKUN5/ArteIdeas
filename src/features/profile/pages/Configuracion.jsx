@@ -10,14 +10,14 @@ import {
   Trash2,
   Save
 } from 'lucide-react';
-import authService from '@services/authService.js';
+import authService from '@/features/auth/services/authService.js';
 import { useApp } from '@context/AppContext.jsx';
 
 // Importar componentes extraídos
 import UserTable from '@components/tables/UserTable.jsx';
 // Se removieron Servicios y Precios, y Seguridad según requerimiento
-import BusinessConfig from '@components/settings/BusinessConfig.jsx';
-import RolePermissions from '@components/settings/RolePermissions.jsx';
+import BusinessConfig from '@/features/profile/components/BusinessConfig.jsx';
+import RolePermissions from '@/features/profile/components/RolePermissions.jsx';
 import UserForm from '@features/profile/components/UserForm.jsx';
 
 const Configuracion = () => {

@@ -159,7 +159,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="nombre"
             value={formData.nombre}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.nombre ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.nombre ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder={isRepuestoMode ? "Ej: Tóner Negro" : "Ej: Impresora Láser"}
           />
         </div>
@@ -176,7 +176,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="categoria"
             value={formData.categoria}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.categoria ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.categoria ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
           >
             {isRepuestoMode ? (
               <>
@@ -212,7 +212,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="proveedor"
             value={formData.proveedor}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.proveedor ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.proveedor ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="Nombre del proveedor"
           />
         </div>
@@ -235,7 +235,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="codigo"
             value={formData.codigo}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.codigo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.codigo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="Ej: REP-001"
           />
         </div>
@@ -254,7 +254,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             min="0"
             value={formData.stock}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.stock ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.stock ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="Cantidad en inventario"
           />
         </div>
@@ -273,7 +273,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             min="0"
             value={formData.stockMinimo}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.stockMinimo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.stockMinimo ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="Nivel mínimo de inventario"
           />
         </div>
@@ -293,7 +293,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             step="0.01"
             value={formData.costoUnitario}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.costoUnitario ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.costoUnitario ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="0.00"
           />
         </div>
@@ -310,7 +310,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="ubicacion"
             value={formData.ubicacion}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.ubicacion ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.ubicacion ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
           >
             <option value="Almacén A">Almacén A</option>
             <option value="Almacén B">Almacén B</option>
@@ -352,7 +352,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="fechaCompra"
             value={formData.fechaCompra}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.fechaCompra ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.fechaCompra ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
           />
         </div>
         {errors.fechaCompra && <p className="mt-1 text-sm text-red-600">{errors.fechaCompra}</p>}
@@ -371,7 +371,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             step="0.01"
             value={formData.costoTotal}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.costoTotal ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.costoTotal ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="0.00"
           />
         </div>
@@ -388,7 +388,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="tipoPago"
             value={formData.tipoPago}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.tipoPago ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.tipoPago ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
           >
             <option value="Contado">Contado</option>
             <option value="Financiado">Financiado</option>
@@ -410,7 +410,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             min="1"
             value={formData.vidaUtil}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.vidaUtil ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.vidaUtil ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
             placeholder="Ej: 60"
           />
         </div>
@@ -428,7 +428,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="depreciacion"
             value={formData.depreciacion || '0.00'}
             readOnly
-            className="pl-10 w-full rounded-md border border-gray-300 bg-gray-100 text-gray-700"
+            className="pl-10 w-full h-11 rounded-md border border-gray-300 bg-gray-100 text-gray-700"
           />
         </div>
       </div>
@@ -443,7 +443,7 @@ const ActivoForm = ({ mode = 'activo', activo = null, repuesto = null, onSubmit,
             name="estado"
             value={formData.estado}
             onChange={handleChange}
-            className={`pl-10 w-full rounded-md border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
+            className={`pl-10 w-full h-11 rounded-md border ${errors.estado ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-primary focus:border-transparent`}
           >
             <option value="Activo">Activo</option>
             <option value="Mantenimiento">En Mantenimiento</option>
